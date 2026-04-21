@@ -716,6 +716,48 @@
             #slot-stepper button { width: 36px; }
         }
 
+        /* ── Unsupported-browser state ── */
+        #unsupported {
+            max-width: 520px;
+            margin: 80px auto;
+            padding: 40px 32px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 6px 4px rgba(0,0,0,0.14);
+        }
+        .unsupported-logo { margin-bottom: 24px; }
+        .unsupported-logo svg { width: 100%; max-width: 260px; height: auto; }
+        .unsupported-logo svg .st1 { fill: #1e48d4; }
+        .unsupported-logo svg .st0 { fill: #d43800; }
+        #unsupported h1 {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 18px;
+        }
+        #unsupported p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--fg-dim);
+            margin-bottom: 14px;
+        }
+        #unsupported p strong { color: var(--fg); }
+        .unsupported-cta { padding: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 18px 0 !important; }
+        .unsupported-note {
+            font-size: 11px !important;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+        }
+
         /* ── Log — teletype output ── */
         #log {
             background: var(--bg-inset);
@@ -1979,16 +2021,19 @@ async function triggerConnect() {
 }
 
 async function init() {
-    // File System Access API is Chromium-only. Gracefully bail on
-    // Firefox / Safari / mobile with a friendly message instead of a
-    // dead button that fails silently.
+    // File System Access API is Chromium-only. Hide the entire UI and show
+    // a prominent "unsupported" message on Firefox / Safari / mobile.
     const forceUnsupported = new URLSearchParams(location.search).has('test-unsupported');
     if (forceUnsupported || !('showDirectoryPicker' in window)) {
-        setCardStatus(
-            '<span class="card-ok" style="color:var(--accent);font-weight:700">' +
-            'Browser not supported</span> — use Chrome or Edge'
-        );
-        log('This browser does not support the File System Access API needed to read the SD card. Please open this page in Chrome, Edge, Opera, Brave, or another Chromium-based browser.');
+        document.getElementById('app').innerHTML = `
+            <div id="unsupported">
+                <div class="unsupported-logo">${document.querySelector('#logo svg')?.outerHTML || ''}</div>
+                <h1>Browser not supported</h1>
+                <p>CYCLES needs to read and write directly to your SD card from the browser. That requires the <strong>File System Access API</strong>, which isn't available here.</p>
+                <p class="unsupported-cta">Please reopen this page in <strong>Chrome</strong>, <strong>Microsoft Edge</strong>, or another Chromium-based browser (Opera, Brave, Vivaldi).</p>
+                <p class="unsupported-note">Mobile browsers are not supported at this time.</p>
+            </div>
+        `;
         return;
     }
     showConnectButton('Checking for CYCLES card…');
