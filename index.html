@@ -6,6 +6,10 @@
     <title>CYCLES — Data Managerr</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
+        /* Sophisticated monospace for labels, durations, the log — replaces
+           Courier New across the UI for a modern/typographic feel. */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+
         /* DSEG 7-seg font — explicit @font-face from the keshikan/DSEG GitHub
            mirror (the old `@import` of the npm dseg.min.css was silently failing,
            falling back to Courier). */
@@ -256,7 +260,7 @@
         }
 
         #viewer-zoom-val {
-            font-family: 'Courier New', monospace;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
             font-size: 10px;
             color: var(--fg-muted);
             min-width: 26px;
@@ -359,7 +363,7 @@
 
         /* ── Section label — engraved/stencil style ── */
         .section-label {
-            font-size: 8px;
+            font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.3em;
             color: var(--fg-muted);
@@ -417,7 +421,7 @@
 
         .slot-num {
             font-size: 14px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
             font-weight: 700;
             color: var(--fg);
             letter-spacing: 0.04em;
@@ -425,7 +429,7 @@
 
         .slot-dur {
             font-size: 10px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
             color: var(--fg-muted);
             letter-spacing: 0.06em;
         }
@@ -519,6 +523,10 @@
         }
         .pedal-toggle:has(.pedal-opt:nth-child(2).active)::before {
             transform: translateX(100%);
+        }
+        /* Direction toggle uses brand blue for the thumb instead of accent red */
+        .pedal-toggle:has(.pedal-opt[data-dir])::before {
+            background: #1e48d4;
         }
         /* 3-option variant (auto-detected by presence of a 3rd .pedal-opt) */
         .pedal-toggle:has(.pedal-opt:nth-child(3)) { width: 138px; }
@@ -839,7 +847,7 @@
             background: var(--bg-inset);
             border: 1px solid var(--border-dark);
             padding: 8px 10px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
             font-size: 10px;
             color: var(--fg-muted);
             min-height: 44px;
@@ -924,7 +932,7 @@
 
 <!-- ── Working Files ──────────────────────────────────────────────────────── -->
 <div id="engine-section">
-    <div class="section-label">Working Files</div>
+    <div class="section-label">Working File</div>
     <div id="engine-grid"></div>
 </div>
 
@@ -1355,9 +1363,6 @@ async function readRawFromHandle(dirHandle, filename) {
 // ── Inspect ───────────────────────────────────────────────────────────────────
 const ENGINE_FILES = [
     { filename: '01_Loop.raw',  label: 'Loop'  },
-    { filename: '02_Mix.raw',   label: 'Mix'   },
-    { filename: '03_Dub_A.raw', label: 'Dub A' },
-    { filename: '03_Dub_B.raw', label: 'Dub B' },
 ];
 async function listEngineFiles() {
     if (!g_cyclesHandle) return [];
@@ -1429,7 +1434,7 @@ function drawViewerWindow(playheadFrame = -1) {
         const hL   = Math.min(pL * (halfH - 4), halfH - 4);
         const hR   = Math.min(pR * (halfH - 4), halfH - 4);
         ctx2d.lineWidth = 1;
-        ctx2d.strokeStyle = '#3366ee';
+        ctx2d.strokeStyle = '#d43800';
         ctx2d.beginPath(); ctx2d.moveTo(x + 0.5, midL - hL); ctx2d.lineTo(x + 0.5, midL + hL); ctx2d.stroke();
         ctx2d.strokeStyle = '#1e48d4';
         ctx2d.beginPath(); ctx2d.moveTo(x + 0.5, midR - hR); ctx2d.lineTo(x + 0.5, midR + hR); ctx2d.stroke();
