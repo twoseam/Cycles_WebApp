@@ -963,7 +963,7 @@
 <div id="engine-section">
     <div class="section-header">
         <div class="section-label">Working File</div>
-        <button class="section-wipe" id="btn-wipe-working" title="Delete 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw">Wipe</button>
+        <button class="section-wipe" id="btn-wipe-working" title="Delete 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw">Delete</button>
     </div>
     <div id="engine-grid"></div>
 </div>
@@ -972,7 +972,7 @@
 <div id="slot-section">
     <div class="section-header">
         <div class="section-label">Memory Slots</div>
-        <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Wipe All</button>
+        <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
     </div>
     <div id="slot-grid"></div>
 </div>
@@ -1564,12 +1564,16 @@ async function loadViewerWaveform(dirHandle, filename, label) {
     const footer = document.getElementById('viewer-footer');
 
     // Hi-DPI: backing store in physical pixels, CSS box stays logical.
+    // Must make canvas visible AND clear any stale inline width before measuring
+    // — CSS is `width: 100%` of the parent, but a prior inline `style.width` (or
+    // display:none on first load) defeats that and the canvas gets stuck at 860px.
+    canvas.style.width   = '';
+    canvas.style.display = 'block';
     const dpr   = window.devicePixelRatio || 1;
-    const cssW  = canvas.offsetWidth || 860;
+    const cssW  = canvas.offsetWidth || canvas.parentElement.clientWidth || 860;
     const cssH  = 192;
-    canvas.width       = Math.round(cssW * dpr);
-    canvas.height      = Math.round(cssH * dpr);
-    canvas.style.width  = cssW + 'px';
+    canvas.width        = Math.round(cssW * dpr);
+    canvas.height       = Math.round(cssH * dpr);
     canvas.style.height = cssH + 'px';
 
     g_viewerRaw         = null;
