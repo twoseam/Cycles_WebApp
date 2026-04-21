@@ -991,11 +991,42 @@
 'use strict';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const SAMPLE_RATE      = 96000;
-const NUM_CHANNELS     = 2;
-const BYTES_PER_SAMPLE = 4;
-const SLOT_PREFIX      = 'Mem_';
-const SLOT_EXT         = '.raw';
+// Disk format (v1.5.0+): int24 LE interleaved stereo PCM @ 48 kHz.
+// In-memory / WAV-export format: float32 interleaved @ SAMPLE_RATE.
+const SAMPLE_RATE           = 48000;
+const NUM_CHANNELS          = 2;
+const DISK_BYTES_PER_SAMPLE = 3;                              // int24 LE on disk
+const DISK_BYTES_PER_FRAME  = NUM_CHANNELS * DISK_BYTES_PER_SAMPLE;  // 6
+const WAV_BYTES_PER_SAMPLE  = 4;                              // float32 WAV export
+const SLOT_PREFIX           = 'Mem_';
+const SLOT_EXT              = '.raw';
+
+// ── Disk format: int24 LE ↔ float32 ──────────────────────────────────────────
+// Matches firmware packInt24LE / unpackInt24LE exactly: full-scale = ±8388607.
+function unpackInt24BufferToFloat32(ab) {
+    const bytes  = new Uint8Array(ab);
+    const frames = Math.floor(bytes.length / DISK_BYTES_PER_SAMPLE);
+    const out    = new Float32Array(frames);
+    for (let i = 0, o = 0; i < frames; i++, o += 3) {
+        let s = bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16);
+        if (s & 0x800000) s |= 0xFF000000;  // sign-extend to 32-bit
+        out[i] = s / 8388607;
+    }
+    return out;
+}
+function packFloat32ToInt24Buffer(interleaved) {
+    const out = new Uint8Array(interleaved.length * DISK_BYTES_PER_SAMPLE);
+    for (let i = 0, o = 0; i < interleaved.length; i++, o += 3) {
+        let x = interleaved[i];
+        if (x >  1) x =  1;
+        if (x < -1) x = -1;
+        const s = (x * 8388607) | 0;
+        out[o]     =  s        & 0xFF;
+        out[o + 1] = (s >> 8)  & 0xFF;
+        out[o + 2] = (s >> 16) & 0xFF;
+    }
+    return out.buffer;
+}
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let g_cyclesHandle      = null;
@@ -1174,7 +1205,7 @@ function getMp3SourceRate(ab) {
     return ({ 3:[44100,48000,32000], 2:[22050,24000,16000], 0:[11025,12000,8000] }[mpegVer] || [])[srIdx] || null;
 }
 
-// ── Audio: Decode + resample to interleaved float32 @ 96 kHz ─────────────────
+// ── Audio: Decode + resample to interleaved float32 @ SAMPLE_RATE ─────────────
 async function decodeToInterleaved(file) {
     const ab  = await file.arrayBuffer();
     let wav = null;
@@ -1265,8 +1296,8 @@ function interleavedToWavBlob(interleaved, sampleRate = SAMPLE_RATE) {
     str(8,'WAVE'); str(12,'fmt ');
     v.setUint32(16,16,true); v.setUint16(20,3,true);
     v.setUint16(22,NUM_CHANNELS,true); v.setUint32(24,sampleRate,true);
-    v.setUint32(28,sampleRate*NUM_CHANNELS*BYTES_PER_SAMPLE,true);
-    v.setUint16(32,NUM_CHANNELS*BYTES_PER_SAMPLE,true); v.setUint16(34,32,true);
+    v.setUint32(28,sampleRate*NUM_CHANNELS*WAV_BYTES_PER_SAMPLE,true);
+    v.setUint16(32,NUM_CHANNELS*WAV_BYTES_PER_SAMPLE,true); v.setUint16(34,32,true);
     str(36,'data'); v.setUint32(40,dataBytes,true);
     new Float32Array(buf,44).set(interleaved);
     return new Blob([buf], { type: 'audio/wav' });
@@ -1372,7 +1403,7 @@ async function listEngineFiles() {
             const fh   = await g_cyclesHandle.getFileHandle(spec.filename);
             const file = await fh.getFile();
             if (file.size === 0) continue;
-            const frames = file.size / (NUM_CHANNELS * BYTES_PER_SAMPLE);
+            const frames = file.size / DISK_BYTES_PER_FRAME;
             items.push({ ...spec, byteSize: file.size, durationSec: frames / SAMPLE_RATE });
         } catch { /* file missing — skip */ }
     }
@@ -1387,7 +1418,7 @@ async function listSlots() {
         const m = name.match(/^Mem_(\d{2})\.raw$/i);
         if (!m) continue;
         const file = await handle.getFile();
-        const frames = file.size / (NUM_CHANNELS * BYTES_PER_SAMPLE);
+        const frames = file.size / DISK_BYTES_PER_FRAME;
         slots.push({ slotNum: parseInt(m[1]), filename: name, byteSize: file.size, durationSec: frames / SAMPLE_RATE });
     }
     return slots.sort((a,b) => a.slotNum - b.slotNum);
@@ -1527,7 +1558,7 @@ async function loadViewerWaveform(dirHandle, filename, label) {
 
     try {
         const raw   = await readRawFromHandle(dirHandle, filename);
-        g_viewerRaw = new Float32Array(raw);
+        g_viewerRaw = unpackInt24BufferToFloat32(raw);
 
         // Set zoom slider max to file duration, default to 5s or file length
         const durSec   = (g_viewerRaw.length / NUM_CHANNELS) / SAMPLE_RATE;
@@ -1675,9 +1706,9 @@ function getViewerAudioBuf() {
     for (let i = 0; i < n; i++) { L[i] = g_viewerRaw[i*2]; R[i] = g_viewerRaw[i*2+1]; }
 
     // Short wrap-boundary fade kills clicks on slot files that weren't
-    // recFinalize-crossfaded. 1 ms each side @ 96 kHz = 96 frames — tempo
+    // recFinalize-crossfaded. 1 ms each side @ 48 kHz = 48 frames — tempo
     // impact is imperceptible, but both sides hit zero at the wrap so no pop.
-    const fadeFrames = Math.min(96, Math.floor(n * 0.01));
+    const fadeFrames = Math.min(48, Math.floor(n * 0.01));
     for (let i = 0; i < fadeFrames; i++) {
         const g = i / fadeFrames;
         L[i] *= g;                L[n - 1 - i] *= g;
@@ -1861,7 +1892,7 @@ document.getElementById('btn-export').addEventListener('click', async () => {
     const targetDbfs = -1;
     try {
         const raw         = await readRawFromHandle(g_selection.dirHandle, g_selection.filename);
-        const interleaved = new Float32Array(raw);
+        const interleaved = unpackInt24BufferToFloat32(raw);
         const peak        = findPeak(interleaved);
         normalizePeak(interleaved, targetDbfs);
         log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → ${targetDbfs} dBFS`);
@@ -2060,7 +2091,7 @@ document.getElementById('btn-import').addEventListener('click', async () => {
         }
         const fh       = await dir.getFileHandle(filename, { create: true });
         const writable = await fh.createWritable();
-        await writable.write(interleaved.buffer);
+        await writable.write(packFloat32ToInt24Buffer(interleaved));
         await writable.close();
         log(`Done → ${filename}`);
         statusEl.textContent = 'Done';
