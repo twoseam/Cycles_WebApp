@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYCLES — SD Card Manager</title>
+    <style>
+        /* DSEG 7-seg font — explicit @font-face from the keshikan/DSEG GitHub
+           mirror (the old `@import` of the npm dseg.min.css was silently failing,
+           falling back to Courier). */
+        @font-face {
+            font-family: 'DSEG7 Classic';
+            font-weight: 400;
+            font-style: normal;
+            src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2') format('woff2'),
+                 url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff') format('woff'),
+                 url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.ttf') format('truetype');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'DSEG7 Classic';
+            font-weight: 700;
+            font-style: normal;
+            src: url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2'),
+                 url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff') format('woff'),
+                 url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        :root {
+            /* Warm cream — vintage hardware panel (matches pedal screenprint) */
+            --bg:           #e2dac0;
+            --bg-panel:     #ddd4b6;
+            --bg-inset:     #f5f2e6;
+            --bg-raised:    #eae3cc;
+            --bg-screen:    #d6cdac;
+            --fg:           #1c1710;
+            --fg-dim:       #3a2e18;
+            --fg-muted:     #6a5c38;
+            --fg-faint:     #8a7c58;
+            --accent:       #d43800;
+            --accent-dim:   rgba(212,56,0,0.3);
+            --led-green:    #44dd22;
+            --led-red:      #cc2828;
+            --border:       #a09060;
+            --border-light: #ccc4a0;
+            --border-dark:  #706040;
+            /* canvas aliases — waveform on white */
+            --bg-alt:        #f5f2e6;
+            --bg-hover:     #ddd4b6;
+            --bg-counter:   #1c1710;
+            --border-strong: #1c1710;
+            --border-mid:   #a09060;
+            --border-subtle: #ddd4b6;
+            --wave-guide:   #bfb596;
+            --playhead:     rgba(28,23,10,0.45);
+            --time-label:   #6a5c38;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            background: var(--bg);
+            color: var(--fg);
+        }
+
+        #app {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 28px 24px;
+        }
+
+        /* ── Header ── */
+        #header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            margin-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #logo { display: flex; flex-direction: column; gap: 6px; }
+        #logo svg .st1 { fill: #1e48d4; }
+        #logo svg .st0 { fill: #d43800; }
+        #logo-sub {
+            font-size: 8px;
+            padding-top: 0.42em;
+            letter-spacing: 0.22em;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+        }
+
+        #header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        #card-status {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        /* Indicator light — small square, vintage style */
+        .led {
+            display: inline-block;
+            width: 7px; height: 7px;
+            border-radius: 1px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-dark);
+            flex-shrink: 0;
+        }
+        .led.green { background: var(--led-green); border-color: #2a9040; }
+        .led.red   { background: var(--led-red);   border-color: #992222; }
+        .led.amber { background: var(--accent);    border-color: #a07810; }
+
+        #btn-theme { display: none; }
+
+        .card-ok {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--fg-dim);
+        }
+        #card-status button { margin-left: 6px; }
+
+        /* ── Base button — flat, printed-panel style ── */
+        button {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 5px 13px;
+            white-space: nowrap;
+            transition: background 0.08s;
+        }
+        button:hover { background: var(--bg); border-color: var(--border-dark); }
+        button:active {
+            background: var(--bg-inset);
+            border-color: var(--border-dark);
+        }
+        button.active {
+            background: var(--fg);
+            border-color: var(--border-dark);
+            color: var(--bg-raised);
+        }
+        #btn-loop.active {
+            background: var(--accent);
+            border-color: #a02800;
+            color: var(--bg-raised);
+        }
+
+        /* ── Waveform viewer — instrument display ── */
+        #viewer {
+            background: var(--bg-screen);
+            border: 2px solid var(--border-dark);
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        /* ── Under-glass overlay (waveform + 7-seg displays) ──
+           Diagonal sheen + inset highlight/shadow for a pane of glass on top
+           of the inset display. pointer-events:none so canvas drags pass through. */
+        #viewer-counter::after,
+        #slot-display::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(
+                155deg,
+                rgba(255,255,255,0.22) 0%,
+                rgba(255,255,255,0.10) 28%,
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.03) 85%,
+                rgba(0,0,0,0.08) 100%
+            );
+            box-shadow:
+                inset 0 1px 1px rgba(255,255,255,0.40),
+                inset 0 -1px 1px rgba(0,0,0,0.18);
+        }
+        /* Hard-edged top reflection band on the 7-seg displays */
+        #viewer-counter::before,
+        #slot-display::before {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 3%;
+            right: 3%;
+            height: 42%;
+            pointer-events: none;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0.22) 0%,
+                rgba(255,255,255,0.20) 88%,
+                rgba(255,255,255,0.04) 92%,
+                rgba(255,255,255,0) 100%
+            );
+            border-radius: 2px 2px 0 0;
+            z-index: 2;
+        }
+
+        #viewer-canvas {
+            display: block;
+            width: 100%;
+            height: 192px;
+            cursor: crosshair;
+        }
+
+        #viewer-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 10px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-raised);
+        }
+
+        #viewer-file-label {
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #viewer-zoom-label {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+        }
+
+        #viewer-zoom {
+            width: 90px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        #viewer-zoom-val {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: var(--fg-muted);
+            min-width: 26px;
+            text-align: right;
+        }
+
+        #viewer-empty {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--fg-faint);
+            background: var(--bg-screen);
+        }
+
+        /* ── Transport ── */
+        #transport {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        #transport button:not(#btn-export) { width: 44px; height: 44px; padding: 0; font-size: 16px; letter-spacing: 0; border-radius: 0; }
+        #btn-loop { width: 44px; padding: 0; }
+        #transport button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fg-dim);
+        }
+        #transport .spacer { flex: 1; }
+
+        /* ── Raised-block aesthetic (physical-button look) ── */
+        /* Stacked hard shadows form the solid "side" of the block;
+           a soft rgba shadow grounds it. On :active the block slides
+           down-right into its shadow for a tactile click. */
+        #transport button,
+        .pedal-trigger,
+        #btn-export, #btn-import,
+        .slot-thumb {
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 6px 4px rgba(0,0,0,0.14);
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+        }
+        #transport button:active,
+        .pedal-trigger:active,
+        #btn-export:active, #btn-import:active,
+        .slot-thumb:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 transparent;
+        }
+
+        /* ── 7-segment counter ── */
+        #viewer-counter {
+            position: relative;
+            display: inline-block;
+            background: #23242c;
+            border: 1px solid #2a2c30;
+            padding: 12px 20px;
+            height: 44px;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
+            white-space: nowrap;
+        }
+
+        /* "All-8s" ghost backdrop — simulates unlit 7-seg segments so the off
+           bars are faintly visible behind the lit digits. Real hardware
+           displays show this because every segment is a discrete LED. */
+        .seg-ghost {
+            font-family: 'DSEG7 Classic', 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: rgba(255,60,60,0.22);
+            user-select: none;
+            pointer-events: none;
+            display: block;
+        }
+
+        /* Lit segments — bright red with a soft red bloom to simulate LED glow */
+        .seg-val {
+            font-family: 'DSEG7 Classic', 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #ff4242;
+            text-shadow:
+                0 0 2px rgba(255,80,80,0.4),
+                0 0 5px rgba(255,50,50,0.2);
+            position: absolute;
+            top: 12px;
+            left: 20px;
+        }
+
+        /* ── Section label — engraved/stencil style ── */
+        .section-label {
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ── Slot grid ── */
+        #engine-section, #slot-section { margin-top: 64px; margin-bottom: 64px; }
+
+        #engine-grid, #slot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+            gap: 5px;
+        }
+
+        .slot-thumb {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            padding: 10px 10px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            user-select: none;
+            transition: background 0.08s;
+            position: relative;
+        }
+        .slot-thumb:hover { background: var(--bg); border-color: var(--border-dark); }
+
+        .slot-led {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-dark);
+        }
+        .slot-thumb.active .slot-led {
+            background: var(--led-green);
+            border-color: #1a8830;
+            box-shadow: 0 0 5px rgba(68,221,34,0.6);
+        }
+
+        .slot-num {
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--fg);
+            letter-spacing: 0.04em;
+        }
+
+        .slot-dur {
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            color: var(--fg-muted);
+            letter-spacing: 0.06em;
+        }
+        .slot-thumb.active .slot-dur { color: var(--fg-dim); }
+
+        .slot-delete {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: none;
+            border: none;
+            color: var(--fg-muted);
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1;
+            padding: 0;
+            letter-spacing: 0;
+            text-transform: none;
+            font-weight: 400;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        .slot-thumb:hover .slot-delete { opacity: 1; }
+        .slot-delete:hover { background: none; border: none; color: var(--led-red); }
+
+        /* ── Pedal panel (compact toolbar above waveform) ── */
+        #pedal-section { margin-bottom: 22px; }
+        #pedal-panel {
+            display: flex;
+            align-items: flex-end;
+            gap: 32px;
+        }
+        .pedal-control {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: flex-start;
+        }
+        .pedal-control-right { margin-left: auto; align-items: flex-end; }
+        .pedal-control-label {
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+        }
+
+        /* One-shot trigger button */
+        .pedal-trigger {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            padding: 0;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            height: 26px;
+            width: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pedal-trigger:hover { background: var(--bg); border-color: var(--border-dark); }
+        .pedal-trigger:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        /* Slider-style 2-position toggle (flat iOS-like) */
+        .pedal-toggle {
+            position: relative;
+            display: flex;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-dark);
+            border-radius: 999px;
+            padding: 3px;
+            height: 26px;
+            width: 100px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.12);
+        }
+        .pedal-toggle::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: calc(50% - 3px);
+            height: calc(100% - 6px);
+            background: var(--accent);
+            border-radius: 999px;
+            transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+            z-index: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+        }
+        .pedal-toggle:has(.pedal-opt:nth-child(2).active)::before {
+            transform: translateX(100%);
+        }
+        /* 3-option variant (auto-detected by presence of a 3rd .pedal-opt) */
+        .pedal-toggle:has(.pedal-opt:nth-child(3)) { width: 138px; }
+        .pedal-toggle:has(.pedal-opt:nth-child(3))::before {
+            width: calc(33.333% - 2px);
+        }
+        .pedal-toggle:has(.pedal-opt:nth-child(3)):has(.pedal-opt:nth-child(3).active)::before {
+            transform: translateX(200%);
+        }
+        .pedal-opt {
+            flex: 1;
+            background: transparent !important;
+            border: none !important;
+            color: var(--fg-muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            padding: 0;
+            position: relative;
+            z-index: 1;
+            transition: color 0.2s ease;
+            box-shadow: none !important;
+        }
+        .pedal-opt.active { color: #fff !important; }
+        .pedal-opt:hover:not(.active) { color: var(--fg); }
+
+        /* ── Import panel ── */
+        #import-section { margin-bottom: 16px; }
+
+        #import-panel {
+            display: flex;
+            align-items: stretch;
+            border: 1px solid var(--border-dark);
+            background: var(--bg-panel);
+            overflow: hidden;
+        }
+
+        .import-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            padding: 12px 16px;
+            border-right: 1px solid var(--border);
+        }
+        .import-cell.grow { flex: 1; }
+        .import-cell.action { border-right: none; gap: 5px; padding: 12px; justify-content: center; }
+
+        .import-cell-label {
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+        }
+
+        #input-slot-num {
+            width: 2.8em;
+            background: #23242c;
+            color: #ff3030;
+            border: 1px solid #2a2c30;
+            padding: 5px 6px;
+            font-family: 'DSEG7 Classic', 'Courier New', monospace;
+            font-size: 20px;
+            text-align: center;
+            appearance: textfield;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
+            text-shadow: 0 0 8px rgba(255,50,50,0.45);
+        }
+        #input-slot-num::-webkit-outer-spin-button,
+        #input-slot-num::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        #import-file-zone {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-dark);
+            padding: 9px 14px;
+            cursor: pointer;
+            color: var(--fg-muted);
+            font-size: 10px;
+            letter-spacing: 0.07em;
+            flex: 1;
+            user-select: none;
+            transition: background 0.08s, color 0.08s;
+        }
+        #import-file-zone:hover { background: var(--bg); color: var(--fg); border-color: var(--border); }
+
+        #input-wav { display: none; }
+
+        #import-filename {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #btn-import, #btn-export {
+            width: auto;
+            padding: 0 18px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+        }
+        #btn-export { height: 44px; }
+        #btn-import { height: auto; padding: 9px 18px; }
+        #btn-export { margin-left: 10px; }
+
+        #label-import {
+            font-size: 8px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+            text-align: center;
+            min-height: 1em;
+        }
+
+        /* ── Slot knob ── */
+        #slot-stepper {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 4px;
+        }
+        #slot-arrows {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        #slot-stepper button {
+            padding: 0;
+            width: 50px;
+            flex: 1;
+            font-size: 9px;
+            line-height: 1;
+            text-align: center;
+            letter-spacing: 0;
+        }
+
+        #slot-display {
+            position: relative;
+            background: #23242c;
+            border: 1px solid #2a2c30;
+            padding: 13px 14px 11px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        #slot-display .seg-ghost { font-size: 18px; display: block; text-align: center; letter-spacing: 2px; }
+
+        #slot-knob-val {
+            font-family: 'DSEG7 Classic', 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #ff4242;
+            text-shadow:
+                0 0 2px rgba(255,80,80,0.4),
+                0 0 5px rgba(255,50,50,0.2);
+            position: absolute;
+            top: 13px;
+            left: 0;
+            right: 0;
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 0 14px;
+            text-align: center;
+            appearance: textfield;
+            outline: none;
+        }
+        #slot-knob-val::-webkit-outer-spin-button,
+        #slot-knob-val::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        /* ── Log — teletype output ── */
+        #log {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-dark);
+            padding: 8px 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: var(--fg-muted);
+            min-height: 44px;
+            max-height: 90px;
+            overflow-y: auto;
+            letter-spacing: 0.02em;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<div id="header">
+    <div id="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136.73 23.06" width="220">
+          <defs><style>.st0{fill:#d43800}.st1{fill:#18191e}</style></defs>
+          <g>
+            <path class="st1" d="M20.33,7.28h-7.12c-1.85,0-3.23.26-4.14.77-1.19.67-1.78,1.84-1.78,3.52s.6,2.82,1.8,3.46c.88.47,2.25.71,4.11.71h11.89c.41,0,.94-.26,1.59-.77.09-.07.56-.48,1.4-1.24l-6.7-6.07c-.29-.26-.64-.39-1.05-.39ZM20.2,13.56h-6.99c-2.07,0-3.26-.31-3.58-.95-.1-.2-.15-.54-.15-1.03,0-.56.07-.95.21-1.18.38-.62,1.55-.92,3.51-.92h6.94l4.47,4.08h-4.42Z"/>
+            <path class="st1" d="M103.36,0h-18.79c-2.13,0-3.96.74-5.47,2.22-1.52,1.48-2.27,3.29-2.27,5.41v5.92h-5.92V0h-2.19v13.54c0,.61.21,1.13.64,1.56.43.43.95.65,1.55.65h8.15c-.01-.15-.04-.3-.04-.46v-7.54c0-1.53.54-2.83,1.63-3.92,1.09-1.09,2.4-1.63,3.92-1.63h52.15V0h-33.36Z"/>
+            <path class="st1" d="M95.62,13.56h-11.51v1.2c0,.3.11.54.33.73.2.17.45.26.76.26h26.14c.41,0,.61-.21.61-.62,0-.32-.2-.55-.61-.71-.43-.17-1.07-.3-1.91-.42-.26-.04-.93-.11-1.99-.21-2.93-.3-5.03-.72-6.29-1.27-2.23-.95-3.34-2.54-3.34-4.77,0-.16.03-.31.04-.46h-12.64c-.31,0-.56.09-.76.26-.22.19-.33.43-.33.73v1.2h11.7c.09.4.21.79.37,1.16.27.64.64,1.23,1.11,1.76.38.42.81.81,1.31,1.16h-3Z"/>
+            <path class="st1" d="M103.37,7.95c0,.34.28.57.83.71,1.1.18,1.93.3,2.51.35,2.33.26,3.8.44,4.42.56,1.78.35,3.13.89,4.07,1.62,1.19.93,1.78,2.22,1.78,3.86s-.57,2.96-1.71,4.09c-1.14,1.13-2.51,1.7-4.1,1.7h-26.6l-5.47-.03-19.15.03h-3.32c-3.3,0-5.9-.7-7.79-2.09-2.15-1.58-3.22-3.97-3.22-7.17,0-1.64.29-3.07.85-4.3h-3.06c-.41,0-.79.16-1.15.48l-12.48,11.23c-1.37,1.23-2.93,1.85-4.68,1.85h-11.89c-3.3,0-5.9-.7-7.79-2.09-2.15-1.58-3.22-3.97-3.22-7.17s1.07-5.6,3.21-7.22c1.91-1.45,4.51-2.17,7.8-2.17h7.12c1.74,0,3.24.57,4.49,1.7l7.04,6.36,6.97-6.28c1.31-1.18,2.84-1.77,4.59-1.77h18.02v5.09h-4.8c-1.85,0-3.23.26-4.14.77-1.19.67-1.78,1.84-1.78,3.52s.6,2.82,1.8,3.46c.88.47,2.25.71,4.11.71h6.99V0h-20.21c-2.3,0-4.32.78-6.05,2.34l-5.5,4.95-5.56-5.03c-1.68-1.51-3.67-2.27-5.97-2.27h-7.12c-3.92,0-7.04.93-9.37,2.78C1.28,4.82,0,7.76,0,11.58s1.28,6.75,3.85,8.75c2.31,1.8,5.43,2.71,9.36,2.71h4.8v.02h7.09c2.31,0,4.36-.81,6.14-2.43l12.28-11.15h.06c-.1.67-.16,1.37-.16,2.11,0,3.83,1.28,6.75,3.85,8.75,2.31,1.8,5.43,2.71,9.36,2.71h54.54c2.21,0,4.09-.78,5.66-2.34,1.56-1.56,2.35-3.44,2.35-5.65,0-1.1-.24-2.15-.73-3.14-.48-.99-1.17-1.8-2.05-2.43h20.32v-2.19h-32.69c-.44.01-.67.23-.67.67ZM56.63,13.56c-2.07,0-3.26-.31-3.58-.95-.1-.2-.15-.54-.15-1.03,0-.56.07-.95.21-1.18.38-.62,1.55-.92,3.51-.92h4.8v4.08h-4.8Z"/>
+          </g>
+          <path class="st0" d="M56.63,19.39h54.54c1.2,0,2.23-.42,3.09-1.27.86-.84,1.28-1.87,1.28-3.07,0-1.9-1.22-3.22-3.65-3.95-.07-.02-2.33-.39-6.78-1.12-2.44-.39-3.65-1.14-3.65-2.23,0-.52.19-.96.56-1.34.38-.38.82-.57,1.34-.57h33.36v-2.19h-52.15c-1.12,0-2.08.42-2.89,1.26-.81.84-1.21,1.82-1.21,2.95v7.33c0,.74.19,1.4.54,2.02h-10.1c-1.01,0-1.87-.36-2.58-1.07-.71-.72-1.06-1.58-1.06-2.59V0h-2.19v13.54c0,1.4.45,2.62,1.31,3.66h-9.76c-2.27,0-4-.36-5.18-1.08-1.47-.91-2.2-2.42-2.2-4.53,0-3.83,2.46-5.75,7.38-5.75h4.8v-2.19h-18.02c-1.42,0-2.63.45-3.64,1.36l-7.92,7.14-7.98-7.22c-.95-.86-2.13-1.29-3.55-1.29h-7.12c-2.88,0-5.13.59-6.77,1.76-1.87,1.35-2.8,3.41-2.8,6.18s.94,4.81,2.82,6.12c1.61,1.12,3.86,1.69,6.76,1.69h11.89c1.42,0,2.66-.48,3.74-1.45l12.47-11.24c.64-.58,1.35-.87,2.11-.87h5.92c-1.52,1.34-2.28,3.25-2.28,5.75,0,2.77.94,4.81,2.82,6.12,1.61,1.12,3.86,1.69,6.76,1.69M27.3,16.24c-.71.64-1.44.96-2.2.96h-11.89c-2.27,0-4-.36-5.18-1.08-1.47-.91-2.2-2.42-2.2-4.53,0-3.83,2.46-5.75,7.38-5.75h7.12c.75,0,1.42.27,2.01.79l7.81,7.06-2.85,2.56ZM102.92,11.57c2.26.36,4.52.72,6.78,1.09,2.44.42,3.65,1.21,3.65,2.4,0,.59-.21,1.1-.64,1.52s-.94.63-1.54.63h-26.6c-.51,0-.96-.23-1.35-.69-.37-.44-.56-.92-.56-1.44v-2.67h14.64c-.48-.53-.84-1.12-1.11-1.76h-13.53v-2.67c0-.52.19-1.01.57-1.46.38-.45.83-.67,1.34-.67h15.19c-.32.58-.49,1.21-.49,1.91,0,1.86,1.22,3.13,3.65,3.82Z"/>
+        </svg>
+        <div id="logo-sub">Looper Workstation Data Manager</div>
+    </div>
+    <div id="header-right">
+        <button id="btn-theme">Dark</button>
+        <div id="card-status">Checking for CYCLES card…</div>
+    </div>
+</div>
+
+<!-- ── Pedal Controls ─────────────────────────────────────────────────────── -->
+<div id="pedal-section">
+    <div id="pedal-panel">
+        <div class="pedal-control">
+            <div class="pedal-control-label">Speed</div>
+            <div class="pedal-toggle">
+                <button class="pedal-opt"        data-speed="0.5">0.5×</button>
+                <button class="pedal-opt active" data-speed="1">1×</button>
+                <button class="pedal-opt"        data-speed="2">2×</button>
+            </div>
+        </div>
+        <div class="pedal-control">
+            <div class="pedal-control-label">Direction</div>
+            <div class="pedal-toggle">
+                <button class="pedal-opt active" data-dir="fwd">FWD</button>
+                <button class="pedal-opt"        data-dir="rev">REV</button>
+            </div>
+        </div>
+        <div class="pedal-control pedal-control-right">
+            <div class="pedal-control-label">1-Shot</div>
+            <button id="btn-oneshot" class="pedal-trigger" title="One-shot"><svg viewBox="0 0 12 14" width="11" height="12" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Waveform Viewer ─────────────────────────────────────────────────────── -->
+<div id="viewer">
+    <canvas id="viewer-canvas" style="display:none"></canvas>
+    <div id="viewer-empty">Select a memory slot</div>
+    <div id="viewer-footer" style="display:none">
+        <span id="viewer-file-label"></span>
+        <span id="viewer-zoom-label">Zoom</span>
+        <input type="range" id="viewer-zoom" min="1" max="300" value="5" step="1">
+        <span id="viewer-zoom-val">5s</span>
+    </div>
+</div>
+
+<!-- ── Transport ──────────────────────────────────────────────────────────── -->
+<div id="transport">
+    <button id="btn-prev"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><rect x="0" y="0" width="2.5" height="14"/><polygon points="18,0 18,14 5,7"/></svg></button>
+    <button id="btn-play"><svg viewBox="0 0 12 14" width="12" height="13" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
+    <button id="btn-stop"><svg viewBox="0 0 13 13" width="12" height="12" fill="currentColor"><rect x="0" y="0" width="13" height="13"/></svg></button>
+    <button id="btn-next"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><polygon points="0,0 13,7 0,14"/><rect x="15.5" y="0" width="2.5" height="14"/></svg></button>
+    <button id="btn-loop"><svg viewBox="0 0 24 16" width="22" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3,11 L3,5 Q3,3 5,3 L18,3"/><polyline points="15,0.5 19,3 15,5.5"/><path d="M21,5 L21,11 Q21,13 19,13 L6,13"/><polyline points="9,10.5 5,13 9,15.5"/></svg></button>
+    <div class="spacer"></div>
+    <div id="viewer-counter"><span class="seg-ghost">8:88</span><span class="seg-val" id="seg-val">0:00</span></div>
+    <button id="btn-export">Export</button>
+</div>
+
+<!-- ── Working Files ──────────────────────────────────────────────────────── -->
+<div id="engine-section">
+    <div class="section-label">Working Files</div>
+    <div id="engine-grid"></div>
+</div>
+
+<!-- ── Memory Slots ───────────────────────────────────────────────────────── -->
+<div id="slot-section">
+    <div class="section-label">Memory Slots</div>
+    <div id="slot-grid"></div>
+</div>
+
+
+<!-- ── Import ─────────────────────────────────────────────────────────────── -->
+<div id="import-section">
+    <div class="section-label">Import</div>
+    <div id="import-panel">
+        <div class="import-cell" id="slot-cell">
+            <div class="import-cell-label">Slot</div>
+            <div id="slot-stepper">
+                <div id="slot-display"><span class="seg-ghost">88</span><input id="slot-knob-val" type="number" min="1" max="99" value="1"></div>
+                <div id="slot-arrows">
+                    <button id="slot-up">▲</button>
+                    <button id="slot-down">▼</button>
+                </div>
+            </div>
+            <input type="number" id="input-slot-num" min="1" max="99" value="1" style="display:none">
+        </div>
+        <div class="import-cell grow">
+            <div class="import-cell-label">Source File</div>
+            <label id="import-file-zone" for="input-wav">
+                <span id="import-filename">Choose</span>
+                <input type="file" id="input-wav" accept="audio/*">
+            </label>
+        </div>
+        <div class="import-cell action">
+            <div class="import-cell-label">&#160;</div>
+            <button id="btn-import">Import</button>
+            <span id="label-import"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Log ────────────────────────────────────────────────────────────────── -->
+<pre id="log"></pre>
+
+<script>
+'use strict';
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+const SAMPLE_RATE      = 96000;
+const NUM_CHANNELS     = 2;
+const BYTES_PER_SAMPLE = 4;
+const SLOT_PREFIX      = 'Mem_';
+const SLOT_EXT         = '.raw';
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let g_cyclesHandle      = null;
+let g_memorySlotsHandle = null;
+let g_audioCtx          = null;
+let g_currentSrc        = null;
+let g_selection         = null;
+let g_allItems          = [];
+
+// Viewer
+let g_viewerRaw         = null;   // Float32Array (interleaved)
+let g_viewerOffset      = 0;      // left-edge scroll position in frames
+let g_viewerAudioBuf    = null;   // cached AudioBuffer (lazy, forward)
+let g_viewerAudioBufRev = null;   // cached AudioBuffer (lazy, reversed)
+let g_zoomSeconds       = 5;      // how many seconds the window shows
+let g_playStartCtxTime  = 0;
+let g_playStartFrame    = 0;
+let g_pausedAtFrame     = 0;
+let g_loop              = false;
+let g_speed             = 1.0;    // 1.0 or 0.5
+let g_reverse           = false;
+let g_rafId             = null;
+
+// Drag / momentum
+let g_dragAnchorX       = null;
+let g_dragAnchorOffset  = 0;
+let g_didDrag           = false;
+let g_dragLastX         = 0;
+let g_dragLastT         = 0;
+let g_scrollVelocity    = 0;   // frames per ms
+let g_momentumRafId     = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const getWindowFrames  = () => Math.round(g_zoomSeconds * SAMPLE_RATE);
+const formatDuration   = s  => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+const formatBytes      = b  => b < 1048576 ? `${(b/1024).toFixed(1)} KB` : `${(b/1048576).toFixed(2)} MB`;
+
+// ── Logging ───────────────────────────────────────────────────────────────────
+function log(msg) {
+    const el = document.getElementById('log');
+    el.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+    el.scrollTop = el.scrollHeight;
+}
+
+// ── Audio: WAV parser ─────────────────────────────────────────────────────────
+// Parses WAV bytes directly — bypasses decodeAudioData entirely so no browser
+// resampler is involved and no leading/trailing silence can be added.
+// Returns { sampleRate, frames, L: Float32Array, R: Float32Array } or null if
+// the file is not a recognised WAV (caller falls back to decodeAudioData).
+function parseWavBytes(ab) {
+    const v   = new DataView(ab);
+    const cc  = (o) => String.fromCharCode(v.getUint8(o),v.getUint8(o+1),v.getUint8(o+2),v.getUint8(o+3));
+    if (cc(0) !== 'RIFF' || cc(8) !== 'WAVE') return null;
+
+    let fmt = null, dataOff = 0, dataLen = 0, pos = 12;
+    while (pos + 8 <= ab.byteLength) {
+        const id   = cc(pos);
+        const size = v.getUint32(pos + 4, true);
+        pos += 8;
+        if (id === 'fmt ') {
+            let format = v.getUint16(pos, true);
+            // WAVE_FORMAT_EXTENSIBLE (0xFFFE): real format is in SubFormat GUID at offset +24
+            if (format === 0xFFFE && size >= 40) format = v.getUint16(pos + 24, true);
+            fmt = {
+                format,
+                channels: v.getUint16(pos + 2,  true),
+                rate:     v.getUint32(pos + 4,  true),
+                bits:     v.getUint16(pos + 14, true),
+            };
+        } else if (id === 'data') {
+            dataOff = pos; dataLen = size; break;
+        }
+        pos += size + (size & 1);
+    }
+    if (!fmt || !dataLen) return null;
+    if (fmt.format !== 1 && fmt.format !== 3) return null; // PCM or float only
+
+    const bps    = fmt.bits / 8;
+    const frames = Math.floor(dataLen / (fmt.channels * bps));
+    const L = new Float32Array(frames);
+    const R = new Float32Array(frames);
+
+    for (let i = 0; i < frames; i++) {
+        const base = dataOff + i * fmt.channels * bps;
+        const read = (byteOff) => {
+            const o = base + byteOff;
+            if (fmt.format === 3) {
+                return fmt.bits === 64 ? v.getFloat64(o, true) : v.getFloat32(o, true);
+            }
+            if (fmt.bits === 8)  return (v.getUint8(o) - 128) / 128;
+            if (fmt.bits === 16) return v.getInt16(o, true) / 32768;
+            if (fmt.bits === 32) return v.getInt32(o, true) / 2147483648;
+            if (fmt.bits === 24) {
+                const lo = v.getUint8(o), mi = v.getUint8(o+1), hi = v.getUint8(o+2);
+                let s = (hi << 16) | (mi << 8) | lo;
+                if (s & 0x800000) s -= 0x1000000;
+                return s / 8388608;
+            }
+            return 0;
+        };
+        L[i] = read(0);
+        R[i] = fmt.channels > 1 ? read(bps) : L[i];
+    }
+    return { sampleRate: fmt.rate, frames, L, R };
+}
+
+// ── MP3 gapless helpers ────────────────────────────────────────────────────────
+// Logic Pro (and all iTunes-compatible encoders) embed exact encoder delay +
+// padding in an iTunSMPB TXXX frame in the ID3 header. Parse that for a
+// sample-accurate trim rather than guessing with amplitude thresholds.
+function parseMp3GaplessInfo(ab) {
+    const v = new DataView(ab);
+    if (v.getUint8(0) !== 0x49 || v.getUint8(1) !== 0x44 || v.getUint8(2) !== 0x33) return null;
+    const ver   = v.getUint8(3);
+    const flags = v.getUint8(5);
+    const id3Sz = ((v.getUint8(6)&0x7F)<<21)|((v.getUint8(7)&0x7F)<<14)|((v.getUint8(8)&0x7F)<<7)|(v.getUint8(9)&0x7F);
+    const end   = Math.min(10 + id3Sz, ab.byteLength);
+    let pos = 10;
+    if (flags & 0x40) pos += v.getUint32(pos, false); // skip extended header
+
+    // Read null-terminated string; enc 0/3 = latin-1/utf-8, enc 1/2 = utf-16
+    function readStr(start, limit, enc) {
+        let s = '', i = start;
+        if (enc === 1 || enc === 2) {
+            let le = (enc === 1);
+            if (i + 1 < limit) {
+                if (v.getUint8(i) === 0xFF && v.getUint8(i+1) === 0xFE) { le = true;  i += 2; }
+                else if (v.getUint8(i) === 0xFE && v.getUint8(i+1) === 0xFF) { le = false; i += 2; }
+            }
+            while (i + 1 < limit) {
+                const c = le ? (v.getUint8(i) | (v.getUint8(i+1) << 8)) : ((v.getUint8(i) << 8) | v.getUint8(i+1));
+                i += 2;
+                if (c === 0) break;
+                s += String.fromCharCode(c);
+            }
+        } else {
+            while (i < limit && v.getUint8(i) !== 0) s += String.fromCharCode(v.getUint8(i++));
+            i++;
+        }
+        return { str: s, end: i };
+    }
+
+    while (pos + 10 < end) {
+        const fid = String.fromCharCode(v.getUint8(pos),v.getUint8(pos+1),v.getUint8(pos+2),v.getUint8(pos+3));
+        const fsz = ver >= 4
+            ? ((v.getUint8(pos+4)&0x7F)<<21)|((v.getUint8(pos+5)&0x7F)<<14)|((v.getUint8(pos+6)&0x7F)<<7)|(v.getUint8(pos+7)&0x7F)
+            : v.getUint32(pos+4, false);
+        pos += 10;
+        if (fid === '\0\0\0\0' || fsz === 0) break;
+        if (fid === 'TXXX' && fsz > 1) {
+            const enc = v.getUint8(pos);
+            const { str: desc, end: valStart } = readStr(pos + 1, pos + fsz, enc);
+            log(`ID3 TXXX enc=${enc} desc="${desc}"`);
+            if (desc === 'iTunSMPB') {
+                const { str: val } = readStr(valStart, pos + fsz, enc);
+                const p = val.trim().split(/\s+/);
+                if (p.length >= 4) return { delay: parseInt(p[1],16), padding: parseInt(p[2],16), total: parseInt(p[3],16) };
+            }
+        }
+        pos += fsz;
+    }
+    return null;
+}
+
+function getMp3SourceRate(ab) {
+    const v = new DataView(ab);
+    let pos = 0;
+    if (v.getUint8(0) === 0x49 && v.getUint8(1) === 0x44 && v.getUint8(2) === 0x33)
+        pos = 10 + (((v.getUint8(6)&0x7F)<<21)|((v.getUint8(7)&0x7F)<<14)|((v.getUint8(8)&0x7F)<<7)|(v.getUint8(9)&0x7F));
+    while (pos < ab.byteLength - 3) {
+        if (v.getUint8(pos) === 0xFF && (v.getUint8(pos+1) & 0xE0) === 0xE0) break;
+        pos++;
+    }
+    const mpegVer = (v.getUint8(pos+1) >> 3) & 0x3;
+    const srIdx   = (v.getUint8(pos+2) >> 2) & 0x3;
+    return ({ 3:[44100,48000,32000], 2:[22050,24000,16000], 0:[11025,12000,8000] }[mpegVer] || [])[srIdx] || null;
+}
+
+// ── Audio: Decode + resample to interleaved float32 @ 96 kHz ─────────────────
+async function decodeToInterleaved(file) {
+    const ab  = await file.arrayBuffer();
+    let wav = null;
+    try { wav = parseWavBytes(ab); } catch(e) { log(`WAV parse error: ${e.message}`); }
+
+    let srcFrames, srcRate, srcL, srcR;
+    if (wav) {
+        ({ frames: srcFrames, sampleRate: srcRate, L: srcL, R: srcR } = wav);
+        log(`Decoded WAV: ${srcRate} Hz, ${srcFrames} frames`);
+    } else {
+        // Non-WAV fallback (MP3, AAC, AIFF, etc.)
+        const ctx = new AudioContext();
+        let buf;
+        try { buf = await ctx.decodeAudioData(ab.slice(0)); } finally { ctx.close(); }
+        srcFrames = buf.length;
+        srcRate   = buf.sampleRate;
+        srcL      = buf.getChannelData(0);
+        srcR      = buf.numberOfChannels > 1 ? buf.getChannelData(1) : srcL;
+
+        let trimStart = 0, trimEnd = srcFrames;
+        let gapless = null, sourceRate = null;
+        try { gapless    = parseMp3GaplessInfo(ab); } catch(e) { log(`ID3 parse error: ${e.message}`); }
+        try { sourceRate = getMp3SourceRate(ab);    } catch(e) { log(`MP3 rate parse error: ${e.message}`); }
+
+        if (gapless && sourceRate) {
+            // Exact trim from iTunSMPB — delay/padding are at source sample rate
+            const ratio   = srcRate / sourceRate;
+            trimStart     = Math.round(gapless.delay   * ratio);
+            const trimPad = Math.round(gapless.padding * ratio);
+            trimEnd       = srcFrames - trimPad;
+            log(`MP3 iTunSMPB: ${gapless.delay} delay + ${gapless.padding} pad @ ${sourceRate} Hz → trim ${(trimStart/srcRate*1000).toFixed(1)}ms start / ${(trimPad/srcRate*1000).toFixed(1)}ms end`);
+        } else if (sourceRate) {
+            // No iTunSMPB: fixed start (standard MPEG L3 priming = 1057 samples), threshold end.
+            // Start uses fixed delay because encoder priming noise sits above -60 dBFS.
+            // End padding is genuine digital zero so threshold scan works fine there.
+            const stdDelay = Math.round(1057 * srcRate / sourceRate);
+            trimStart = stdDelay;
+            // End: MP3 filter-bank post-ringing lives in the -70 to -90 dBFS range (above 0.001
+            // but not musical content), so use a much lower threshold than the start scan.
+            for (let i = srcFrames - 1; i >= trimStart; i--) {
+                if (Math.abs(srcL[i]) > 0.00003 || Math.abs(srcR[i]) > 0.00003) { trimEnd = i + 1; break; }
+            }
+            log(`No iTunSMPB — MPEG L3: ${(trimStart/srcRate*1000).toFixed(1)}ms start / ${((srcFrames-trimEnd)/srcRate*1000).toFixed(1)}ms end`);
+        } else {
+            // Last resort: threshold scan
+            for (let i = 0; i < srcFrames; i++) {
+                if (Math.abs(srcL[i]) > 0.001 || Math.abs(srcR[i]) > 0.001) { trimStart = i; break; }
+            }
+            log(`No source rate detected — threshold trim: ${(trimStart/srcRate*1000).toFixed(1)}ms start`);
+        }
+
+        if (trimStart > 0 || trimEnd < srcFrames) {
+            srcL = srcL.slice(trimStart, trimEnd);
+            srcR = srcR.slice(trimStart, trimEnd);
+            srcFrames = trimEnd - trimStart;
+        }
+        log(`Decoded: ${srcRate} Hz, ${srcFrames} frames`);
+    }
+
+    if (srcRate === SAMPLE_RATE) {
+        const out = new Float32Array(srcFrames * NUM_CHANNELS);
+        for (let i = 0; i < srcFrames; i++) { out[i*2] = srcL[i]; out[i*2+1] = srcR[i]; }
+        return out;
+    }
+
+    // Linear interpolation resample to SAMPLE_RATE
+    const dstFrames = Math.round(srcFrames * SAMPLE_RATE / srcRate);
+    const out       = new Float32Array(dstFrames * NUM_CHANNELS);
+    const ratio     = srcRate / SAMPLE_RATE;
+    for (let i = 0; i < dstFrames; i++) {
+        const p  = i * ratio;
+        const lo = p | 0;
+        const t  = p - lo;
+        const hi = lo + 1 < srcFrames ? lo + 1 : lo;
+        out[i*2]   = srcL[lo] + (srcL[hi] - srcL[lo]) * t;
+        out[i*2+1] = srcR[lo] + (srcR[hi] - srcR[lo]) * t;
+    }
+    return out;
+}
+
+// ── WAV Header ─────────────────────────────────────────────────────────────────
+function interleavedToWavBlob(interleaved, sampleRate = SAMPLE_RATE) {
+    const dataBytes = interleaved.byteLength;
+    const buf = new ArrayBuffer(44 + dataBytes);
+    const v   = new DataView(buf);
+    const str = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+    str(0,'RIFF'); v.setUint32(4, 36+dataBytes, true);
+    str(8,'WAVE'); str(12,'fmt ');
+    v.setUint32(16,16,true); v.setUint16(20,3,true);
+    v.setUint16(22,NUM_CHANNELS,true); v.setUint32(24,sampleRate,true);
+    v.setUint32(28,sampleRate*NUM_CHANNELS*BYTES_PER_SAMPLE,true);
+    v.setUint16(32,NUM_CHANNELS*BYTES_PER_SAMPLE,true); v.setUint16(34,32,true);
+    str(36,'data'); v.setUint32(40,dataBytes,true);
+    new Float32Array(buf,44).set(interleaved);
+    return new Blob([buf], { type: 'audio/wav' });
+}
+
+// ── Normalization ──────────────────────────────────────────────────────────────
+function findPeak(interleaved) {
+    let p = 0;
+    for (let i = 0; i < interleaved.length; i++) { const a = Math.abs(interleaved[i]); if (a > p) p = a; }
+    return p;
+}
+function normalizePeak(interleaved, targetDbfs) {
+    const peak = findPeak(interleaved);
+    if (peak === 0) return 1;
+    const gain = Math.pow(10, targetDbfs / 20) / peak;
+    for (let i = 0; i < interleaved.length; i++) interleaved[i] *= gain;
+    return gain;
+}
+
+// ── IndexedDB ─────────────────────────────────────────────────────────────────
+function openIdb() {
+    return new Promise((res,rej) => {
+        const r = indexedDB.open('cycles-webapp', 1);
+        r.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+        r.onsuccess = e => res(e.target.result);
+        r.onerror   = e => rej(e.target.error);
+    });
+}
+async function saveHandle(handle) {
+    const db = await openIdb();
+    return new Promise((res,rej) => {
+        const tx = db.transaction('handles','readwrite');
+        tx.objectStore('handles').put(handle,'sdcard');
+        tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
+    });
+}
+async function loadHandle() {
+    const db = await openIdb();
+    return new Promise((res,rej) => {
+        const tx = db.transaction('handles','readonly');
+        const r  = tx.objectStore('handles').get('sdcard');
+        r.onsuccess = () => res(r.result || null);
+        r.onerror   = e => rej(e.target.error);
+    });
+}
+
+// ── SD Card ───────────────────────────────────────────────────────────────────
+async function mountFromRoot(sdRoot, { allowCreate = false } = {}) {
+    if (sdRoot.name.toUpperCase() !== 'CYCLES')
+        log(`Warning: volume "${sdRoot.name}" — expected "CYCLES"`);
+    try {
+        g_cyclesHandle = await sdRoot.getDirectoryHandle('Cycles', { create: false });
+    } catch {
+        if (!allowCreate) throw new Error(`No "Cycles" folder on "${sdRoot.name}". Wrong card?`);
+        const proceed = confirm(
+            `No "Cycles" folder found on "${sdRoot.name}".\n\n` +
+            `Create the folder structure (Cycles/ and Cycles/Memory_Slots/) so this card works with the pedal?`
+        );
+        if (!proceed) throw new Error(`No "Cycles" folder on "${sdRoot.name}". Wrong card?`);
+        g_cyclesHandle = await sdRoot.getDirectoryHandle('Cycles', { create: true });
+        await g_cyclesHandle.getDirectoryHandle('Memory_Slots', { create: true });
+        log(`Created Cycles/ + Cycles/Memory_Slots/ on "${sdRoot.name}"`);
+    }
+    try { g_memorySlotsHandle = await g_cyclesHandle.getDirectoryHandle('Memory_Slots', { create: false }); }
+    catch { g_memorySlotsHandle = null; }
+}
+async function ensureMemorySlots() {
+    if (!g_cyclesHandle) throw new Error('No card open');
+    g_memorySlotsHandle = await g_cyclesHandle.getDirectoryHandle('Memory_Slots', { create: true });
+    return g_memorySlotsHandle;
+}
+async function tryAutoConnect() {
+    const handle = await loadHandle();
+    if (!handle) return false;
+    const perm = await handle.queryPermission({ mode: 'readwrite' });
+    if (perm === 'prompt') return 'needs-gesture';
+    if (perm !== 'granted') return false;
+    try { await mountFromRoot(handle); return true; }
+    catch { return false; }
+}
+async function pickCard() {
+    const root = await window.showDirectoryPicker({ mode: 'readwrite' });
+    await mountFromRoot(root, { allowCreate: true });
+    await saveHandle(root);
+}
+
+// ── File Helpers ───────────────────────────────────────────────────────────────
+const slotFilename = n => `${SLOT_PREFIX}${String(n).padStart(2,'0')}${SLOT_EXT}`;
+
+async function readRawFromHandle(dirHandle, filename) {
+    return (await (await dirHandle.getFileHandle(filename)).getFile()).arrayBuffer();
+}
+
+// ── Inspect ───────────────────────────────────────────────────────────────────
+const ENGINE_FILES = [
+    { filename: '01_Loop.raw',  label: 'Loop'  },
+    { filename: '02_Mix.raw',   label: 'Mix'   },
+    { filename: '03_Dub_A.raw', label: 'Dub A' },
+    { filename: '03_Dub_B.raw', label: 'Dub B' },
+];
+async function listEngineFiles() {
+    if (!g_cyclesHandle) return [];
+    const items = [];
+    for (const spec of ENGINE_FILES) {
+        try {
+            const fh   = await g_cyclesHandle.getFileHandle(spec.filename);
+            const file = await fh.getFile();
+            if (file.size === 0) continue;
+            const frames = file.size / (NUM_CHANNELS * BYTES_PER_SAMPLE);
+            items.push({ ...spec, byteSize: file.size, durationSec: frames / SAMPLE_RATE });
+        } catch { /* file missing — skip */ }
+    }
+    return items;
+}
+
+async function listSlots() {
+    if (!g_memorySlotsHandle) return [];
+    const slots = [];
+    for await (const [name, handle] of g_memorySlotsHandle.entries()) {
+        if (handle.kind !== 'file') continue;
+        const m = name.match(/^Mem_(\d{2})\.raw$/i);
+        if (!m) continue;
+        const file = await handle.getFile();
+        const frames = file.size / (NUM_CHANNELS * BYTES_PER_SAMPLE);
+        slots.push({ slotNum: parseInt(m[1]), filename: name, byteSize: file.size, durationSec: frames / SAMPLE_RATE });
+    }
+    return slots.sort((a,b) => a.slotNum - b.slotNum);
+}
+
+// ── Viewer: draw ──────────────────────────────────────────────────────────────
+function drawViewerWindow(playheadFrame = -1) {
+    const canvas = document.getElementById('viewer-canvas');
+    const ctx2d  = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height, halfH = H / 2;
+
+    const cs = getComputedStyle(document.body);
+    ctx2d.fillStyle = cs.getPropertyValue('--bg-alt').trim();
+    ctx2d.fillRect(0, 0, W, H);
+
+    if (!g_viewerRaw) return;
+
+    const totalFrames  = g_viewerRaw.length / NUM_CHANNELS;
+    const winFrames    = Math.min(getWindowFrames(), totalFrames);
+    const framesPerPx  = winFrames / W;
+    const stride       = Math.max(1, Math.floor(framesPerPx / 8));
+
+    // Guide lines
+    ctx2d.strokeStyle = cs.getPropertyValue('--wave-guide').trim(); ctx2d.lineWidth = 1;
+    ctx2d.beginPath();
+    ctx2d.moveTo(0, halfH * 0.5); ctx2d.lineTo(W, halfH * 0.5);
+    ctx2d.moveTo(0, halfH);       ctx2d.lineTo(W, halfH);
+    ctx2d.moveTo(0, halfH * 1.5); ctx2d.lineTo(W, halfH * 1.5);
+    ctx2d.stroke();
+
+    // Waveform — L top half (blue), R bottom half (orange)
+    for (let x = 0; x < W; x++) {
+        const sf = Math.floor(g_viewerOffset + x * framesPerPx);
+        const ef = Math.min(Math.floor(g_viewerOffset + (x + 1) * framesPerPx), totalFrames);
+        if (sf >= totalFrames) break;
+        let pL = 0, pR = 0;
+        for (let f = sf; f < ef; f += stride) {
+            const l = Math.abs(g_viewerRaw[f * 2]);
+            const r = Math.abs(g_viewerRaw[f * 2 + 1]);
+            if (l > pL) pL = l;
+            if (r > pR) pR = r;
+        }
+        const midL = halfH * 0.5, midR = halfH * 1.5;
+        const hL   = Math.min(pL * (halfH - 4), halfH - 4);
+        const hR   = Math.min(pR * (halfH - 4), halfH - 4);
+        ctx2d.lineWidth = 1;
+        ctx2d.strokeStyle = '#3366ee';
+        ctx2d.beginPath(); ctx2d.moveTo(x + 0.5, midL - hL); ctx2d.lineTo(x + 0.5, midL + hL); ctx2d.stroke();
+        ctx2d.strokeStyle = '#1e48d4';
+        ctx2d.beginPath(); ctx2d.moveTo(x + 0.5, midR - hR); ctx2d.lineTo(x + 0.5, midR + hR); ctx2d.stroke();
+    }
+
+    // Playhead
+    if (playheadFrame >= 0) {
+        const rel = playheadFrame - g_viewerOffset;
+        if (rel >= 0 && rel <= winFrames) {
+            const phX = (rel / winFrames) * W;
+            ctx2d.strokeStyle = cs.getPropertyValue('--playhead').trim();
+            ctx2d.lineWidth = 1.5;
+            ctx2d.beginPath(); ctx2d.moveTo(phX, 0); ctx2d.lineTo(phX, H); ctx2d.stroke();
+        }
+    }
+
+    // Time labels
+    ctx2d.fillStyle = cs.getPropertyValue('--time-label').trim(); ctx2d.font = '10px monospace';
+    const t0 = formatDuration(g_viewerOffset / SAMPLE_RATE);
+    const t1 = formatDuration((g_viewerOffset + winFrames) / SAMPLE_RATE);
+    ctx2d.fillText(t0, 6, 13);
+    ctx2d.fillText(t1, W - ctx2d.measureText(t1).width - 6, 13);
+}
+
+function redrawViewer(playheadFrame = -1) {
+    if (g_viewerRaw) {
+        const max = Math.max(0, g_viewerRaw.length / NUM_CHANNELS - getWindowFrames());
+        g_viewerOffset = Math.max(0, Math.min(g_viewerOffset, max));
+    }
+    drawViewerWindow(playheadFrame);
+    const ph = playheadFrame >= 0 ? playheadFrame : g_pausedAtFrame;
+    if (g_viewerRaw) {
+        document.getElementById('seg-val').textContent = formatDuration(ph / SAMPLE_RATE);
+    } else {
+        document.getElementById('seg-val').textContent = '0:00';
+    }
+}
+
+// ── Viewer: load ──────────────────────────────────────────────────────────────
+async function loadViewerWaveform(dirHandle, filename, label) {
+    const canvas = document.getElementById('viewer-canvas');
+    const empty  = document.getElementById('viewer-empty');
+    const footer = document.getElementById('viewer-footer');
+
+    canvas.width  = canvas.offsetWidth  || 860;
+    canvas.height = 192;
+
+    g_viewerRaw         = null;
+    g_viewerAudioBuf    = null;
+    g_viewerAudioBufRev = null;
+    g_viewerOffset      = 0;
+    g_pausedAtFrame     = 0;
+
+    // Show loading state
+    canvas.style.display = 'block';
+    empty.style.display  = 'none';
+    footer.style.display = 'flex';
+    document.getElementById('viewer-file-label').textContent = label;
+
+    const ctx2d = canvas.getContext('2d');
+    const cs2 = getComputedStyle(document.body);
+    ctx2d.fillStyle = cs2.getPropertyValue('--bg-alt').trim(); ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+    ctx2d.fillStyle = cs2.getPropertyValue('--wave-guide').trim(); ctx2d.font = '11px sans-serif';
+    ctx2d.fillText('Loading…', canvas.width / 2 - 28, canvas.height / 2 + 4);
+
+    try {
+        const raw   = await readRawFromHandle(dirHandle, filename);
+        g_viewerRaw = new Float32Array(raw);
+
+        // Set zoom slider max to file duration, default to 5s or file length
+        const durSec   = (g_viewerRaw.length / NUM_CHANNELS) / SAMPLE_RATE;
+        const zoomMax  = Math.max(1, Math.ceil(durSec));
+        const zoomDef  = Math.min(5, zoomMax);
+        const slider   = document.getElementById('viewer-zoom');
+        slider.max     = zoomMax;
+        slider.value   = zoomDef;
+        g_zoomSeconds  = zoomDef;
+        document.getElementById('viewer-zoom-val').textContent = `${zoomDef}s`;
+
+        redrawViewer(0);
+    } catch (e) {
+        log('Waveform error: ' + e.message);
+    }
+}
+
+// ── Viewer: canvas mouse events ───────────────────────────────────────────────
+const viewerCanvas = document.getElementById('viewer-canvas');
+
+viewerCanvas.addEventListener('mousedown', e => {
+    cancelAnimationFrame(g_momentumRafId); g_momentumRafId = null;
+    g_scrollVelocity  = 0;
+    g_dragAnchorX     = e.clientX;
+    g_dragAnchorOffset = g_viewerOffset;
+    g_dragLastX       = e.clientX;
+    g_dragLastT       = performance.now();
+    g_didDrag         = false;
+});
+
+viewerCanvas.addEventListener('mousemove', e => {
+    if (!(e.buttons & 1) || g_dragAnchorX === null || !g_viewerRaw) return;
+    const dx = e.clientX - g_dragAnchorX;
+    if (Math.abs(dx) > 4) g_didDrag = true;
+    if (!g_didDrag) return;
+
+    const now         = performance.now();
+    const dt          = now - g_dragLastT;
+    const rect        = viewerCanvas.getBoundingClientRect();
+    const framesPerPx = getWindowFrames() / rect.width;
+    const totalFrames = g_viewerRaw.length / NUM_CHANNELS;
+
+    if (dt > 0) {
+        g_scrollVelocity = -(e.clientX - g_dragLastX) * framesPerPx / dt;
+    }
+    g_dragLastX = e.clientX;
+    g_dragLastT = now;
+
+    g_viewerOffset = g_dragAnchorOffset - Math.round(dx * framesPerPx);
+    g_viewerOffset = Math.max(0, Math.min(g_viewerOffset, Math.max(0, totalFrames - getWindowFrames())));
+    redrawViewer(getCurrentFrame());
+});
+
+function releaseDrag() {
+    g_dragAnchorX = null;
+    if (g_didDrag && Math.abs(g_scrollVelocity) > 50) startMomentumScroll();
+}
+
+viewerCanvas.addEventListener('mouseup',    releaseDrag);
+viewerCanvas.addEventListener('mouseleave', releaseDrag);
+
+viewerCanvas.addEventListener('click', e => {
+    if (g_didDrag) { g_didDrag = false; return; }
+    if (!g_viewerRaw) return;
+    const rect        = viewerCanvas.getBoundingClientRect();
+    const x           = (e.clientX - rect.left) / rect.width;
+    const totalFrames = g_viewerRaw.length / NUM_CHANNELS;
+    seekTo(Math.round(g_viewerOffset + x * Math.min(getWindowFrames(), totalFrames)));
+});
+
+// Trackpad swipe + mouse wheel
+viewerCanvas.addEventListener('wheel', e => {
+    if (!g_viewerRaw) return;
+    e.preventDefault();
+    cancelAnimationFrame(g_momentumRafId); g_momentumRafId = null;
+    const delta       = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    const rect        = viewerCanvas.getBoundingClientRect();
+    const framesPerPx = getWindowFrames() / rect.width;
+    const totalFrames = g_viewerRaw.length / NUM_CHANNELS;
+    g_viewerOffset += Math.round(delta * framesPerPx * 2);
+    g_viewerOffset  = Math.max(0, Math.min(g_viewerOffset, Math.max(0, totalFrames - getWindowFrames())));
+    redrawViewer(getCurrentFrame());
+}, { passive: false });
+
+// ── Momentum scroll ───────────────────────────────────────────────────────────
+function startMomentumScroll() {
+    let lastTime = performance.now();
+    function step(now) {
+        const dt  = Math.min(now - lastTime, 64);
+        lastTime  = now;
+        g_scrollVelocity *= Math.pow(0.90, dt / 16);
+        if (Math.abs(g_scrollVelocity) < 20 || !g_viewerRaw) { g_momentumRafId = null; return; }
+        const totalFrames = g_viewerRaw.length / NUM_CHANNELS;
+        const prev        = g_viewerOffset;
+        g_viewerOffset    = Math.max(0, Math.min(
+            g_viewerOffset + Math.round(g_scrollVelocity * dt),
+            Math.max(0, totalFrames - getWindowFrames())
+        ));
+        if (g_viewerOffset === prev) { g_momentumRafId = null; return; }
+        redrawViewer(getCurrentFrame());
+        g_momentumRafId = requestAnimationFrame(step);
+    }
+    g_momentumRafId = requestAnimationFrame(step);
+}
+
+// ── Zoom slider ───────────────────────────────────────────────────────────────
+document.getElementById('viewer-zoom').addEventListener('input', e => {
+    if (!g_viewerRaw) return;
+    const oldWin   = getWindowFrames();
+    g_zoomSeconds  = parseInt(e.target.value);
+    const newWin   = getWindowFrames();
+    document.getElementById('viewer-zoom-val').textContent = `${g_zoomSeconds}s`;
+    // Zoom around current center
+    const center   = g_viewerOffset + Math.floor(oldWin / 2);
+    g_viewerOffset = Math.max(0, center - Math.floor(newWin / 2));
+    redrawViewer(getCurrentFrame());
+});
+
+// ── Playback ──────────────────────────────────────────────────────────────────
+function getAudioContext() {
+    if (!g_audioCtx) g_audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+    return g_audioCtx;
+}
+
+function getCurrentFrame() {
+    if (!g_currentSrc || !g_audioCtx) return g_pausedAtFrame;
+    const elapsed = (g_audioCtx.currentTime - g_playStartCtxTime) * SAMPLE_RATE * g_speed;
+    const raw = g_reverse
+        ? g_playStartFrame - Math.round(elapsed)
+        : g_playStartFrame + Math.round(elapsed);
+    if (g_loop && g_viewerRaw) {
+        const total = g_viewerRaw.length / NUM_CHANNELS;
+        if (total > 0) return ((raw % total) + total) % total;
+    }
+    return raw;
+}
+
+function getViewerAudioBuf() {
+    if (g_viewerAudioBuf) return g_viewerAudioBuf;
+    if (!g_viewerRaw) return null;
+    const ctx = getAudioContext();
+    const n   = g_viewerRaw.length / NUM_CHANNELS;
+    const buf = ctx.createBuffer(NUM_CHANNELS, n, SAMPLE_RATE);
+    const L = buf.getChannelData(0), R = buf.getChannelData(1);
+    for (let i = 0; i < n; i++) { L[i] = g_viewerRaw[i*2]; R[i] = g_viewerRaw[i*2+1]; }
+
+    // No boundary fade applied here — Web Audio src.loop wraps sample-accurately
+    // with zero gap. Baking a fade-out at the end + fade-in at the start would
+    // create ~10ms of near-silence at every loop boundary, which throws off tempo.
+    // The firmware's boundary fade is a real-time multiplier in its playback ISR;
+    // that model doesn't translate to a pre-baked AudioBuffer.
+
+    g_viewerAudioBuf = buf;
+    return buf;
+}
+
+function getViewerAudioBufRev() {
+    if (g_viewerAudioBufRev) return g_viewerAudioBufRev;
+    const fwd = getViewerAudioBuf();
+    if (!fwd) return null;
+    const ctx = getAudioContext();
+    const n   = fwd.length;
+    const rev = ctx.createBuffer(NUM_CHANNELS, n, SAMPLE_RATE);
+    for (let ch = 0; ch < NUM_CHANNELS; ch++) {
+        const src = fwd.getChannelData(ch);
+        const dst = rev.getChannelData(ch);
+        for (let i = 0; i < n; i++) dst[i] = src[n - 1 - i];
+    }
+    g_viewerAudioBufRev = rev;
+    return rev;
+}
+
+function _killSource() {
+    if (g_currentSrc) {
+        try { g_currentSrc.stop(); } catch (_) {}
+        g_currentSrc = null;
+    }
+    cancelAnimationFrame(g_rafId); g_rafId = null;
+}
+
+function playFrom(startFrame, { oneShot = false } = {}) {
+    _killSource();
+    const fwd = getViewerAudioBuf();
+    if (!fwd) { log('No audio loaded'); return; }
+    const total = fwd.length;
+    startFrame = Math.max(0, Math.min(startFrame, total - 1));
+    const buf = g_reverse ? getViewerAudioBufRev() : fwd;
+    const ctx  = getAudioContext();
+    const src  = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop   = oneShot ? false : g_loop;
+    src.playbackRate.value = g_speed;
+    src.connect(ctx.destination);
+    // In reverse, the reversed buffer's time-axis is flipped: original frame F
+    // corresponds to reversed-buffer frame (total-1-F).
+    const bufStartFrame = g_reverse ? (total - 1 - startFrame) : startFrame;
+    src.start(0, bufStartFrame / SAMPLE_RATE);
+    g_currentSrc       = src;
+    g_playStartCtxTime = ctx.currentTime;
+    g_playStartFrame   = startFrame;
+    src.onended = () => {
+        if (g_currentSrc !== src) return;
+        _killSource();
+        g_pausedAtFrame = 0;
+        g_viewerOffset  = 0;
+        document.getElementById('btn-play').innerHTML = ICON_PLAY;
+        redrawViewer(0);
+    };
+    document.getElementById('btn-play').innerHTML = ICON_PAUSE;
+    tickPlayhead();
+}
+
+function tickPlayhead() {
+    if (!g_currentSrc || !g_viewerRaw) { g_rafId = null; return; }
+    const frame       = getCurrentFrame();
+    const totalFrames = g_viewerRaw.length / NUM_CHANNELS;
+    // Pin playhead at 25% from left — waveform scrolls continuously, no jumps
+    const target = frame - Math.floor(getWindowFrames() * 0.25);
+    g_viewerOffset = Math.max(0, Math.min(target, Math.max(0, totalFrames - getWindowFrames())));
+    redrawViewer(frame);
+    g_rafId = requestAnimationFrame(tickPlayhead);
+}
+
+function seekTo(frame) {
+    cancelAnimationFrame(g_momentumRafId); g_momentumRafId = null;
+    if (!g_viewerRaw) return;
+    const totalFrames = g_viewerRaw.length / NUM_CHANNELS;
+    frame = Math.max(0, Math.min(frame, totalFrames - 1));
+    g_viewerOffset  = frame - Math.floor(getWindowFrames() / 2);
+    g_pausedAtFrame = frame;
+    if (g_currentSrc) playFrom(frame);
+    else redrawViewer(frame);
+}
+
+// ── Transport handlers ────────────────────────────────────────────────────────
+const ICON_PLAY  = '<svg viewBox="0 0 12 14" width="12" height="13" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 12 14" width="12" height="13" fill="currentColor"><rect x="1" y="0" width="3.5" height="14"/><rect x="7.5" y="0" width="3.5" height="14"/></svg>';
+
+document.getElementById('btn-play').addEventListener('click', () => {
+    if (g_currentSrc) {
+        g_pausedAtFrame = getCurrentFrame();
+        _killSource();
+        document.getElementById('btn-play').innerHTML = ICON_PLAY;
+        redrawViewer(g_pausedAtFrame);
+        return;
+    }
+    if (!g_viewerRaw) { log('Select a file first'); return; }
+    playFrom(g_pausedAtFrame);
+});
+
+document.getElementById('btn-stop').addEventListener('click', () => {
+    _killSource();
+    g_pausedAtFrame = 0;
+    g_viewerOffset  = 0;
+    document.getElementById('btn-play').innerHTML = ICON_PLAY;
+    redrawViewer(0);
+});
+
+document.getElementById('btn-loop').addEventListener('click', () => {
+    g_loop = !g_loop;
+    document.getElementById('btn-loop').classList.toggle('active', g_loop);
+    if (g_currentSrc) g_currentSrc.loop = g_loop;
+});
+
+// ── Pedal panel handlers ──────────────────────────────────────────────────────
+document.getElementById('btn-oneshot').addEventListener('click', () => {
+    if (!g_viewerRaw) { log('Select a file first'); return; }
+    const total = g_viewerRaw.length / NUM_CHANNELS;
+    const startFrame = g_reverse ? (total - 1) : 0;
+    g_pausedAtFrame = startFrame;
+    playFrom(startFrame, { oneShot: true });
+});
+
+document.querySelectorAll('.pedal-opt[data-speed]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const newSpeed = parseFloat(btn.dataset.speed);
+        if (newSpeed === g_speed) return;
+        g_speed = newSpeed;
+        document.querySelectorAll('.pedal-opt[data-speed]').forEach(b =>
+            b.classList.toggle('active', parseFloat(b.dataset.speed) === g_speed));
+        if (g_currentSrc) {
+            const resumeFrame = getCurrentFrame();
+            playFrom(resumeFrame);
+        }
+    });
+});
+
+document.querySelectorAll('.pedal-opt[data-dir]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const newRev = btn.dataset.dir === 'rev';
+        if (newRev === g_reverse) return;
+        const wasPlaying  = !!g_currentSrc;
+        const resumeFrame = wasPlaying ? getCurrentFrame() : g_pausedAtFrame;
+        g_reverse = newRev;
+        document.querySelectorAll('.pedal-opt[data-dir]').forEach(b =>
+            b.classList.toggle('active', (b.dataset.dir === 'rev') === g_reverse));
+        if (wasPlaying) playFrom(resumeFrame);
+    });
+});
+
+// ── Global keybindings ────────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space') return;
+    // Don't hijack space when the user is typing in an input / textarea / etc.
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    e.preventDefault();
+    document.getElementById('btn-play').click();
+});
+
+document.getElementById('btn-prev').addEventListener('click', () => {
+    if (!g_selection || !g_allItems.length) return;
+    const idx  = g_allItems.findIndex(i => i.filename === g_selection.filename);
+    const prev = g_allItems[(idx - 1 + g_allItems.length) % g_allItems.length];
+    prev.thumbEl.click();
+});
+
+document.getElementById('btn-next').addEventListener('click', () => {
+    if (!g_selection || !g_allItems.length) return;
+    const idx  = g_allItems.findIndex(i => i.filename === g_selection.filename);
+    const next = g_allItems[(idx + 1) % g_allItems.length];
+    next.thumbEl.click();
+});
+
+document.getElementById('btn-export').addEventListener('click', async () => {
+    if (!g_selection) { log('Select a file first'); return; }
+    const targetDbfs = -1;
+    try {
+        const raw         = await readRawFromHandle(g_selection.dirHandle, g_selection.filename);
+        const interleaved = new Float32Array(raw);
+        const peak        = findPeak(interleaved);
+        normalizePeak(interleaved, targetDbfs);
+        log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → ${targetDbfs} dBFS`);
+
+        // Reverse: swap the interleaved stereo frames end-to-end.
+        if (g_reverse) {
+            const n = interleaved.length / NUM_CHANNELS;
+            for (let i = 0, j = n - 1; i < j; i++, j--) {
+                for (let ch = 0; ch < NUM_CHANNELS; ch++) {
+                    const a = interleaved[i * NUM_CHANNELS + ch];
+                    interleaved[i * NUM_CHANNELS + ch] = interleaved[j * NUM_CHANNELS + ch];
+                    interleaved[j * NUM_CHANNELS + ch] = a;
+                }
+            }
+        }
+
+        // Speed: WAV plays at sampleRate × g_speed so the same samples take
+        // 1/g_speed as long — matches the preview's playbackRate behavior
+        // (pitch rises with speed). No resampling, no quality loss.
+        const exportRate = Math.round(SAMPLE_RATE * g_speed);
+
+        const base    = g_selection.filename.replace(/\.raw$/, '');
+        const tags    = [];
+        if (g_speed !== 1.0) tags.push(`${g_speed}x`);
+        if (g_reverse)       tags.push('rev');
+        const outName = tags.length ? `${base}_${tags.join('_')}.wav` : `${base}.wav`;
+
+        triggerDownload(interleavedToWavBlob(interleaved, exportRate), outName);
+        log(`Downloaded ${outName} @ ${exportRate} Hz${g_reverse ? ' (reversed)' : ''}`);
+    } catch(e) { log('Export error: ' + e.message); }
+});
+
+// ── Selection ─────────────────────────────────────────────────────────────────
+async function selectItem(dirHandle, filename, label, thumbEl) {
+    const wasPlaying = !!g_currentSrc;
+    _killSource();
+    document.getElementById('btn-play').innerHTML = ICON_PLAY;
+    g_selection = { dirHandle, filename, label };
+    document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
+    if (thumbEl) thumbEl.classList.add('active');
+    await loadViewerWaveform(dirHandle, filename, label);
+    if (wasPlaying) playFrom(0);
+}
+
+// ── Refresh UI ────────────────────────────────────────────────────────────────
+async function refreshUI(autoLoad = false) {
+    const engineFiles = await listEngineFiles();
+    const slots       = await listSlots();
+    g_allItems = [];
+
+    const engineGrid = document.getElementById('engine-grid');
+    engineGrid.innerHTML = '';
+    for (const f of engineFiles) {
+        const thumb = document.createElement('div');
+        thumb.className = 'slot-thumb';
+        thumb.dataset.filename = f.filename;
+
+        const ledDot = document.createElement('span');
+        ledDot.className = 'slot-led';
+        thumb.appendChild(ledDot);
+
+        const nameLabel = document.createElement('div');
+        nameLabel.className = 'slot-num';
+        nameLabel.textContent = f.label;
+        thumb.appendChild(nameLabel);
+
+        const durLabel = document.createElement('div');
+        durLabel.className = 'slot-dur';
+        durLabel.textContent = formatDuration(f.durationSec);
+        thumb.appendChild(durLabel);
+
+        engineGrid.appendChild(thumb);
+        const label = `${f.label} — ${formatDuration(f.durationSec)} — ${formatBytes(f.byteSize)}`;
+        thumb.addEventListener('click', () => selectItem(g_cyclesHandle, f.filename, label, thumb));
+        g_allItems.push({ filename: f.filename, thumbEl: thumb });
+    }
+    if (!engineFiles.length) engineGrid.textContent = 'No working files on this card';
+
+    const slotGrid = document.getElementById('slot-grid');
+    slotGrid.innerHTML = '';
+    for (const s of slots) {
+        const thumb = document.createElement('div');
+        thumb.className = 'slot-thumb';
+        thumb.dataset.filename = s.filename;
+
+        const header = document.createElement('div');
+        header.className = 'slot-header';
+
+        const headerLeft = document.createElement('div');
+        headerLeft.className = 'slot-header-left';
+
+        const ledDot = document.createElement('span');
+        ledDot.className = 'slot-led';
+        headerLeft.appendChild(ledDot);
+
+        const numLabel = document.createElement('div');
+        numLabel.className = 'slot-num';
+        numLabel.textContent = String(s.slotNum).padStart(2,'0');
+        headerLeft.appendChild(numLabel);
+
+        header.appendChild(headerLeft);
+
+        const delBtn = document.createElement('button');
+        delBtn.className   = 'slot-delete';
+        delBtn.textContent = '×';
+        delBtn.title       = `Delete Slot ${String(s.slotNum).padStart(2,'0')}`;
+        delBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const slotLabel = `Slot ${String(s.slotNum).padStart(2,'0')}`;
+            if (!confirm(`Delete ${slotLabel}?\n\nThis cannot be undone.`)) return;
+            try {
+                await g_memorySlotsHandle.removeEntry(s.filename);
+                if (g_selection && g_selection.filename === s.filename) {
+                    _killSource();
+                    g_selection    = null;
+                    g_viewerRaw    = null;
+                    g_viewerAudioBuf = null;
+                    g_viewerAudioBufRev = null;
+                    document.getElementById('viewer-canvas').style.display = 'none';
+                    document.getElementById('viewer-footer').style.display = 'none';
+                    document.getElementById('viewer-empty').style.display  = '';
+                    document.getElementById('viewer-empty').textContent    = 'Select a memory slot below';
+                    document.getElementById('btn-play').innerHTML = ICON_PLAY;
+                }
+                await refreshUI();
+            } catch (err) {
+                alert(`Could not delete ${slotLabel}: ${err.message}`);
+            }
+        });
+        header.appendChild(delBtn);
+        thumb.appendChild(header);
+
+        const durLabel = document.createElement('div');
+        durLabel.className = 'slot-dur';
+        durLabel.textContent = formatDuration(s.durationSec);
+        thumb.appendChild(durLabel);
+
+        slotGrid.appendChild(thumb);
+        const label = `Slot ${String(s.slotNum).padStart(2,'0')} — ${formatDuration(s.durationSec)} — ${formatBytes(s.byteSize)}`;
+        thumb.addEventListener('click', (e) => { if (e.target !== delBtn) selectItem(g_memorySlotsHandle, s.filename, label, thumb); });
+        g_allItems.push({ filename: s.filename, thumbEl: thumb });
+    }
+    if (!slots.length) slotGrid.textContent = 'No slots saved yet';
+
+    // Auto-load first slot on connect
+    if (autoLoad && !g_selection) {
+        if (slots.length) {
+            slotGrid.querySelector('.slot-thumb').click();
+        } else {
+            document.getElementById('viewer-empty').textContent = 'No memory slots on this card';
+        }
+    }
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+    URL.revokeObjectURL(url);
+}
+
+// ── Import ────────────────────────────────────────────────────────────────────
+document.getElementById('btn-import').addEventListener('click', async () => {
+    const slotNum   = parseInt(document.getElementById('input-slot-num').value, 10);
+    const fileInput = document.getElementById('input-wav');
+    const statusEl  = document.getElementById('label-import');
+    if (!fileInput.files.length)     { log('No file selected'); return; }
+    if (slotNum < 1 || slotNum > 99) { log('Slot must be 1–99'); return; }
+    const file = fileInput.files[0];
+    const isMP3 = /\.mp3$/i.test(file.name) || file.type === 'audio/mpeg';
+    if (isMP3) {
+        const proceed = confirm(
+            'MP3 files can cause subtle timing drift at loop boundaries.\n\n' +
+            'MP3 encoding adds a small block of silence to the start and end of every file. ' +
+            'This app does its best to strip it automatically, but the result may not be sample-accurate.\n\n' +
+            'For tight loops, export from your DAW as 24-bit WAV instead — that path is always sample-exact.\n\n' +
+            'Continue with MP3 anyway?'
+        );
+        if (!proceed) return;
+    }
+    const targetDbfs = -18;
+    try {
+        statusEl.textContent = 'Importing…';
+        const interleaved = await decodeToInterleaved(file);
+        const peak  = findPeak(interleaved);
+        normalizePeak(interleaved, targetDbfs);
+        log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → ${targetDbfs} dBFS`);
+        const filename = slotFilename(slotNum);
+        const dir      = await ensureMemorySlots();
+        // Check if slot already exists and confirm overwrite
+        let exists = false;
+        try { await dir.getFileHandle(filename, { create: false }); exists = true; } catch { /* new slot */ }
+        if (exists && !confirm(`Slot ${String(slotNum).padStart(2,'0')} already has content.\n\nOverwrite it?`)) {
+            statusEl.textContent = '';
+            return;
+        }
+        const fh       = await dir.getFileHandle(filename, { create: true });
+        const writable = await fh.createWritable();
+        await writable.write(interleaved.buffer);
+        await writable.close();
+        log(`Done → ${filename}`);
+        statusEl.textContent = 'Done';
+        await refreshUI();
+        // Auto-load the just-imported slot into the player
+        const newThumb = document.querySelector(`.slot-thumb[data-filename="${filename}"]`);
+        if (newThumb) newThumb.click();
+        else {
+            const label = `Slot ${String(slotNum).padStart(2,'0')}`;
+            await selectItem(g_memorySlotsHandle, filename, label, null);
+            playFrom(0);
+        }
+    } catch(e) { statusEl.textContent = 'Error'; log(`Import error: ${e.message}`); }
+});
+
+document.getElementById('input-wav').addEventListener('change', e => {
+    const f = e.target.files[0];
+    document.getElementById('import-filename').textContent = f ? f.name : 'Choose WAV or MP3…';
+});
+
+// ── Slot stepper ──────────────────────────────────────────────────────────────
+(function initSlotStepper() {
+    const valEl  = document.getElementById('slot-knob-val');
+    const hidden = document.getElementById('input-slot-num');
+
+    function setSlot(v) {
+        v = Math.max(1, Math.min(99, Math.round(v)));
+        hidden.value = v;
+        valEl.value  = String(v).padStart(2, '0');
+    }
+
+    document.getElementById('slot-up').addEventListener('click',   () => setSlot((parseInt(hidden.value) || 1) + 1));
+    document.getElementById('slot-down').addEventListener('click', () => setSlot((parseInt(hidden.value) || 1) - 1));
+
+    valEl.addEventListener('input', () => {
+        const v = parseInt(valEl.value, 10);
+        if (v >= 1 && v <= 99) hidden.value = v;
+    });
+    valEl.addEventListener('change', () => setSlot(parseInt(valEl.value, 10) || 1));
+
+    setSlot(1);
+})();
+
+// ── Card Status / Init ────────────────────────────────────────────────────────
+function setCardStatus(html) { document.getElementById('card-status').innerHTML = html; }
+
+function showConnectButton(label = 'Connect CYCLES card') {
+    setCardStatus(`<button id="btn-connect">${label}</button>`);
+    document.getElementById('btn-connect').addEventListener('click', triggerConnect);
+}
+
+async function triggerConnect() {
+    showConnectButton('Connecting…');
+    try {
+        // If we have a stored handle that just needs a permission gesture, reuse it
+        const stored = await loadHandle();
+        if (stored) {
+            const perm = await stored.requestPermission({ mode: 'readwrite' });
+            if (perm === 'granted') {
+                try {
+                    await mountFromRoot(stored, { allowCreate: true });
+                    setCardStatus('<span class="card-ok"><span class="led green"></span>CYCLES card connected</span><button id="btn-change">Change</button>');
+                    document.getElementById('btn-change').addEventListener('click', async () => { await pickCard(); await refreshUI(); setCardStatus('<span class="card-ok"><span class="led green"></span>CYCLES card connected</span>'); });
+                    log('CYCLES card connected');
+                    await refreshUI(true);
+                    return;
+                } catch { /* card not present, fall through to picker */ }
+            }
+        }
+        // No stored handle or mount failed — open the directory picker
+        await pickCard();
+        setCardStatus('<span class="card-ok"><span class="led green"></span>CYCLES card connected</span>');
+        log('CYCLES card connected');
+        await refreshUI(true);
+    } catch(e) {
+        if (e.name === 'AbortError') showConnectButton('Connect CYCLES card');
+        else { log(`Connect error: ${e.message}`); showConnectButton('⚠ Connect failed — retry'); }
+    }
+}
+
+async function init() {
+    showConnectButton('Checking for CYCLES card…');
+    try {
+        const result = await tryAutoConnect();
+        if (result === true) {
+            setCardStatus('<span class="card-ok"><span class="led green"></span>CYCLES card connected</span>');
+            log('CYCLES card connected');
+            await refreshUI(true);
+        }
+        // Any non-true result leaves the connect button visible and clickable
+    } catch(e) {
+        log(`Init error: ${e.message}`);
+        // Button is already showing from showConnectButton above
+    }
+}
+
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+(function() {
+    const btn = document.getElementById('btn-theme');
+    const saved = localStorage.getItem('cycles-theme');
+    if (saved === 'dark') { document.body.classList.add('dark'); btn.textContent = 'Light'; }
+
+    btn.addEventListener('click', () => {
+        const dark = document.body.classList.toggle('dark');
+        btn.textContent = dark ? 'Light' : 'Dark';
+        localStorage.setItem('cycles-theme', dark ? 'dark' : 'light');
+        if (g_viewerRaw) redrawViewer(getCurrentFrame());
+    });
+})();
+
+init();
+</script>
+</div><!-- #app -->
+</body>
+</html>
