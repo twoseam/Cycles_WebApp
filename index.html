@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CYCLES — SD Card Manager</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         /* DSEG 7-seg font — explicit @font-face from the keshikan/DSEG GitHub
            mirror (the old `@import` of the npm dseg.min.css was silently failing,
@@ -691,6 +692,29 @@
         }
         #slot-knob-val::-webkit-outer-spin-button,
         #slot-knob-val::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        /* ── Mobile / narrow-window layout (under 600 px) ──
+           File System Access API doesn't actually work on mobile browsers, but
+           the layout still needs to degrade gracefully for narrow desktop
+           windows and anyone poking at the site on their phone. */
+        @media (max-width: 600px) {
+            #app { padding: 18px 12px; }
+            #header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            #header-right { align-items: flex-start; }
+            #pedal-panel { gap: 16px; flex-wrap: wrap; row-gap: 14px; }
+            .pedal-control-right { margin-left: 0; align-items: flex-start; }
+            #transport { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
+            #transport .spacer { display: none; }
+            #transport button:not(#btn-export) { width: 40px; height: 40px; }
+            #viewer-counter { height: 40px; padding: 10px 16px; }
+            .seg-val { top: 10px; left: 16px; }
+            #btn-export { height: 40px; margin-left: auto; }
+            #engine-section, #slot-section { margin-top: 36px; margin-bottom: 36px; }
+            #import-panel { flex-direction: column; }
+            .import-cell { border-right: none; border-bottom: 1px solid var(--border); }
+            .import-cell.action { border-bottom: none; }
+            #slot-stepper button { width: 36px; }
+        }
 
         /* ── Log — teletype output ── */
         #log {
@@ -1955,6 +1979,18 @@ async function triggerConnect() {
 }
 
 async function init() {
+    // File System Access API is Chromium-only. Gracefully bail on
+    // Firefox / Safari / mobile with a friendly message instead of a
+    // dead button that fails silently.
+    const forceUnsupported = new URLSearchParams(location.search).has('test-unsupported');
+    if (forceUnsupported || !('showDirectoryPicker' in window)) {
+        setCardStatus(
+            '<span class="card-ok" style="color:var(--accent);font-weight:700">' +
+            'Browser not supported</span> — use Chrome or Edge'
+        );
+        log('This browser does not support the File System Access API needed to read the SD card. Please open this page in Chrome, Edge, Opera, Brave, or another Chromium-based browser.');
+        return;
+    }
     showConnectButton('Checking for CYCLES card…');
     try {
         const result = await tryAutoConnect();
