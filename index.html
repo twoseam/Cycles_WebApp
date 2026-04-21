@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYCLES — SD Card Manager</title>
+    <title>CYCLES — Data Managerr</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         /* DSEG 7-seg font — explicit @font-face from the keshikan/DSEG GitHub
@@ -716,6 +716,82 @@
             #slot-stepper button { width: 36px; }
         }
 
+        /* ── Connect prompt (shown when no card connected) ── */
+        #connect-prompt {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+        #connect-card {
+            max-width: 520px;
+            width: 100%;
+            padding: 40px 32px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 6px 4px rgba(0,0,0,0.14);
+        }
+        .connect-logo { margin-bottom: 24px; }
+        .connect-logo svg { width: 100%; max-width: 260px; height: auto; }
+        .connect-logo svg .st1 { fill: #1e48d4; }
+        .connect-logo svg .st0 { fill: #d43800; }
+        #connect-card h1 {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--fg);
+            margin-bottom: 18px;
+        }
+        #connect-card p {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--fg-dim);
+            margin-bottom: 20px;
+        }
+        #btn-connect-prompt {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            padding: 14px 28px;
+            margin: 6px 0 22px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 6px 4px rgba(0,0,0,0.14);
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+        }
+        #btn-connect-prompt:hover { background: var(--bg); border-color: var(--border-dark); }
+        #btn-connect-prompt:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 transparent;
+        }
+        #btn-connect-prompt:disabled { opacity: 0.6; cursor: default; }
+        .connect-note {
+            font-size: 10px !important;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--fg-muted) !important;
+            margin-bottom: 0 !important;
+        }
+
         /* ── Unsupported-browser state ── */
         #unsupported {
             max-width: 520px;
@@ -891,6 +967,17 @@
 
 <!-- ── Log ────────────────────────────────────────────────────────────────── -->
 <pre id="log"></pre>
+
+<!-- ── Connect prompt (full-screen, shown when no card is connected) ─────── -->
+<div id="connect-prompt" style="display:none">
+    <div id="connect-card">
+        <div class="connect-logo"></div>
+        <h1>Connect your CYCLES card</h1>
+        <p>Insert your SD card, then click the button below and pick the card's root folder to grant this page access.</p>
+        <button id="btn-connect-prompt">Connect CYCLES Card</button>
+        <p class="connect-note">Your card stays on your computer — nothing is uploaded.</p>
+    </div>
+</div>
 
 <script>
 'use strict';
@@ -2020,6 +2107,32 @@ async function triggerConnect() {
     }
 }
 
+function showConnectPrompt() {
+    // Clone the header logo into the connect card (same brand colors)
+    const logoSrc = document.querySelector('#logo svg');
+    const logoSlot = document.querySelector('.connect-logo');
+    if (logoSrc && logoSlot && !logoSlot.firstChild) {
+        logoSlot.innerHTML = logoSrc.outerHTML;
+    }
+    document.getElementById('connect-prompt').style.display = 'flex';
+}
+function hideConnectPrompt() {
+    document.getElementById('connect-prompt').style.display = 'none';
+}
+
+document.getElementById('btn-connect-prompt').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-connect-prompt');
+    btn.textContent = 'Connecting…';
+    btn.disabled = true;
+    await triggerConnect();
+    if (g_cyclesHandle) {
+        hideConnectPrompt();
+    } else {
+        btn.textContent = 'Connect CYCLES Card';
+        btn.disabled = false;
+    }
+});
+
 async function init() {
     // File System Access API is Chromium-only. Hide the entire UI and show
     // a prominent "unsupported" message on Firefox / Safari / mobile.
@@ -2036,18 +2149,19 @@ async function init() {
         `;
         return;
     }
-    showConnectButton('Checking for CYCLES card…');
     try {
         const result = await tryAutoConnect();
         if (result === true) {
             setCardStatus('<span class="card-ok"><span class="led green"></span>CYCLES card connected</span>');
             log('CYCLES card connected');
             await refreshUI(true);
+            return;
         }
-        // Any non-true result leaves the connect button visible and clickable
+        // Not auto-connected — show the big connect prompt
+        showConnectPrompt();
     } catch(e) {
         log(`Init error: ${e.message}`);
-        // Button is already showing from showConnectButton above
+        showConnectPrompt();
     }
 }
 
