@@ -380,6 +380,35 @@
             background: var(--border);
         }
 
+        /* Section header with wipe action on the right */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .section-header .section-label {
+            margin-bottom: 0;
+            flex: 1;
+        }
+        .section-wipe {
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: color 0.08s, border-color 0.08s;
+        }
+        .section-wipe:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
         /* ── Slot grid ── */
         #engine-section, #slot-section { margin-top: 64px; margin-bottom: 64px; }
 
@@ -932,13 +961,19 @@
 
 <!-- ── Working Files ──────────────────────────────────────────────────────── -->
 <div id="engine-section">
-    <div class="section-label">Working File</div>
+    <div class="section-header">
+        <div class="section-label">Working File</div>
+        <button class="section-wipe" id="btn-wipe-working" title="Delete 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw">Wipe</button>
+    </div>
     <div id="engine-grid"></div>
 </div>
 
 <!-- ── Memory Slots ───────────────────────────────────────────────────────── -->
 <div id="slot-section">
-    <div class="section-label">Memory Slots</div>
+    <div class="section-header">
+        <div class="section-label">Memory Slots</div>
+        <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Wipe All</button>
+    </div>
     <div id="slot-grid"></div>
 </div>
 
@@ -2110,6 +2145,56 @@ document.getElementById('btn-import').addEventListener('click', async () => {
 document.getElementById('input-wav').addEventListener('change', e => {
     const f = e.target.files[0];
     document.getElementById('import-filename').textContent = f ? f.name : 'Choose WAV or MP3…';
+});
+
+// ── Wipe ──────────────────────────────────────────────────────────────────────
+// File-level deletes only (File System Access API can't format a volume).
+// Working wipe clears all four engine files; slot wipe removes every Mem_NN.raw.
+const WORKING_FILE_NAMES = ['01_Loop.raw', '02_Mix.raw', '03_Dub_A.raw', '03_Dub_B.raw'];
+
+function clearViewerAfterWipe(emptyMsg) {
+    _killSource();
+    g_selection         = null;
+    g_viewerRaw         = null;
+    g_viewerAudioBuf    = null;
+    g_viewerAudioBufRev = null;
+    document.getElementById('viewer-canvas').style.display = 'none';
+    document.getElementById('viewer-footer').style.display = 'none';
+    const emptyEl = document.getElementById('viewer-empty');
+    emptyEl.style.display = '';
+    emptyEl.textContent   = emptyMsg;
+    document.getElementById('btn-play').innerHTML = ICON_PLAY;
+}
+
+document.getElementById('btn-wipe-working').addEventListener('click', async () => {
+    if (!g_cyclesHandle) { log('Card not connected'); return; }
+    if (!confirm('Wipe the working file?\n\nDeletes 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw.\nMemory slots are NOT affected.')) return;
+    let deleted = 0;
+    for (const name of WORKING_FILE_NAMES) {
+        try { await g_cyclesHandle.removeEntry(name); deleted++; } catch { /* missing — fine */ }
+    }
+    if (g_selection && WORKING_FILE_NAMES.includes(g_selection.filename)) {
+        clearViewerAfterWipe('Working file wiped');
+    }
+    log(`Working file wiped (${deleted} deleted)`);
+    await refreshUI();
+});
+
+document.getElementById('btn-wipe-slots').addEventListener('click', async () => {
+    if (!g_memorySlotsHandle) { log('Card not connected'); return; }
+    const slots = await listSlots();
+    if (!slots.length) { log('No memory slots to wipe'); return; }
+    if (!confirm(`Wipe all ${slots.length} memory slot${slots.length > 1 ? 's' : ''}?\n\nThis cannot be undone.`)) return;
+    let deleted = 0;
+    for (const s of slots) {
+        try { await g_memorySlotsHandle.removeEntry(s.filename); deleted++; }
+        catch (e) { log(`Could not delete ${s.filename}: ${e.message}`); }
+    }
+    if (g_selection && /^Mem_\d{2}\.raw$/i.test(g_selection.filename)) {
+        clearViewerAfterWipe('All memory slots wiped');
+    }
+    log(`Memory slots wiped (${deleted} deleted)`);
+    await refreshUI();
 });
 
 // ── Slot stepper ──────────────────────────────────────────────────────────────
