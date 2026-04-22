@@ -1,0 +1,64 @@
+name: Generate stock tracks manifest
+
+# Regenerates Assets/Stock_Tracks/tracks.json whenever the stock-track folder
+# changes. The webapp fetches this static manifest at runtime — no GitHub API
+# calls from the browser, no rate limit.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Assets/Stock_Tracks/**'
+    paths-ignore:
+      - 'Assets/Stock_Tracks/tracks.json'
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # need full history for first-commit dates
+
+      - name: Build tracks.json
+        run: |
+          python3 <<'EOF'
+          import json, subprocess
+          from pathlib import Path
+
+          AUDIO_EXTS = {'.wav', '.mp3', '.flac', '.aif', '.aiff', '.ogg', '.m4a'}
+          folder = Path('Assets/Stock_Tracks')
+
+          tracks = []
+          for f in sorted(folder.iterdir()):
+              if not f.is_file() or f.suffix.lower() not in AUDIO_EXTS:
+                  continue
+              # Earliest "Added" commit for this file = when it was first added.
+              result = subprocess.run(
+                  ['git', 'log', '--diff-filter=A', '--format=%aI', '--', str(f)],
+                  capture_output=True, text=True, check=False,
+              )
+              dates = [d for d in result.stdout.strip().split('\n') if d]
+              tracks.append({'file': f.name, 'addedAt': dates[-1] if dates else None})
+
+          # Sort oldest → newest. Unknown dates sort to the end.
+          tracks.sort(key=lambda t: (t['addedAt'] is None, t['addedAt'] or ''))
+
+          with open(folder / 'tracks.json', 'w') as out:
+              json.dump({'tracks': tracks}, out, indent=2)
+              out.write('\n')
+          EOF
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- Assets/Stock_Tracks/tracks.json; then
+            echo "tracks.json unchanged — nothing to commit"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Assets/Stock_Tracks/tracks.json
+          git commit -m "Auto-update stock tracks manifest"
+          git push
