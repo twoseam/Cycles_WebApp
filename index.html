@@ -626,6 +626,7 @@
         .slot-thumb.empty .fmt-dot  { background: var(--border-light); }
         .slot-thumb.empty .slot-format-left      { color: var(--border-light); }
         .slot-thumb.empty .slot-format-dub.no-dub { color: var(--fg-muted); }
+        .slot-thumb.empty .slot-format-undo.no-undo { color: var(--fg-muted); }
 
         .slot-led {
             position: absolute;
@@ -678,6 +679,8 @@
         }
         .slot-format-dub             { color: #f48107; font-weight: 700; }
         .slot-format-dub.no-dub      { color: var(--border-light); font-weight: 400; }
+        .slot-format-undo            { color: #8a3fc7; font-weight: 700; }
+        .slot-format-undo.no-undo    { color: var(--border-light); font-weight: 400; }
         .slot-format-dots {
             position: relative;
             height: 7px;
@@ -2706,6 +2709,10 @@ async function refreshUI(autoLoad = false) {
             emptyDub.className = 'slot-format-dub no-dub';
             emptyDub.textContent = 'Overdub';
             emptyFmt.appendChild(emptyDub);
+            const emptyUndo = document.createElement('span');
+            emptyUndo.className = 'slot-format-undo no-undo';
+            emptyUndo.textContent = 'Undo';
+            emptyFmt.appendChild(emptyUndo);
             emptyThumb.appendChild(emptyFmt);
             // Clicking an empty placeholder sets that slot number as the
             // Import target — quick way to "pick up" a gap for import.
@@ -2803,11 +2810,20 @@ async function refreshUI(autoLoad = false) {
         fmtRow.appendChild(fmtLeft);
 
         const shortCapSec = s.isMono ? 180 : 90;
-        const canDub = !s.isStream && s.durationSec <= shortCapSec;
+        // Overdub: any non-stream slot supports overdub (destructive on
+        // long-mode, with undo on short-mode). Undo: only short-mode slots
+        // preserve an undo snapshot. v1.6.3: long-mono (3:00–6:00) now has
+        // destructive overdub but no undo, so the two markers can diverge.
+        const canDub  = !s.isStream;
+        const canUndo = !s.isStream && s.durationSec <= shortCapSec;
         const dubLabel = document.createElement('span');
         dubLabel.className = `slot-format-dub ${canDub ? '' : 'no-dub'}`;
         dubLabel.textContent = 'Overdub';
         fmtRow.appendChild(dubLabel);
+        const undoLabel = document.createElement('span');
+        undoLabel.className = `slot-format-undo ${canUndo ? '' : 'no-undo'}`;
+        undoLabel.textContent = 'Undo';
+        fmtRow.appendChild(undoLabel);
 
         thumb.appendChild(fmtRow);
 
@@ -2973,8 +2989,10 @@ function buildImportOptions(frames) {
         dub:   true,
         process: { mono: false, trimFrames: LIVE_STEREO_SHORT_FRAMES },
     });
-    // B1 — mono SDRAM-loaded, short-mode cap (3:00), with overdub. Trims
-    //      only when file exceeds the mono-short cap.
+    // B1 — mono SDRAM-loaded, short-mode cap (3:00), with overdub + undo.
+    //      Trims when file exceeds the mono-short cap. Keeps the undo-capable
+    //      slot as an explicit option even when B2 could hold the full length,
+    //      so the user can choose "give up length to keep undo."
     {
         const outFrames = Math.min(frames, LIVE_MONO_SHORT_FRAMES);
         opts.push({
@@ -2983,6 +3001,19 @@ function buildImportOptions(frames) {
             dur:   mmss(outFrames / SAMPLE_RATE),
             dub:   true,
             process: { mono: true, trimFrames: outFrames },
+        });
+    }
+    // B2 — mono SDRAM-loaded, long-mode cap (6:00), destructive overdub.
+    //      v1.6.3+. Fires only when the file exceeds the mono-short cap but
+    //      still fits in the mono-long cap. Gives up undo in exchange for
+    //      keeping full length. Files > 6:00 fall through to B3 (stream).
+    if (frames > LIVE_MONO_SHORT_FRAMES && frames <= LIVE_MONO_LONG_FRAMES) {
+        opts.push({
+            group: 'mono', id: 'B2',
+            title: 'Full length',
+            dur:   mmss(frames / SAMPLE_RATE),
+            dub:   false,
+            process: { mono: true, trimFrames: frames },
         });
     }
     // C1 — stereo full-length via SD streaming. Surfaced under the stereo
@@ -3000,9 +3031,10 @@ function buildImportOptions(frames) {
         });
     }
     // B3 — mono full-length via SD streaming. Mirrors C1 for the mono group.
-    //      No overdub (streams are read-only), so nothing to trim. Covers any
-    //      mono file that exceeds B1's 3:00 overdub cap.
-    if (frames > LIVE_MONO_SHORT_FRAMES) {
+    //      No overdub (streams are read-only). Only offered when the file
+    //      exceeds B2's 6:00 SDRAM cap — for files ≤ 6:00, B2 strictly
+    //      dominates (same length, overdub-capable even if destructive).
+    if (frames > LIVE_MONO_LONG_FRAMES) {
         opts.push({
             group: 'mono', id: 'B3',
             title: 'Full length',
