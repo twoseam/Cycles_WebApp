@@ -902,6 +902,7 @@
             color: var(--fg-muted);
             text-align: center;
             min-height: 1em;
+            margin-top: 8px;
         }
 
         /* ── Slot knob ── */
@@ -1039,9 +1040,9 @@
             letter-spacing: 0.14em;
             padding: 14px 28px;
             margin: 6px 0 22px;
-            background: var(--bg-raised);
-            border: 1px solid var(--border);
-            color: var(--fg);
+            background: var(--brand-blue);
+            border: 1px solid var(--brand-blue);
+            color: #fff;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow:
@@ -1052,7 +1053,10 @@
                 5px 6px 4px rgba(0,0,0,0.14);
             transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
         }
-        #btn-connect-prompt:hover { background: var(--bg); border-color: var(--border-dark); }
+        #btn-connect-prompt:hover {
+            background:   color-mix(in srgb, var(--brand-blue), black 15%);
+            border-color: color-mix(in srgb, var(--brand-blue), black 15%);
+        }
         #btn-connect-prompt:active {
             transform: translate(4px, 4px);
             box-shadow: 0 0 0 transparent;
@@ -1287,6 +1291,18 @@
         /* Cancel (.neutral) uses the base .modal-btn style unchanged —
            default border and text, no red accent. */
 
+        /* ── Draggable popup titles (drag handle for the card) ── */
+        #connect-card h1,
+        #import-popup h1,
+        #modal-title {
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        #connect-card h1:active,
+        #import-popup h1:active,
+        #modal-title:active { cursor: grabbing; }
+
         /* ── Unsupported-browser state ── */
         #unsupported {
             max-width: 520px;
@@ -1475,10 +1491,10 @@
 <div id="connect-prompt" style="display:none">
     <div id="connect-card">
         <div class="connect-logo"></div>
-        <h1>Connect your CYCLES card</h1>
-        <p>Insert your SD card, then click the button below and pick the card's root folder to grant this page access.</p>
+        <h1>MicroSD Card Missing</h1>
+        <p>Insert your MicroSD card, then click the button.<br>This will give the app access to your loopers' memory bank.</p>
         <button id="btn-connect-prompt">Connect CYCLES Card</button>
-        <p class="connect-note">Your card stays on your computer — nothing is uploaded.</p>
+        <p class="connect-note">Cycles Looper Workstation Memory Manager</p>
     </div>
 </div>
 
@@ -1927,8 +1943,17 @@ async function loadHandle() {
 
 // ── SD Card ───────────────────────────────────────────────────────────────────
 async function mountFromRoot(sdRoot, { allowCreate = false } = {}) {
-    if (sdRoot.name.toUpperCase() !== 'CYCLES')
-        log(`Warning: volume "${sdRoot.name}" — expected "CYCLES"`);
+    const isCyclesVolume = sdRoot.name.toUpperCase() === 'CYCLES';
+    // Fresh mounts: reject wrong-card picks up front so the create-folder
+    // prompt only fires on a real CYCLES card that's missing its subfolder.
+    if (!isCyclesVolume && allowCreate) {
+        await dialogAlert(
+            'Invalid CYCLES card',
+            `"${sdRoot.name}" isn't a CYCLES card.\n\nBe sure your card is named CYCLES and is formatted as FAT32 file system. Refresh this page and try again.`,
+        );
+        throw new Error(`Wrong card: "${sdRoot.name}" — expected FAT32 volume named CYCLES`);
+    }
+    if (!isCyclesVolume) log(`Warning: volume "${sdRoot.name}" — expected "CYCLES"`);
     try {
         g_cyclesHandle = await sdRoot.getDirectoryHandle('Cycles', { create: false });
     } catch {
@@ -1936,7 +1961,7 @@ async function mountFromRoot(sdRoot, { allowCreate = false } = {}) {
         const proceed = await dialogConfirm(
             'Create CYCLES folder?',
             `No "Cycles" folder found on "${sdRoot.name}".\n\nCreate the folder structure (Cycles/ and Cycles/Memory_Slots/) so this card works with the pedal?`,
-            { okLabel: 'Create', okVariant: 'primary' },
+            { okLabel: 'Create', okVariant: 'danger' },
         );
         if (!proceed) throw new Error(`No "Cycles" folder on "${sdRoot.name}". Wrong card?`);
         g_cyclesHandle = await sdRoot.getDirectoryHandle('Cycles', { create: true });
@@ -3443,7 +3468,11 @@ async function triggerConnect() {
             const perm = await stored.requestPermission({ mode: 'readwrite' });
             if (perm === 'granted') {
                 try {
-                    await mountFromRoot(stored, { allowCreate: true });
+                    // Auto-reconnect: read-only mount. If the card isn't
+                    // inserted (or the subfolder is gone), this throws and
+                    // we fall through to the picker — never silently prompt
+                    // "Create Cycles folder?" off a stale stored handle.
+                    await mountFromRoot(stored, { allowCreate: false });
                     setCardStatus('<span class="card-ok"><span class="led green"></span>CYCLES card connected</span><button id="btn-change">Change</button>');
                     document.getElementById('btn-change').addEventListener('click', async () => { await pickCard(); await refreshUI(); setCardStatus('<span class="card-ok"><span class="led green"></span>CYCLES card connected</span>'); });
                     log('CYCLES card connected');
@@ -3561,6 +3590,56 @@ async function init() {
     });
 })();
 */
+
+// ── Draggable popup cards ──────────────────────────────────────────────────
+// Grab the card's title to drag. Position resets when the overlay hides so
+// the next open is centered.
+function makeDraggable(card, handle, overlay) {
+    let startX = 0, startY = 0, baseX = 0, baseY = 0, dx = 0, dy = 0;
+    let dragging = false;
+
+    handle.addEventListener('pointerdown', (e) => {
+        if (e.button !== undefined && e.button !== 0) return;
+        dragging = true;
+        startX = e.clientX; startY = e.clientY;
+        baseX = dx; baseY = dy;
+        try { handle.setPointerCapture(e.pointerId); } catch {}
+        e.preventDefault();
+    });
+    handle.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        dx = baseX + (e.clientX - startX);
+        dy = baseY + (e.clientY - startY);
+        card.style.transform = `translate(${dx}px, ${dy}px)`;
+    });
+    const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        try { handle.releasePointerCapture(e.pointerId); } catch {}
+    };
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+
+    new MutationObserver(() => {
+        const d = overlay.style.display;
+        if (d === 'none' || d === '') {
+            dx = 0; dy = 0;
+            card.style.transform = '';
+        }
+    }).observe(overlay, { attributes: true, attributeFilter: ['style'] });
+}
+
+(function initDraggablePopups() {
+    const wire = (overlayId, cardId, handleSel) => {
+        const overlay = document.getElementById(overlayId);
+        const card    = document.getElementById(cardId);
+        const handle  = card && card.querySelector(handleSel);
+        if (overlay && card && handle) makeDraggable(card, handle, overlay);
+    };
+    wire('connect-prompt', 'connect-card',      'h1');
+    wire('import-popup',   'import-popup-card', 'h1');
+    wire('modal-dialog',   'modal-card',        '#modal-title');
+})();
 
 init();
 </script>
