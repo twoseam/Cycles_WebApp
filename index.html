@@ -411,15 +411,16 @@
             font-weight: 700;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: var(--fg-muted);
+            color: var(--accent);
             background: var(--bg-raised);
-            border: 1px solid var(--border);
+            border: 1px solid var(--accent);
             padding: 4px 10px;
             cursor: pointer;
-            transition: color 0.08s, border-color 0.08s;
+            transition: background 0.08s, color 0.08s;
         }
         .section-wipe:hover {
-            color: var(--accent);
+            color: #fff;
+            background: var(--accent);
             border-color: var(--accent);
         }
 
@@ -2897,6 +2898,36 @@ function askImportOption({ title, fileName, durationSec, frames, initialSlot }) 
     });
 }
 
+// Hold-to-repeat helper for stepper buttons. First press fires immediately,
+// then after a 400 ms delay auto-repeats at 150 ms, accelerating to 80 ms
+// after 5 ticks and 40 ms after 10 ticks. Installs mouse + touch listeners.
+function attachHoldRepeat(btn, fn) {
+    let timer = null;
+    let ticks = 0;
+    function tick() {
+        fn();
+        ticks++;
+        const next = ticks < 5 ? 150 : ticks < 10 ? 80 : 40;
+        timer = setTimeout(tick, next);
+    }
+    function start(e) {
+        e.preventDefault();
+        if (timer !== null) return;  // already held
+        fn();
+        ticks = 0;
+        timer = setTimeout(tick, 400);
+    }
+    function stop() {
+        if (timer !== null) { clearTimeout(timer); timer = null; }
+    }
+    btn.addEventListener('mousedown',  start);
+    btn.addEventListener('mouseup',    stop);
+    btn.addEventListener('mouseleave', stop);
+    btn.addEventListener('touchstart', start, { passive: false });
+    btn.addEventListener('touchend',   stop);
+    btn.addEventListener('touchcancel', stop);
+}
+
 // ── Popup slot stepper ───────────────────────────────────────────────────────
 // Same wrap behavior as the Import panel stepper; see initSlotStepper.
 (function initPopupSlotStepper() {
@@ -2910,8 +2941,8 @@ function askImportOption({ title, fileName, durationSec, frames, initialSlot }) 
         const next = cur + delta;
         setSlot(next < 1 ? 99 : next > 99 ? 1 : next);
     }
-    document.getElementById('popup-slot-up').addEventListener('click',   () => stepSlot(+1));
-    document.getElementById('popup-slot-down').addEventListener('click', () => stepSlot(-1));
+    attachHoldRepeat(document.getElementById('popup-slot-up'),   () => stepSlot(+1));
+    attachHoldRepeat(document.getElementById('popup-slot-down'), () => stepSlot(-1));
     valEl.addEventListener('change', () => setSlot(parseInt(valEl.value) || 1));
 })();
 
@@ -3124,10 +3155,16 @@ async function renderStockTracks() {
 
         const ext = (track.file.match(/\.([^.]+)$/)?.[1] || 'file').toUpperCase();
         const dur = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
-        const meta = document.createElement('div');
-        meta.className = 'stock-meta';
-        meta.textContent = dur ? `${dur} · ${ext}` : ext;
-        thumb.appendChild(meta);
+        if (dur) {
+            const durEl = document.createElement('div');
+            durEl.className = 'stock-meta';
+            durEl.textContent = dur;
+            thumb.appendChild(durEl);
+        }
+        const extEl = document.createElement('div');
+        extEl.className = 'stock-meta';
+        extEl.textContent = ext;
+        thumb.appendChild(extEl);
 
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
         grid.appendChild(thumb);
@@ -3192,8 +3229,8 @@ document.getElementById('btn-wipe-slots').addEventListener('click', async () => 
         setSlot(next < 1 ? 99 : next > 99 ? 1 : next);
     }
 
-    document.getElementById('slot-up').addEventListener('click',   () => stepSlot(+1));
-    document.getElementById('slot-down').addEventListener('click', () => stepSlot(-1));
+    attachHoldRepeat(document.getElementById('slot-up'),   () => stepSlot(+1));
+    attachHoldRepeat(document.getElementById('slot-down'), () => stepSlot(-1));
 
     valEl.addEventListener('input', () => {
         const v = parseInt(valEl.value, 10);
