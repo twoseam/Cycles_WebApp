@@ -1,6 +1,6 @@
 {
   "tracks": [
-    { "file": "Weezer - Say it Ain't So.wav", "addedAt": "2026-04-22T08:05:54-05:00" },
-    { "file": "Michael Martin - Test Song.wav", "addedAt": "2026-04-22T09:01:19-05:00" }
+    { "file": "Weezer - Say it Ain't So.wav", "addedAt": "2026-04-22T08:05:54-05:00", "durationSec": 269.57 },
+    { "file": "Michael Martin - Test Song.wav", "addedAt": "2026-04-22T09:01:19-05:00", "durationSec": 269.57 }
   ]
 }

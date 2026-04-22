@@ -25,11 +25,21 @@ jobs:
       - name: Build tracks.json
         run: |
           python3 <<'EOF'
-          import json, subprocess
+          import json, subprocess, wave
           from pathlib import Path
 
           AUDIO_EXTS = {'.wav', '.mp3', '.flac', '.aif', '.aiff', '.ogg', '.m4a'}
           folder = Path('Assets/Stock_Tracks')
+
+          def duration_sec(path):
+              # WAV header read — no decode needed. Other formats: null for now.
+              if path.suffix.lower() == '.wav':
+                  try:
+                      with wave.open(str(path), 'rb') as w:
+                          return round(w.getnframes() / w.getframerate(), 2)
+                  except Exception:
+                      return None
+              return None
 
           tracks = []
           for f in sorted(folder.iterdir()):
@@ -41,7 +51,11 @@ jobs:
                   capture_output=True, text=True, check=False,
               )
               dates = [d for d in result.stdout.strip().split('\n') if d]
-              tracks.append({'file': f.name, 'addedAt': dates[-1] if dates else None})
+              tracks.append({
+                  'file': f.name,
+                  'addedAt': dates[-1] if dates else None,
+                  'durationSec': duration_sec(f),
+              })
 
           # Sort oldest → newest. Unknown dates sort to the end.
           tracks.sort(key=lambda t: (t['addedAt'] is None, t['addedAt'] or ''))

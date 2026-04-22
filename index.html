@@ -173,7 +173,7 @@
         #viewer {
             background: var(--bg-screen);
             border: 2px solid var(--border-dark);
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             position: relative;
         }
 
@@ -181,7 +181,8 @@
            Diagonal sheen + inset highlight/shadow for a pane of glass on top
            of the inset display. pointer-events:none so canvas drags pass through. */
         #viewer-counter::after,
-        #slot-display::after {
+        #slot-display::after,
+        #popup-slot-display::after {
             content: '';
             position: absolute;
             inset: 0;
@@ -200,7 +201,8 @@
         }
         /* Hard-edged top reflection band on the 7-seg displays */
         #viewer-counter::before,
-        #slot-display::before {
+        #slot-display::before,
+        #popup-slot-display::before {
             content: '';
             position: absolute;
             top: 1px;
@@ -283,8 +285,13 @@
         #transport {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
-            margin-bottom: 14px;
+        }
+        #transport-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         #transport button:not(#btn-export) { width: 44px; height: 44px; padding: 0; font-size: 16px; letter-spacing: 0; border-radius: 0; }
         #btn-loop { width: 44px; padding: 0; }
@@ -328,15 +335,17 @@
             display: inline-block;
             background: #23242c;
             border: 1px solid #2a2c30;
-            padding: 12px 20px;
-            height: 44px;
+            padding: 14px 22px;
+            height: 52px;
             box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
             white-space: nowrap;
         }
 
         /* "All-8s" ghost backdrop — simulates unlit 7-seg segments so the off
            bars are faintly visible behind the lit digits. Real hardware
-           displays show this because every segment is a discrete LED. */
+           displays show this because every segment is a discrete LED.
+           Defaults to red-ghost for slot steppers; viewer-counter overrides
+           to green to match its lit color. */
         .seg-ghost {
             font-family: 'DSEG7 Classic', 'Courier New', monospace;
             font-weight: 700;
@@ -347,20 +356,24 @@
             pointer-events: none;
             display: block;
         }
+        #viewer-counter .seg-ghost {
+            font-size: 24px;
+            color: rgba(68,221,34,0.22);
+        }
 
-        /* Lit segments — bright red with a soft red bloom to simulate LED glow */
+        /* Lit segments — bright green with a soft green bloom (LED glow). */
         .seg-val {
             font-family: 'DSEG7 Classic', 'Courier New', monospace;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 24px;
             letter-spacing: 2px;
-            color: #ff4242;
+            color: #44dd22;
             text-shadow:
-                0 0 2px rgba(255,80,80,0.4),
-                0 0 5px rgba(255,50,50,0.2);
+                0 0 2px rgba(80,255,80,0.4),
+                0 0 6px rgba(50,220,50,0.25);
             position: absolute;
-            top: 12px;
-            left: 20px;
+            top: 14px;
+            left: 22px;
         }
 
         /* ── Section label — engraved/stencil style ── */
@@ -382,16 +395,15 @@
             background: var(--border);
         }
 
-        /* Section header with wipe action on the right */
+        /* Section header — used for module action row (e.g. Delete All Slots).
+           The module name lives in .module-code now, so this row just right-
+           aligns any action buttons. */
         .section-header {
             display: flex;
+            justify-content: flex-end;
             align-items: center;
             gap: 10px;
             margin-bottom: 8px;
-        }
-        .section-header .section-label {
-            margin-bottom: 0;
-            flex: 1;
         }
         .section-wipe {
             font-family: inherit;
@@ -411,15 +423,51 @@
             border-color: var(--accent);
         }
 
+        /* ── Apollo-era rack modules ──
+           Each section gets a framed panel treatment: darker outer border,
+           four corner "screws" painted via radial gradients, and a small
+           module-code label hanging off the top edge. Not skeuomorphic —
+           graphic-inspired. */
+        .module {
+            position: relative;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-dark);
+            padding: 24px 22px 26px;
+            margin: 24px 0;
+        }
+        .module::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 10px 10px, var(--border-dark) 2.5px, transparent 3px),
+                radial-gradient(circle at calc(100% - 10px) 10px, var(--border-dark) 2.5px, transparent 3px),
+                radial-gradient(circle at 10px calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px),
+                radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px);
+        }
+        .module-code {
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            background: var(--bg-panel);
+            padding: 0 10px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+        }
+
         /* ── Slot grid ── */
-        #slot-section, #stock-section { margin-top: 64px; margin-bottom: 64px; }
 
         #stock-grid {
             display: grid;
             gap: 5px;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(5, 1fr);
         }
-        @media (max-width: 600px) { #stock-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px) { #stock-grid { grid-template-columns: repeat(3, 1fr); } }
 
         .stock-thumb {
             background: var(--bg-raised);
@@ -688,7 +736,6 @@
         .pedal-opt:hover:not(.active) { color: var(--fg); }
 
         /* ── Import panel ── */
-        #import-section { margin-bottom: 16px; }
 
         #import-panel {
             display: flex;
@@ -779,18 +826,21 @@
         }
 
         /* ── Slot knob ── */
-        #slot-stepper {
+        #slot-stepper,
+        #popup-slot-stepper {
             display: flex;
             flex-direction: row;
             align-items: stretch;
             gap: 4px;
         }
-        #slot-arrows {
+        #slot-arrows,
+        #popup-slot-arrows {
             display: flex;
             flex-direction: column;
             gap: 3px;
         }
-        #slot-stepper button {
+        #slot-stepper button,
+        #popup-slot-stepper button {
             padding: 0;
             width: 50px;
             flex: 1;
@@ -800,7 +850,8 @@
             letter-spacing: 0;
         }
 
-        #slot-display {
+        #slot-display,
+        #popup-slot-display {
             position: relative;
             background: #23242c;
             border: 1px solid #2a2c30;
@@ -808,9 +859,11 @@
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
         }
 
-        #slot-display .seg-ghost { font-size: 18px; display: block; text-align: center; letter-spacing: 2px; }
+        #slot-display .seg-ghost,
+        #popup-slot-display .seg-ghost { font-size: 18px; display: block; text-align: center; letter-spacing: 2px; }
 
-        #slot-knob-val {
+        #slot-knob-val,
+        #popup-slot-val {
             font-family: 'DSEG7 Classic', 'Courier New', monospace;
             font-weight: 700;
             font-size: 18px;
@@ -832,7 +885,9 @@
             outline: none;
         }
         #slot-knob-val::-webkit-outer-spin-button,
-        #slot-knob-val::-webkit-inner-spin-button { -webkit-appearance: none; }
+        #slot-knob-val::-webkit-inner-spin-button,
+        #popup-slot-val::-webkit-outer-spin-button,
+        #popup-slot-val::-webkit-inner-spin-button { -webkit-appearance: none; }
 
         /* ── Mobile / narrow-window layout (under 600 px) ──
            File System Access API doesn't actually work on mobile browsers, but
@@ -847,10 +902,9 @@
             #transport { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
             #transport .spacer { display: none; }
             #transport button:not(#btn-export) { width: 40px; height: 40px; }
-            #viewer-counter { height: 40px; padding: 10px 16px; }
-            .seg-val { top: 10px; left: 16px; }
+            #viewer-counter { height: 46px; padding: 12px 18px; }
+            .seg-val { top: 12px; left: 18px; }
             #btn-export { height: 40px; margin-left: auto; }
-            #slot-section, #stock-section { margin-top: 36px; margin-bottom: 36px; }
             #import-panel { flex-direction: column; }
             .import-cell { border-right: none; border-bottom: 1px solid var(--border); }
             .import-cell.action { border-bottom: none; }
@@ -971,6 +1025,19 @@
             color: var(--fg-dim);
             margin-bottom: 20px;
             word-break: break-all;
+        }
+        #import-popup-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+        #import-popup-slot label {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
         }
         #import-popup .popup-group-label {
             font-size: 10px;
@@ -1219,88 +1286,61 @@
     </div>
 </div>
 
-<!-- ── Pedal Controls ─────────────────────────────────────────────────────── -->
-<div id="pedal-section">
-    <div id="pedal-panel">
-        <div class="pedal-control">
-            <div class="pedal-control-label">Speed</div>
-            <div class="pedal-toggle">
-                <button class="pedal-opt"        data-speed="0.5">0.5×</button>
-                <button class="pedal-opt active" data-speed="1">1×</button>
-                <button class="pedal-opt"        data-speed="2">2×</button>
+<!-- ── Playback (pedal controls + waveform + transport) ────────────────────── -->
+<div id="playback-section" class="module">
+    <div class="module-code">Playback</div>
+
+    <div id="pedal-section">
+        <div id="pedal-panel">
+            <div class="pedal-control">
+                <div class="pedal-control-label">Speed</div>
+                <div class="pedal-toggle">
+                    <button class="pedal-opt"        data-speed="0.5">0.5×</button>
+                    <button class="pedal-opt active" data-speed="1">1×</button>
+                    <button class="pedal-opt"        data-speed="2">2×</button>
+                </div>
+            </div>
+            <div class="pedal-control">
+                <div class="pedal-control-label">Direction</div>
+                <div class="pedal-toggle">
+                    <button class="pedal-opt active" data-dir="fwd">FWD</button>
+                    <button class="pedal-opt"        data-dir="rev">REV</button>
+                </div>
+            </div>
+            <div class="pedal-control pedal-control-right">
+                <div class="pedal-control-label">1-Shot</div>
+                <button id="btn-oneshot" class="pedal-trigger" title="One-shot"><svg viewBox="0 0 12 14" width="11" height="12" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
             </div>
         </div>
-        <div class="pedal-control">
-            <div class="pedal-control-label">Direction</div>
-            <div class="pedal-toggle">
-                <button class="pedal-opt active" data-dir="fwd">FWD</button>
-                <button class="pedal-opt"        data-dir="rev">REV</button>
-            </div>
+    </div>
+
+    <div id="viewer">
+        <canvas id="viewer-canvas" style="display:none"></canvas>
+        <div id="viewer-empty">Select a memory slot</div>
+        <div id="viewer-footer" style="display:none">
+            <span id="viewer-file-label"></span>
+            <span id="viewer-zoom-label">Zoom</span>
+            <input type="range" id="viewer-zoom" min="1" max="300" value="5" step="1">
+            <span id="viewer-zoom-val">5s</span>
         </div>
-        <div class="pedal-control pedal-control-right">
-            <div class="pedal-control-label">1-Shot</div>
-            <button id="btn-oneshot" class="pedal-trigger" title="One-shot"><svg viewBox="0 0 12 14" width="11" height="12" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
+    </div>
+
+    <div id="transport">
+        <div id="viewer-counter"><span class="seg-ghost">8:88</span><span class="seg-val" id="seg-val">0:00</span></div>
+        <div id="transport-buttons">
+            <button id="btn-prev"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><rect x="0" y="0" width="2.5" height="14"/><polygon points="18,0 18,14 5,7"/></svg></button>
+            <button id="btn-play"><svg viewBox="0 0 12 14" width="12" height="13" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
+            <button id="btn-stop"><svg viewBox="0 0 13 13" width="12" height="12" fill="currentColor"><rect x="0" y="0" width="13" height="13"/></svg></button>
+            <button id="btn-next"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><polygon points="0,0 13,7 0,14"/><rect x="15.5" y="0" width="2.5" height="14"/></svg></button>
+            <button id="btn-loop"><svg viewBox="0 0 24 16" width="22" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3,11 L3,5 Q3,3 5,3 L18,3"/><polyline points="15,0.5 19,3 15,5.5"/><path d="M21,5 L21,11 Q21,13 19,13 L6,13"/><polyline points="9,10.5 5,13 9,15.5"/></svg></button>
         </div>
+        <button id="btn-export">Export</button>
     </div>
 </div>
-
-<!-- ── Waveform Viewer ─────────────────────────────────────────────────────── -->
-<div id="viewer">
-    <canvas id="viewer-canvas" style="display:none"></canvas>
-    <div id="viewer-empty">Select a memory slot</div>
-    <div id="viewer-footer" style="display:none">
-        <span id="viewer-file-label"></span>
-        <span id="viewer-zoom-label">Zoom</span>
-        <input type="range" id="viewer-zoom" min="1" max="300" value="5" step="1">
-        <span id="viewer-zoom-val">5s</span>
-    </div>
-</div>
-
-<!-- ── Transport ──────────────────────────────────────────────────────────── -->
-<div id="transport">
-    <button id="btn-prev"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><rect x="0" y="0" width="2.5" height="14"/><polygon points="18,0 18,14 5,7"/></svg></button>
-    <button id="btn-play"><svg viewBox="0 0 12 14" width="12" height="13" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
-    <button id="btn-stop"><svg viewBox="0 0 13 13" width="12" height="12" fill="currentColor"><rect x="0" y="0" width="13" height="13"/></svg></button>
-    <button id="btn-next"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><polygon points="0,0 13,7 0,14"/><rect x="15.5" y="0" width="2.5" height="14"/></svg></button>
-    <button id="btn-loop"><svg viewBox="0 0 24 16" width="22" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3,11 L3,5 Q3,3 5,3 L18,3"/><polyline points="15,0.5 19,3 15,5.5"/><path d="M21,5 L21,11 Q21,13 19,13 L6,13"/><polyline points="9,10.5 5,13 9,15.5"/></svg></button>
-    <div class="spacer"></div>
-    <div id="viewer-counter"><span class="seg-ghost">8:88</span><span class="seg-val" id="seg-val">0:00</span></div>
-    <button id="btn-export">Export</button>
-</div>
-
-<!-- ── Memory Slots ───────────────────────────────────────────────────────── -->
-<div id="slot-section">
-    <div class="section-header">
-        <div class="section-label">Memory Slots</div>
-        <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
-    </div>
-    <div id="slot-grid"></div>
-</div>
-
-<!-- ── Stock Music ────────────────────────────────────────────────────────── -->
-<!-- Stock tracks are listed in Assets/Stock_Tracks/tracks.json — auto-
-     regenerated by a GitHub Action when files land in that folder. The inline
-     manifest below is only used as a last-resort fallback (e.g. local file://
-     with no network). -->
-<script id="stock-tracks-manifest" type="application/json">
-{
-    "tracks": [
-        { "file": "Weezer - Say it Ain't So.wav" },
-        { "file": "Michael Martin - Test Song.wav" }
-    ]
-}
-</script>
-<div id="stock-section">
-    <div class="section-header">
-        <div class="section-label">Stock Music</div>
-    </div>
-    <div id="stock-grid"></div>
-</div>
-
 
 <!-- ── Import ─────────────────────────────────────────────────────────────── -->
-<div id="import-section">
-    <div class="section-label">Import</div>
+<div id="import-section" class="module">
+    <div class="module-code">Import</div>
     <div id="import-panel">
         <div class="import-cell" id="slot-cell">
             <div class="import-cell-label">Slot</div>
@@ -1328,6 +1368,33 @@
     </div>
 </div>
 
+<!-- ── Memory Slots ───────────────────────────────────────────────────────── -->
+<div id="slot-section" class="module">
+    <div class="module-code">Memory Slots</div>
+    <div class="section-header">
+        <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
+    </div>
+    <div id="slot-grid"></div>
+</div>
+
+<!-- ── Stock Music ────────────────────────────────────────────────────────── -->
+<!-- Stock tracks are listed in Assets/Stock_Tracks/tracks.json — auto-
+     regenerated by a GitHub Action when files land in that folder. The inline
+     manifest below is only used as a last-resort fallback (e.g. local file://
+     with no network). -->
+<script id="stock-tracks-manifest" type="application/json">
+{
+    "tracks": [
+        { "file": "Weezer - Say it Ain't So.wav", "durationSec": 269.57 },
+        { "file": "Michael Martin - Test Song.wav", "durationSec": 269.57 }
+    ]
+}
+</script>
+<div id="stock-section" class="module">
+    <div class="module-code">Stock Music</div>
+    <div id="stock-grid"></div>
+</div>
+
 <!-- ── Log ────────────────────────────────────────────────────────────────── -->
 <pre id="log"></pre>
 
@@ -1342,11 +1409,21 @@
     </div>
 </div>
 
-<!-- ── Import popup (shown when imported file exceeds 1:30 stereo cap) ───── -->
+<!-- ── Import popup (format + slot selector; also used for stock tracks) ──── -->
 <div id="import-popup">
     <div id="import-popup-card">
-        <h1>Track too long for default import</h1>
+        <h1 id="import-popup-title">Track too long for default import</h1>
         <p class="popup-sub" id="import-popup-sub"><!-- filename + duration --></p>
+        <div id="import-popup-slot">
+            <label>Target slot</label>
+            <div id="popup-slot-stepper">
+                <div id="popup-slot-display"><span class="seg-ghost">88</span><input id="popup-slot-val" type="number" min="1" max="99" value="1"></div>
+                <div id="popup-slot-arrows">
+                    <button id="popup-slot-up">▲</button>
+                    <button id="popup-slot-down">▼</button>
+                </div>
+            </div>
+        </div>
         <div id="import-popup-options"><!-- rendered dynamically --></div>
         <button id="btn-import-cancel">Cancel</button>
     </div>
@@ -2679,6 +2756,27 @@ function buildImportOptions(frames) {
     const opts = [];
     const mmss = formatDurMSS;
 
+    // File already fits the 1:30 stereo-short cap — no trimming needed.
+    // Present the two "default" options (stereo-with-dub and mono-with-dub)
+    // so the stock-track dialog always has something to show.
+    if (frames <= LIVE_STEREO_SHORT_FRAMES) {
+        opts.push({
+            group: 'stereo', id: 'A2',
+            title: 'Full length',
+            dur:   mmss(frames / SAMPLE_RATE),
+            dub:   true,
+            process: { mono: false, trimFrames: frames },
+        });
+        opts.push({
+            group: 'mono', id: 'B1',
+            title: 'Full length',
+            dur:   mmss(frames / SAMPLE_RATE),
+            dub:   true,
+            process: { mono: true, trimFrames: frames },
+        });
+        return opts;
+    }
+
     // A1 — stereo SDRAM-loaded, full length, no overdub. Hidden when file
     //      exceeds the 3:00 SDRAM cap: C1 (stream) covers that case without
     //      trimming, so A1 would be strictly worse.
@@ -2741,22 +2839,32 @@ function buildImportOptions(frames) {
     return opts;
 }
 
-// Show the popup, render options, resolve with user's chosen option or
-// null on cancel. Popup is modal — the rest of the UI stays live but the
-// backdrop blocks clicks.
-function askImportOption(fileName, durationSec, frames) {
+// Show the popup, render options + slot selector, resolve with {slot, option}
+// on confirm or null on cancel. Popup is modal — backdrop blocks clicks.
+// Used by both the normal Import flow (when the file exceeds the 1:30 cap)
+// and the Stock Music flow (always shown on track click).
+function askImportOption({ title, fileName, durationSec, frames, initialSlot }) {
     return new Promise(resolve => {
         const popup    = document.getElementById('import-popup');
+        const titleEl  = document.getElementById('import-popup-title');
         const subEl    = document.getElementById('import-popup-sub');
         const listEl   = document.getElementById('import-popup-options');
         const cancelEl = document.getElementById('btn-import-cancel');
+        const slotInp  = document.getElementById('popup-slot-val');
 
-        subEl.textContent = `${fileName} — ${formatDurMSS(durationSec)}`;
+        titleEl.textContent = title || 'Choose import format';
+        subEl.textContent   = `${fileName} — ${formatDurMSS(durationSec)}`;
         listEl.innerHTML = '';
+        slotInp.value = String(Math.max(1, Math.min(99, initialSlot || 1))).padStart(2, '0');
 
         const opts = buildImportOptions(frames);
         const stereoOpts = opts.filter(o => o.group === 'stereo');
         const monoOpts   = opts.filter(o => o.group === 'mono');
+
+        const readSlot = () => {
+            const v = parseInt(slotInp.value, 10);
+            return (v >= 1 && v <= 99) ? v : 1;
+        };
 
         const renderGroup = (label, groupOpts) => {
             if (!groupOpts.length) return;
@@ -2767,14 +2875,12 @@ function askImportOption(fileName, durationSec, frames) {
             for (const opt of groupOpts) {
                 const btn = document.createElement('button');
                 btn.className = 'popup-opt';
-                // Button shows title + overdub pill. Duration is implied by
-                // the title ("Trim to 1:30" / "Full length — matches subtitle").
                 btn.innerHTML = `
                     <div class="popup-opt-row">
                         <span class="popup-opt-title">${opt.title}</span>
                         <span class="popup-opt-pill ${opt.dub ? 'dub' : 'no-dub'}">${opt.dub ? 'With overdub' : 'No overdub'}</span>
                     </div>`;
-                btn.addEventListener('click', () => { cleanup(); resolve(opt); });
+                btn.addEventListener('click', () => { cleanup(); resolve({ slot: readSlot(), option: opt }); });
                 listEl.appendChild(btn);
             }
         };
@@ -2789,6 +2895,76 @@ function askImportOption(fileName, durationSec, frames) {
         cancelEl.addEventListener('click', onCancel);
         popup.style.display = 'flex';
     });
+}
+
+// ── Popup slot stepper ───────────────────────────────────────────────────────
+// Same wrap behavior as the Import panel stepper; see initSlotStepper.
+(function initPopupSlotStepper() {
+    const valEl = document.getElementById('popup-slot-val');
+    function setSlot(v) {
+        v = Math.max(1, Math.min(99, Math.round(v)));
+        valEl.value = String(v).padStart(2, '0');
+    }
+    function stepSlot(delta) {
+        const cur = parseInt(valEl.value) || 1;
+        const next = cur + delta;
+        setSlot(next < 1 ? 99 : next > 99 ? 1 : next);
+    }
+    document.getElementById('popup-slot-up').addEventListener('click',   () => stepSlot(+1));
+    document.getElementById('popup-slot-down').addEventListener('click', () => stepSlot(-1));
+    valEl.addEventListener('change', () => setSlot(parseInt(valEl.value) || 1));
+})();
+
+// Write a decoded+normalized stereo-interleaved Float32 buffer to a slot
+// using the chosen import option. Handles the mono downmix, int24 packing,
+// slot-variant exclusivity, overwrite confirm, and auto-selecting the new
+// slot in the viewer. Shared by the Import panel and the Stock Music flow.
+async function writeImportToSlot({ slotNum, interleaved, chosen, statusEl }) {
+    const frames = interleaved.length >>> 1;
+    let outputBytes, filename;
+    const isMono   = !!(chosen && chosen.process.mono);
+    const isStream = !!(chosen && chosen.process.stream);
+    if (isMono) {
+        const trimmed = interleaved.subarray(0, chosen.process.trimFrames * 2);
+        const mono    = downmixStereoToMono(trimmed);
+        outputBytes   = packFloat32MonoToInt24Buffer(mono);
+    } else {
+        const trimFrames = chosen ? chosen.process.trimFrames : frames;
+        const trimmed = interleaved.subarray(0, trimFrames * 2);
+        outputBytes   = packFloat32ToInt24Buffer(trimmed);
+    }
+    filename = slotFilenameVariant(slotNum, { mono: isMono, stream: isStream });
+
+    const dir = await ensureMemorySlots();
+    let existingName = null;
+    for (const v of slotAllVariants(slotNum)) {
+        try { await dir.getFileHandle(v, { create: false }); existingName = v; break; } catch { /* missing */ }
+    }
+    if (existingName) {
+        const ok = await dialogConfirm(
+            `Overwrite slot ${String(slotNum).padStart(2,'0')}?`,
+            `This slot already has content (${existingName}).`,
+            { okLabel: 'Overwrite', okVariant: 'danger' },
+        );
+        if (!ok) { if (statusEl) statusEl.textContent = ''; return { ok: false, cancelled: true }; }
+    }
+    await unlinkAllSlotVariants(dir, slotNum);
+
+    const fh = await dir.getFileHandle(filename, { create: true });
+    const writable = await fh.createWritable();
+    await writable.write(outputBytes);
+    await writable.close();
+    log(`Done → ${filename}${chosen ? ` (${chosen.id})` : ''}`);
+    if (statusEl) statusEl.textContent = 'Done';
+    await refreshUI();
+    const newThumb = document.querySelector(`.slot-thumb[data-filename="${filename}"]`);
+    if (newThumb) newThumb.click();
+    else {
+        const label = `Slot ${String(slotNum).padStart(2,'0')}`;
+        await selectItem(g_memorySlotsHandle, filename, label, null);
+        playFrom(0);
+    }
+    return { ok: true, filename };
 }
 
 document.getElementById('btn-import').addEventListener('click', async () => {
@@ -2819,63 +2995,25 @@ document.getElementById('btn-import').addEventListener('click', async () => {
 
         const frames = interleaved.length >>> 1;
 
-        // Decide output format. If the file fits the default stereo-short
-        // cap, no choice needed — write Mem_NN.raw and we're done.
+        // Short files skip the popup and write directly as Mem_NN.raw (stereo
+        // with dub). Longer files show the popup — the popup's own slot
+        // selector wins over the Import-panel slot if the user changes it.
         let chosen = null;
+        let targetSlot = slotNum;
         if (frames > LIVE_STEREO_SHORT_FRAMES) {
-            chosen = await askImportOption(file.name, frames / SAMPLE_RATE, frames);
-            if (!chosen) { statusEl.textContent = ''; log('Import cancelled'); return; }
+            const picked = await askImportOption({
+                title: 'Track too long for default import',
+                fileName: file.name,
+                durationSec: frames / SAMPLE_RATE,
+                frames,
+                initialSlot: slotNum,
+            });
+            if (!picked) { statusEl.textContent = ''; log('Import cancelled'); return; }
+            chosen = picked.option;
+            targetSlot = picked.slot;
         }
 
-        // Build output buffer + filename. Stream path writes full-length
-        // stereo regardless of SDRAM cap — firmware v1.6.2 will read it in
-        // chunks off the SD card rather than preloading.
-        let outputBytes, filename;
-        const isMono   = !!(chosen && chosen.process.mono);
-        const isStream = !!(chosen && chosen.process.stream);
-        if (isMono) {
-            const trimmed = interleaved.subarray(0, chosen.process.trimFrames * 2);
-            const mono    = downmixStereoToMono(trimmed);
-            outputBytes   = packFloat32MonoToInt24Buffer(mono);
-        } else {
-            const trimFrames = chosen ? chosen.process.trimFrames : frames;
-            const trimmed = interleaved.subarray(0, trimFrames * 2);
-            outputBytes   = packFloat32ToInt24Buffer(trimmed);
-        }
-        filename = slotFilenameVariant(slotNum, { mono: isMono, stream: isStream });
-
-        // Enforce exclusivity: wipe ALL variants for this slot before writing
-        // the chosen one. Prompts to overwrite if ANY variant currently exists.
-        const dir = await ensureMemorySlots();
-        let existingName = null;
-        for (const v of slotAllVariants(slotNum)) {
-            try { await dir.getFileHandle(v, { create: false }); existingName = v; break; } catch { /* missing */ }
-        }
-        if (existingName) {
-            const ok = await dialogConfirm(
-                `Overwrite slot ${String(slotNum).padStart(2,'0')}?`,
-                `This slot already has content (${existingName}).`,
-                { okLabel: 'Overwrite', okVariant: 'danger' },
-            );
-            if (!ok) { statusEl.textContent = ''; return; }
-        }
-        await unlinkAllSlotVariants(dir, slotNum);
-
-        const fh       = await dir.getFileHandle(filename, { create: true });
-        const writable = await fh.createWritable();
-        await writable.write(outputBytes);
-        await writable.close();
-        log(`Done → ${filename}${chosen ? ` (${chosen.id})` : ''}`);
-        statusEl.textContent = 'Done';
-        await refreshUI();
-        // Auto-load the just-imported slot into the player.
-        const newThumb = document.querySelector(`.slot-thumb[data-filename="${filename}"]`);
-        if (newThumb) newThumb.click();
-        else {
-            const label = `Slot ${String(slotNum).padStart(2,'0')}`;
-            await selectItem(g_memorySlotsHandle, filename, label, null);
-            playFrom(0);
-        }
+        await writeImportToSlot({ slotNum: targetSlot, interleaved, chosen, statusEl });
     } catch(e) { statusEl.textContent = 'Error'; log(`Import error: ${e.message}`); }
 });
 
@@ -2894,18 +3032,7 @@ const STOCK_BASE = location.protocol === 'file:'
     ? 'https://cycleslooper.com/Assets/Stock_Tracks/'
     : 'Assets/Stock_Tracks/';
 
-async function fetchStockTracks() {
-    // Primary: static tracks.json served alongside the site.
-    try {
-        const resp = await fetch(STOCK_BASE + 'tracks.json', { cache: 'no-cache' });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const m = await resp.json();
-        if (Array.isArray(m?.tracks) && m.tracks.length) return m.tracks;
-    } catch { /* fall through to inline fallback */ }
-
-    // Fallback: inline <script type="application/json"> manifest. Used when
-    // neither the static fetch nor the live site is reachable (e.g. offline
-    // local file:// without network).
+function readInlineStockManifest() {
     try {
         const m = JSON.parse(document.getElementById('stock-tracks-manifest').textContent);
         return Array.isArray(m?.tracks) ? m.tracks : [];
@@ -2914,21 +3041,55 @@ async function fetchStockTracks() {
     }
 }
 
-async function loadStockTrackAsImportSource(track) {
+async function fetchStockTracks() {
+    // On local file:// use the inline manifest directly — fetching the live
+    // tracks.json from here would give us whatever's currently deployed,
+    // which may lag the local edits we're actively iterating on.
+    if (location.protocol === 'file:') return readInlineStockManifest();
+
+    // Hosted: fetch the static tracks.json (regenerated by the GitHub Action),
+    // fall back to the inline manifest if that's unavailable.
     try {
+        const resp = await fetch(STOCK_BASE + 'tracks.json', { cache: 'no-cache' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const m = await resp.json();
+        if (Array.isArray(m?.tracks) && m.tracks.length) return m.tracks;
+    } catch { /* fall through */ }
+    return readInlineStockManifest();
+}
+
+async function handleStockTrackClick(track, displayTitle) {
+    if (!g_memorySlotsHandle) {
+        await dialogAlert('No card connected', 'Connect your CYCLES card before importing a stock track.');
+        return;
+    }
+    try {
+        log(`Fetching stock track: ${track.file}…`);
         const url = track.url || (STOCK_BASE + encodeURIComponent(track.file));
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const blob = await resp.blob();
         const file = new File([blob], track.file, { type: blob.type || 'audio/wav' });
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        const input = document.getElementById('input-wav');
-        input.files = dt.files;
-        document.getElementById('import-filename').textContent = track.file;
-        log(`Loaded stock track: ${track.file}`);
+
+        log('Decoding…');
+        const interleaved = await decodeToInterleaved(file);
+        const peak = findPeak(interleaved);
+        normalizePeak(interleaved, -18);
+        log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -18 dBFS`);
+
+        const frames = interleaved.length >>> 1;
+        const picked = await askImportOption({
+            title: `Import — ${displayTitle}`,
+            fileName: track.file,
+            durationSec: frames / SAMPLE_RATE,
+            frames,
+            initialSlot: parseInt(document.getElementById('input-slot-num').value, 10) || 1,
+        });
+        if (!picked) { log('Stock import cancelled'); return; }
+
+        await writeImportToSlot({ slotNum: picked.slot, interleaved, chosen: picked.option });
     } catch (e) {
-        log(`Stock load error: ${e.message}`);
+        log(`Stock import error: ${e.message}`);
     }
 }
 
@@ -2961,12 +3122,14 @@ async function renderStockTracks() {
             thumb.appendChild(artistEl);
         }
 
+        const ext = (track.file.match(/\.([^.]+)$/)?.[1] || 'file').toUpperCase();
+        const dur = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
         const meta = document.createElement('div');
         meta.className = 'stock-meta';
-        meta.textContent = (track.file.match(/\.([^.]+)$/)?.[1] || 'file').toUpperCase();
+        meta.textContent = dur ? `${dur} · ${ext}` : ext;
         thumb.appendChild(meta);
 
-        thumb.addEventListener('click', () => loadStockTrackAsImportSource(track));
+        thumb.addEventListener('click', () => handleStockTrackClick(track, title));
         grid.appendChild(thumb);
     }
 }
