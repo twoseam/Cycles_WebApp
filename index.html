@@ -485,10 +485,20 @@
         .stock-thumb:active { background: var(--bg-panel); }
         .stock-thumb .stock-title {
             font-size: 13px;
+            line-height: 1.3;
             font-family: 'Roboto Mono', 'Courier New', monospace;
             font-weight: 700;
             color: var(--fg);
             letter-spacing: 0.02em;
+            /* Always reserve exactly 2 rows so the Artist line sits at the
+               same vertical position across tiles. Titles that overflow get
+               clipped with an ellipsis. */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: calc(2 * 1.3em);
         }
         .stock-thumb .stock-artist {
             font-size: 10px;
