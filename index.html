@@ -36,6 +36,7 @@
             /* Warm cream — vintage hardware panel (matches pedal screenprint) */
             --bg:           #f1e7d2;
             --bg-panel:     #e4dcbe;
+            --bg-label:     #fffdf9;   /* Module edge-tag labels (Playback, Import, etc.) */
             --bg-inset:     #f5f2e6;
             --bg-raised:    #eae3cc;
             --bg-screen:    #d6cdac;
@@ -43,7 +44,7 @@
             --fg-dim:       #3a2e18;
             --fg-muted:     #6a5c38;
             --fg-faint:     #8a7c58;
-            --accent:       #d43800;
+            --accent:       #3b302c;
             --accent-dim:   rgba(212,56,0,0.3);
             --led-green:    #44dd22;
             --led-red:      #cc2828;
@@ -317,7 +318,9 @@
                 2px 2px 0 var(--border),
                 3px 3px 0 var(--border),
                 4px 4px 0 var(--border),
-                5px 6px 4px rgba(0,0,0,0.14);
+                5px 5px 0 var(--border),
+                6px 6px 0 var(--border),
+                7px 8px 6px rgba(0,0,0,0.20);
             transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
         }
         #transport button:active,
@@ -325,7 +328,7 @@
         #btn-export:active, #btn-import:active,
         .slot-thumb:active,
         .stock-thumb:active {
-            transform: translate(4px, 4px);
+            transform: translate(6px, 6px);
             box-shadow: 0 0 0 transparent;
         }
 
@@ -464,17 +467,33 @@
                 radial-gradient(circle at 10px calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px),
                 radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px);
         }
-        /* Embossed Dymo label — shiny black plastic tape. Letters are
-           HOLLOW: transparent fill with a pale blue-white stroke that
-           simulates the embossed rim catching light around the recessed
-           letter face. This is the signature Dymo look. */
+        .module-code {
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            background: var(--bg-label);
+            padding: 0 8px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+        }
+
+        /* ── Dymo label alternative (commented out, kept for reference) ──
+           Embossed shiny black plastic tape with hollow outlined letters,
+           crisp gloss highlight, slightly off-square cut ends, per-letter
+           jitter via the script block at the end of this file. To enable:
+           uncomment the .module-code + :nth-of-type rules below (they will
+           shadow the simple rule above) AND uncomment the Dymo letter
+           jitter IIFE near the bottom of the <script> block.
+
         .module-code {
             position: absolute;
             top: -13px;
             left: 18px;
             background: #0a0a0c;
-            /* Glossy top-edge highlight — crisp bright band along the top,
-               like a direct specular reflection, not a soft fade */
             background-image: linear-gradient(to bottom,
                 rgba(255,255,255,0.30) 0%,
                 rgba(255,255,255,0.28) 9%,
@@ -488,28 +507,23 @@
             color: #6d747b;
             -webkit-text-stroke: 0.9px #cdd9e3;
             text-transform: uppercase;
-            /* Subtle halo + recessed shadow per glyph */
             text-shadow:
                 0 0 1.5px rgba(205,217,227,0.35),
                 0 1px 1px rgba(0,0,0,0.85);
-            /* Inset sheen stays inside the clip; outer drop moves to filter
-               so the shadow follows the off-square ends */
             box-shadow:
                 inset 0 1px 0 rgba(255,255,255,0.12),
                 inset 0 -1px 0 rgba(0,0,0,0.50);
             filter: drop-shadow(0 2px 3px rgba(0,0,0,0.40));
-            /* Slightly off-square cut — ends aren't perfectly perpendicular,
-               as if the Dymo cutter didn't bite square */
             clip-path: polygon(0.8% 0%, 99.7% 0.3%, 100% 99.6%, 0.3% 100%);
             transform: rotate(-0.4deg);
             transform-origin: left center;
         }
-        /* Alternate tiny tilt + mirrored cut angles per module. */
         .module:nth-of-type(even) .module-code {
             transform: rotate(0.3deg);
             left: 22px;
             clip-path: polygon(0.3% 0.3%, 100% 0%, 99.6% 100%, 0.6% 99.7%);
         }
+        ── end Dymo block ── */
 
         /* ── Slot grid ── */
 
@@ -1329,7 +1343,7 @@
 <!-- ── Header ─────────────────────────────────────────────────────────────── -->
 <div id="header">
     <div id="logo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136.73 23.06" width="242">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136.73 23.06" width="28em">
           <defs><style>.st0{fill:#d43800}.st1{fill:#18191e}</style></defs>
           <g>
             <path class="st1" d="M20.33,7.28h-7.12c-1.85,0-3.23.26-4.14.77-1.19.67-1.78,1.84-1.78,3.52s.6,2.82,1.8,3.46c.88.47,2.25.71,4.11.71h11.89c.41,0,.94-.26,1.59-.77.09-.07.56-.48,1.4-1.24l-6.7-6.07c-.29-.26-.64-.39-1.05-.39ZM20.2,13.56h-6.99c-2.07,0-3.26-.31-3.58-.95-.1-.2-.15-.54-.15-1.03,0-.56.07-.95.21-1.18.38-.62,1.55-.92,3.51-.92h6.94l4.47,4.08h-4.42Z"/>
@@ -3507,11 +3521,12 @@ async function init() {
     });
 })();
 
-// ── Dymo letter jitter ────────────────────────────────────────────────────────
-// Wrap each glyph in .module-code labels in a span, then apply tiny random
-// translateY, rotation, and tracking offsets so the text reads as individually
-// stamped by a label maker rather than cleanly set by a font. pointer-events:
-// none on the spans preserves the parent's module-drag-handle behavior.
+// ── Dymo letter jitter (disabled — kept for reference) ──────────────────────
+// Wraps each glyph in .module-code in a span, then applies tiny random
+// translateY, rotation, and tracking offsets so text reads as individually
+// stamped by a label maker. Only useful with the commented-out Dymo CSS
+// block in the <style> section. To re-enable, also uncomment that CSS block.
+/*
 (function() {
     document.querySelectorAll('.module-code').forEach(el => {
         const text = el.textContent;
@@ -3520,9 +3535,9 @@ async function init() {
             if (ch === ' ') { el.appendChild(document.createTextNode(' ')); continue; }
             const span = document.createElement('span');
             span.textContent = ch;
-            const ty  = (Math.random() - 0.5) * 0.5;   // -0.25 .. 0.25 px (barely off)
-            const rot = (Math.random() - 0.5) * 1.0;   // -0.5 .. 0.5 deg (subtle)
-            const mx  = (Math.random() - 0.3) * 0.06;  // small tracking jitter
+            const ty  = (Math.random() - 0.5) * 0.5;
+            const rot = (Math.random() - 0.5) * 1.0;
+            const mx  = (Math.random() - 0.3) * 0.06;
             span.style.cssText =
                 'display:inline-block;pointer-events:none;' +
                 `transform:translateY(${ty.toFixed(2)}px) rotate(${rot.toFixed(2)}deg);` +
@@ -3531,6 +3546,7 @@ async function init() {
         }
     });
 })();
+*/
 
 init();
 </script>
