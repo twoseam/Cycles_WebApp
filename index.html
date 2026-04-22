@@ -303,7 +303,8 @@
         #transport button,
         .pedal-trigger,
         #btn-export, #btn-import,
-        .slot-thumb {
+        .slot-thumb,
+        .stock-thumb {
             box-shadow:
                 1px 1px 0 var(--border),
                 2px 2px 0 var(--border),
@@ -315,7 +316,8 @@
         #transport button:active,
         .pedal-trigger:active,
         #btn-export:active, #btn-import:active,
-        .slot-thumb:active {
+        .slot-thumb:active,
+        .stock-thumb:active {
             transform: translate(4px, 4px);
             box-shadow: 0 0 0 transparent;
         }
@@ -410,7 +412,50 @@
         }
 
         /* ── Slot grid ── */
-        #slot-section { margin-top: 64px; margin-bottom: 64px; }
+        #slot-section, #stock-section { margin-top: 64px; margin-bottom: 64px; }
+
+        #stock-grid {
+            display: grid;
+            gap: 5px;
+            grid-template-columns: repeat(3, 1fr);
+        }
+        @media (max-width: 600px) { #stock-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .stock-thumb {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            user-select: none;
+            transition: background 0.08s;
+        }
+        .stock-thumb:hover  { background: var(--bg); border-color: var(--border-dark); }
+        .stock-thumb:active { background: var(--bg-panel); }
+        .stock-thumb .stock-title {
+            font-size: 13px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--fg);
+            letter-spacing: 0.02em;
+        }
+        .stock-thumb .stock-artist {
+            font-size: 10px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            color: var(--fg-muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .stock-thumb .stock-meta {
+            font-size: 9px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            color: var(--fg-muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
 
         #slot-grid {
             display: grid;
@@ -451,6 +496,9 @@
         }
         .slot-thumb.empty .slot-num { color: var(--fg-muted); }
         .slot-thumb.empty .slot-dur { color: var(--fg-muted); }
+        .slot-thumb.empty .fmt-dot  { background: var(--border-light); }
+        .slot-thumb.empty .slot-format-left      { color: var(--border-light); }
+        .slot-thumb.empty .slot-format-dub.no-dub { color: var(--fg-muted); }
 
         .slot-led {
             position: absolute;
@@ -802,7 +850,7 @@
             #viewer-counter { height: 40px; padding: 10px 16px; }
             .seg-val { top: 10px; left: 16px; }
             #btn-export { height: 40px; margin-left: auto; }
-            #slot-section { margin-top: 36px; margin-bottom: 36px; }
+            #slot-section, #stock-section { margin-top: 36px; margin-bottom: 36px; }
             #import-panel { flex-direction: column; }
             .import-cell { border-right: none; border-bottom: 1px solid var(--border); }
             .import-cell.action { border-bottom: none; }
@@ -1227,6 +1275,23 @@
         <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
     </div>
     <div id="slot-grid"></div>
+</div>
+
+<!-- ── Stock Music ────────────────────────────────────────────────────────── -->
+<!-- Manifest is inlined so local file:// testing works (fetch is blocked for
+     local files in Chrome). Update this list when adding/removing tracks. -->
+<script id="stock-tracks-manifest" type="application/json">
+{
+    "tracks": [
+        { "file": "Weezer - Say it Ain't So.wav" }
+    ]
+}
+</script>
+<div id="stock-section">
+    <div class="section-header">
+        <div class="section-label">Stock Music</div>
+    </div>
+    <div id="stock-grid"></div>
 </div>
 
 
@@ -2343,7 +2408,7 @@ async function refreshUI(autoLoad = false) {
     // slot 01 to the highest occupied slot — gaps in between become empty
     // placeholders, but we don't spam 99 cells beyond the last real one.
     const slotMap = new Map(slots.map(s => [s.slotNum, s]));
-    const maxSlot = slots.length ? Math.max(...slots.map(s => s.slotNum)) : 0;
+    const maxSlot = slots.length ? Math.max(...slots.map(s => s.slotNum)) : 3;
 
     for (let slotNum = 1; slotNum <= maxSlot; slotNum++) {
         const s = slotMap.get(slotNum);
@@ -2366,6 +2431,29 @@ async function refreshUI(autoLoad = false) {
             emptyDur.className   = 'slot-dur';
             emptyDur.textContent = 'EMPTY';
             emptyThumb.appendChild(emptyDur);
+
+            const emptyFmt = document.createElement('div');
+            emptyFmt.className = 'slot-format';
+            const emptyFmtLeft = document.createElement('div');
+            emptyFmtLeft.className = 'slot-format-left';
+            const emptyDots = document.createElement('span');
+            emptyDots.className = 'slot-format-dots stereo';
+            const emptyRed = document.createElement('span');
+            emptyRed.className = 'fmt-dot red';
+            const emptyBlue = document.createElement('span');
+            emptyBlue.className = 'fmt-dot blue';
+            emptyDots.appendChild(emptyRed);
+            emptyDots.appendChild(emptyBlue);
+            const emptyFmtText = document.createElement('span');
+            emptyFmtText.textContent = 'Stereo';
+            emptyFmtLeft.appendChild(emptyFmtText);
+            emptyFmtLeft.appendChild(emptyDots);
+            emptyFmt.appendChild(emptyFmtLeft);
+            const emptyDub = document.createElement('span');
+            emptyDub.className = 'slot-format-dub no-dub';
+            emptyDub.textContent = 'Overdub';
+            emptyFmt.appendChild(emptyDub);
+            emptyThumb.appendChild(emptyFmt);
             // Clicking an empty placeholder sets that slot number as the
             // Import target — quick way to "pick up" a gap for import.
             emptyThumb.addEventListener('click', () => {
@@ -2473,8 +2561,6 @@ async function refreshUI(autoLoad = false) {
         thumb.addEventListener('click', (e) => { if (e.target !== delBtn) selectItem(g_memorySlotsHandle, s.filename, label, thumb); });
         g_allItems.push({ filename: s.filename, thumbEl: thumb });
     }
-    if (!slots.length) slotGrid.textContent = 'No slots saved yet';
-
     // Auto-load first slot on connect
     if (autoLoad && !g_selection) {
         if (slots.length) {
@@ -2794,6 +2880,81 @@ document.getElementById('input-wav').addEventListener('change', e => {
     const f = e.target.files[0];
     document.getElementById('import-filename').textContent = f ? f.name : 'Choose WAV or MP3…';
 });
+
+// ── Stock Music ───────────────────────────────────────────────────────────────
+// Click a tile to load the track as the Import source; user then picks a slot
+// and hits Import. Manifest is inlined in a <script type="application/json">
+// tag above (fetch is blocked for local file:// URLs).
+// When running on file://, fetch the WAVs from the live site — GitHub Pages
+// serves them with permissive CORS. When hosted, use the relative path.
+const STOCK_BASE = location.protocol === 'file:'
+    ? 'https://cycleslooper.com/Assets/Stock_Tracks/'
+    : 'Assets/Stock_Tracks/';
+
+async function loadStockTrackAsImportSource(track) {
+    try {
+        const resp = await fetch(STOCK_BASE + encodeURIComponent(track.file));
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob = await resp.blob();
+        const file = new File([blob], track.file, { type: blob.type || 'audio/wav' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        const input = document.getElementById('input-wav');
+        input.files = dt.files;
+        document.getElementById('import-filename').textContent = track.file;
+        log(`Loaded stock track: ${track.file}`);
+    } catch (e) {
+        log(`Stock load error: ${e.message}`);
+    }
+}
+
+function renderStockTracks() {
+    const grid = document.getElementById('stock-grid');
+    grid.innerHTML = '';
+    let manifest;
+    try {
+        manifest = JSON.parse(document.getElementById('stock-tracks-manifest').textContent);
+    } catch (e) {
+        grid.textContent = 'No stock tracks available';
+        return;
+    }
+    const tracks = Array.isArray(manifest?.tracks) ? manifest.tracks : [];
+    if (!tracks.length) { grid.textContent = 'No stock tracks available'; return; }
+
+    for (const track of tracks) {
+        // Parse "Artist - Title.ext" from the filename. Manifest fields
+        // `title` / `artist` override the parsed values when present.
+        const base     = track.file.replace(/\.[^.]+$/, '');
+        const split    = base.match(/^(.+?)\s+-\s+(.+)$/);
+        const artist   = track.artist || (split ? split[1] : null);
+        const title    = track.title  || (split ? split[2] : base);
+
+        const thumb = document.createElement('div');
+        thumb.className = 'stock-thumb';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'stock-title';
+        titleEl.textContent = title;
+        thumb.appendChild(titleEl);
+
+        if (artist) {
+            const artistEl = document.createElement('div');
+            artistEl.className = 'stock-artist';
+            artistEl.textContent = artist;
+            thumb.appendChild(artistEl);
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'stock-meta';
+        meta.textContent = (track.file.match(/\.([^.]+)$/)?.[1] || 'file').toUpperCase();
+        thumb.appendChild(meta);
+
+        thumb.addEventListener('click', () => loadStockTrackAsImportSource(track));
+        grid.appendChild(thumb);
+    }
+}
+
+renderStockTracks();
 
 // ── Wipe ──────────────────────────────────────────────────────────────────────
 // File-level deletes only (File System Access API can't format a volume).
