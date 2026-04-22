@@ -186,7 +186,7 @@
            Diagonal sheen + inset highlight/shadow for a pane of glass on top
            of the inset display. pointer-events:none so canvas drags pass through. */
         #viewer-counter::after,
-        #slot-display::after,
+        .slot-display::after,
         #popup-slot-display::after {
             content: '';
             position: absolute;
@@ -206,7 +206,7 @@
         }
         /* Hard-edged top reflection band on the 7-seg displays */
         #viewer-counter::before,
-        #slot-display::before,
+        .slot-display::before,
         #popup-slot-display::before {
             content: '';
             position: absolute;
@@ -440,7 +440,7 @@
             position: relative;
             background: var(--bg-panel);
             border: 2px solid var(--border-dark);
-            padding: 24px 22px 26px;
+            padding: 36px 22px 26px;
             margin: 24px 0;
         }
         /* While a module is being dragged, the others get a subtle dim +
@@ -473,12 +473,12 @@
         }
         .module-code {
             position: absolute;
-            top: -8px;
+            top: -14px;
             left: 20px;
             background: var(--bg-label);
-            padding: 0 8px;
+            padding: 6px 10px;
             font-family: 'Roboto Mono', 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 700;
             letter-spacing: 0.2em;
             color: var(--fg-muted);
@@ -818,11 +818,79 @@
 
         #import-panel {
             display: flex;
-            align-items: stretch;
+            flex-direction: column;
             border: 1px solid var(--border-dark);
             background: var(--bg-panel);
             overflow: hidden;
         }
+
+        #import-rows {
+            display: flex;
+            flex-direction: column;
+        }
+        .import-row {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid var(--border);
+        }
+        .import-row:last-child { border-bottom: none; }
+
+        #import-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0 0;
+        }
+        #btn-add-row {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 8px 14px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border-dark);
+            color: var(--fg);
+            cursor: pointer;
+        }
+        #btn-add-row:hover { background: var(--bg); border-color: var(--fg-muted); }
+        #import-footer-action {
+            margin-left: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        #import-footer-action #label-import { margin-top: 0; }
+
+        .btn-remove-row {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--fg-muted);
+            font-family: sans-serif;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1;
+            letter-spacing: 0;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .btn-remove-row:hover { color: var(--brand-red); border-color: var(--brand-red); }
+
+        .row-status {
+            font-size: 8px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+            text-align: center;
+            min-height: 0;
+        }
+        .row-status:empty { display: none; }
 
         .import-cell {
             display: flex;
@@ -832,7 +900,7 @@
             border-right: 1px solid var(--border);
         }
         .import-cell.grow { flex: 1; }
-        .import-cell.action { border-right: none; gap: 5px; padding: 12px; justify-content: center; }
+        .import-cell.action { border-right: none; gap: 4px; padding: 10px 14px; justify-content: center; align-items: center; min-width: 68px; }
 
         .import-cell-label {
             font-size: 8px;
@@ -842,7 +910,7 @@
             color: var(--fg-muted);
         }
 
-        #input-slot-num {
+        .input-slot-num {
             width: 2.8em;
             background: #23242c;
             color: #ff3030;
@@ -855,10 +923,10 @@
             box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
             text-shadow: 0 0 8px rgba(255,50,50,0.45);
         }
-        #input-slot-num::-webkit-outer-spin-button,
-        #input-slot-num::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .input-slot-num::-webkit-outer-spin-button,
+        .input-slot-num::-webkit-inner-spin-button { -webkit-appearance: none; }
 
-        #import-file-zone {
+        .import-file-zone {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -873,11 +941,11 @@
             user-select: none;
             transition: background 0.08s, color 0.08s;
         }
-        #import-file-zone:hover { background: var(--bg); color: var(--fg); border-color: var(--border); }
+        .import-file-zone:hover { background: var(--bg); color: var(--fg); border-color: var(--border); }
 
-        #input-wav { display: none; }
+        .input-wav { display: none; }
 
-        #import-filename {
+        .import-filename {
             flex: 1;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -906,20 +974,20 @@
         }
 
         /* ── Slot knob ── */
-        #slot-stepper,
+        .slot-stepper,
         #popup-slot-stepper {
             display: flex;
             flex-direction: row;
             align-items: stretch;
             gap: 4px;
         }
-        #slot-arrows,
+        .slot-arrows,
         #popup-slot-arrows {
             display: flex;
             flex-direction: column;
             gap: 3px;
         }
-        #slot-stepper button,
+        .slot-stepper button,
         #popup-slot-stepper button {
             padding: 0;
             width: 50px;
@@ -930,7 +998,7 @@
             letter-spacing: 0;
         }
 
-        #slot-display,
+        .slot-display,
         #popup-slot-display {
             position: relative;
             background: #23242c;
@@ -939,10 +1007,10 @@
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
         }
 
-        #slot-display .seg-ghost,
+        .slot-display .seg-ghost,
         #popup-slot-display .seg-ghost { font-size: 18px; display: block; text-align: center; letter-spacing: 2px; }
 
-        #slot-knob-val,
+        .slot-knob-val,
         #popup-slot-val {
             font-family: 'DSEG7 Classic', 'Courier New', monospace;
             font-weight: 700;
@@ -964,8 +1032,8 @@
             appearance: textfield;
             outline: none;
         }
-        #slot-knob-val::-webkit-outer-spin-button,
-        #slot-knob-val::-webkit-inner-spin-button,
+        .slot-knob-val::-webkit-outer-spin-button,
+        .slot-knob-val::-webkit-inner-spin-button,
         #popup-slot-val::-webkit-outer-spin-button,
         #popup-slot-val::-webkit-inner-spin-button { -webkit-appearance: none; }
 
@@ -985,10 +1053,10 @@
             #viewer-counter { height: 46px; padding: 12px 18px; }
             .seg-val { top: 12px; left: 18px; }
             #btn-export { height: 40px; margin-left: auto; }
-            #import-panel { flex-direction: column; }
+            .import-row { flex-direction: column; }
             .import-cell { border-right: none; border-bottom: 1px solid var(--border); }
             .import-cell.action { border-bottom: none; }
-            #slot-stepper button { width: 36px; }
+            .slot-stepper button { width: 36px; }
         }
 
         /* ── Connect prompt (shown when no card connected) ── */
@@ -1440,26 +1508,11 @@
 <div id="import-section" class="module">
     <div class="module-code">Import</div>
     <div id="import-panel">
-        <div class="import-cell" id="slot-cell">
-            <div class="import-cell-label">Slot</div>
-            <div id="slot-stepper">
-                <div id="slot-display"><span class="seg-ghost">88</span><input id="slot-knob-val" type="number" min="1" max="99" value="1"></div>
-                <div id="slot-arrows">
-                    <button id="slot-up">▲</button>
-                    <button id="slot-down">▼</button>
-                </div>
-            </div>
-            <input type="number" id="input-slot-num" min="1" max="99" value="1" style="display:none">
-        </div>
-        <div class="import-cell grow">
-            <div class="import-cell-label">Source File</div>
-            <label id="import-file-zone" for="input-wav">
-                <span id="import-filename">Choose</span>
-                <input type="file" id="input-wav" accept="audio/*">
-            </label>
-        </div>
-        <div class="import-cell action">
-            <div class="import-cell-label">&#160;</div>
+        <div id="import-rows"><!-- rows inserted by JS --></div>
+    </div>
+    <div id="import-footer">
+        <button id="btn-add-row" type="button">+ Add Memory Slot</button>
+        <div id="import-footer-action">
             <button id="btn-import">Import</button>
             <span id="label-import"></span>
         </div>
@@ -1560,7 +1613,7 @@ const LIVE_MONO_LONG_FRAMES    = 360 * SAMPLE_RATE;   //  6:00 no overdub (mono)
 //   .raw              stereo, SDRAM-loaded      (default)
 //   _mono.raw         mono,   SDRAM-loaded      (v1.6.1)
 //   _stream.raw       stereo, SD-streamed       (future v1.6.2)
-//   _mono_stream.raw  mono,   SD-streamed       (reserved; unlikely to ship)
+//   _mono_stream.raw  mono,   SD-streamed       (future v1.6.2, mono > 3:00 no-dub)
 // Modifiers alphabetical when both present. Exclusivity: only one variant
 // may exist per slot number — save/import must unlink the other three.
 function slotFilenameVariant(n, { mono = false, stream = false } = {}) {
@@ -2595,6 +2648,22 @@ async function refreshUI(autoLoad = false) {
     const slotMap = new Map(slots.map(s => [s.slotNum, s]));
     const maxSlot = slots.length ? Math.max(...slots.map(s => s.slotNum)) : 3;
 
+    // On initial connect, point the first Import row's slot at the first
+    // empty slot (lowest gap, or maxSlot+1 if packed). User can still pick
+    // anything after; this is just a default.
+    if (autoLoad) {
+        let firstEmpty = 1;
+        while (firstEmpty <= 99 && slotMap.has(firstEmpty)) firstEmpty++;
+        if (firstEmpty > 99) firstEmpty = 99;
+        const firstRow = document.querySelector('#import-rows .import-row');
+        if (firstRow) {
+            const hidden = firstRow.querySelector('.input-slot-num');
+            const knob   = firstRow.querySelector('.slot-knob-val');
+            if (hidden) hidden.value = firstEmpty;
+            if (knob)   knob.value   = String(firstEmpty).padStart(2, '0');
+        }
+    }
+
     for (let slotNum = 1; slotNum <= maxSlot; slotNum++) {
         const s = slotMap.get(slotNum);
         if (!s) {
@@ -2642,10 +2711,12 @@ async function refreshUI(autoLoad = false) {
             // Clicking an empty placeholder sets that slot number as the
             // Import target — quick way to "pick up" a gap for import.
             emptyThumb.addEventListener('click', () => {
-                const hidden = document.getElementById('input-slot-num');
-                const valEl  = document.getElementById('slot-knob-val');
-                hidden.value = slotNum;
-                valEl.value  = String(slotNum).padStart(2, '0');
+                const firstRow = document.querySelector('#import-rows .import-row');
+                if (!firstRow) return;
+                const hidden = firstRow.querySelector('.input-slot-num');
+                const knob   = firstRow.querySelector('.slot-knob-val');
+                if (hidden) hidden.value = slotNum;
+                if (knob)   knob.value   = String(slotNum).padStart(2, '0');
             });
             slotGrid.appendChild(emptyThumb);
             continue;
@@ -2915,18 +2986,6 @@ function buildImportOptions(frames) {
             process: { mono: true, trimFrames: outFrames },
         });
     }
-    // B2 — mono SDRAM-loaded, long-mode (6:00), no overdub. Only meaningful
-    //      when the file is 3:00–6:00: B1 would trim here, B2 keeps full
-    //      length. Hidden above 6:00 because C1 (stream) dominates that case.
-    if (frames > LIVE_MONO_SHORT_FRAMES && frames <= LIVE_MONO_LONG_FRAMES) {
-        opts.push({
-            group: 'mono', id: 'B2',
-            title: 'Full length',
-            dur:   mmss(frames / SAMPLE_RATE),
-            dub:   false,
-            process: { mono: true, trimFrames: frames },
-        });
-    }
     // C1 — stereo full-length via SD streaming. Surfaced under the stereo
     //      group so the user just sees "Full length" vs "Trim to 1:30" — the
     //      SDRAM-vs-stream mechanism is invisible. Only shown when A1 can't
@@ -2939,6 +2998,18 @@ function buildImportOptions(frames) {
             dur:   mmss(frames / SAMPLE_RATE),
             dub:   false,
             process: { mono: false, stream: true, trimFrames: frames },
+        });
+    }
+    // B3 — mono full-length via SD streaming. Mirrors C1 for the mono group.
+    //      No overdub (streams are read-only), so nothing to trim. Covers any
+    //      mono file that exceeds B1's 3:00 overdub cap.
+    if (frames > LIVE_MONO_SHORT_FRAMES) {
+        opts.push({
+            group: 'mono', id: 'B3',
+            title: 'Full length',
+            dur:   mmss(frames / SAMPLE_RATE),
+            dub:   false,
+            process: { mono: true, stream: true, trimFrames: frames },
         });
     }
     return opts;
@@ -3099,62 +3170,90 @@ async function writeImportToSlot({ slotNum, interleaved, chosen, statusEl }) {
         await selectItem(g_memorySlotsHandle, filename, label, null);
         playFrom(0);
     }
+    // Advance the first Import row's slot to the next empty gap so single-row
+    // users can fire successive imports without manually bumping the stepper.
+    // (Multi-row mode already relies on Add Memory Slot for fresh defaults.)
+    const filled = new Set((await listSlots()).map(s => s.slotNum));
+    let nextEmpty = slotNum + 1;
+    while (nextEmpty <= 99 && filled.has(nextEmpty)) nextEmpty++;
+    if (nextEmpty <= 99) {
+        const firstRow = document.querySelector('#import-rows .import-row');
+        if (firstRow) {
+            const hidden = firstRow.querySelector('.input-slot-num');
+            const knob   = firstRow.querySelector('.slot-knob-val');
+            if (hidden) hidden.value = nextEmpty;
+            if (knob)   knob.value   = String(nextEmpty).padStart(2, '0');
+        }
+    }
     return { ok: true, filename };
 }
 
 document.getElementById('btn-import').addEventListener('click', async () => {
-    const slotNum   = parseInt(document.getElementById('input-slot-num').value, 10);
-    const fileInput = document.getElementById('input-wav');
-    const statusEl  = document.getElementById('label-import');
-    if (!fileInput.files.length)     { log('No file selected'); return; }
-    if (slotNum < 1 || slotNum > 99) { log('Slot must be 1–99'); return; }
-    const file = fileInput.files[0];
-    const isMP3 = /\.mp3$/i.test(file.name) || file.type === 'audio/mpeg';
-    if (isMP3) {
-        const proceed = await dialogConfirm(
-            'MP3 loop timing caution',
-            'MP3 encoding adds a small block of silence to the start and end of every file. ' +
-            'This app does its best to strip it automatically, but the result may not be sample-accurate.\n\n' +
-            'For tight loops, export from your DAW as 24-bit WAV instead — that path is always sample-exact.',
-            { okLabel: 'Continue with MP3', okVariant: 'primary' },
-        );
-        if (!proceed) return;
+    const globalStatus = document.getElementById('label-import');
+    const rowEls = Array.from(document.querySelectorAll('#import-rows .import-row'));
+
+    // Collect rows that have a file; blank rows are skipped silently.
+    const jobs = [];
+    for (const row of rowEls) {
+        const hidden    = row.querySelector('.input-slot-num');
+        const fileInput = row.querySelector('.input-wav');
+        const statusEl  = row.querySelector('.row-status');
+        if (!fileInput.files.length) continue;
+        const slotNum = parseInt(hidden.value, 10);
+        if (slotNum < 1 || slotNum > 99) { statusEl.textContent = 'Bad slot'; continue; }
+        jobs.push({ slotNum, file: fileInput.files[0], statusEl });
     }
-    const targetDbfs = -18;
-    try {
-        statusEl.textContent = 'Importing…';
-        const interleaved = await decodeToInterleaved(file);
-        const peak  = findPeak(interleaved);
-        normalizePeak(interleaved, targetDbfs);
-        log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → ${targetDbfs} dBFS`);
+    if (!jobs.length) { log('No files selected'); return; }
 
-        const frames = interleaved.length >>> 1;
+    globalStatus.textContent = `Importing (0/${jobs.length})…`;
+    let done = 0;
 
-        // Short files skip the popup and write directly as Mem_NN.raw (stereo
-        // with dub). Longer files show the popup — the popup's own slot
-        // selector wins over the Import-panel slot if the user changes it.
-        let chosen = null;
-        let targetSlot = slotNum;
-        if (frames > LIVE_STEREO_SHORT_FRAMES) {
-            const picked = await askImportOption({
-                title: 'Track too long for default import',
-                fileName: file.name,
-                durationSec: frames / SAMPLE_RATE,
-                frames,
-                initialSlot: slotNum,
-            });
-            if (!picked) { statusEl.textContent = ''; log('Import cancelled'); return; }
-            chosen = picked.option;
-            targetSlot = picked.slot;
+    for (const job of jobs) {
+        job.statusEl.textContent = 'Importing…';
+        try {
+            const file = job.file;
+            const isMP3 = /\.mp3$/i.test(file.name) || file.type === 'audio/mpeg';
+            if (isMP3) {
+                const proceed = await dialogConfirm(
+                    'MP3 loop timing caution',
+                    'MP3 encoding adds a small block of silence to the start and end of every file. ' +
+                    'This app does its best to strip it automatically, but the result may not be sample-accurate.\n\n' +
+                    'For tight loops, export from your DAW as 24-bit WAV instead — that path is always sample-exact.',
+                    { okLabel: 'Continue with MP3', okVariant: 'primary' },
+                );
+                if (!proceed) { job.statusEl.textContent = 'Cancelled'; continue; }
+            }
+            const interleaved = await decodeToInterleaved(file);
+            const peak = findPeak(interleaved);
+            normalizePeak(interleaved, -18);
+            log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -18 dBFS`);
+
+            const frames = interleaved.length >>> 1;
+            let chosen = null;
+            let targetSlot = job.slotNum;
+            if (frames > LIVE_STEREO_SHORT_FRAMES) {
+                const picked = await askImportOption({
+                    title: 'Track too long for default import',
+                    fileName: file.name,
+                    durationSec: frames / SAMPLE_RATE,
+                    frames,
+                    initialSlot: job.slotNum,
+                });
+                if (!picked) { job.statusEl.textContent = 'Cancelled'; continue; }
+                chosen = picked.option;
+                targetSlot = picked.slot;
+            }
+
+            const res = await writeImportToSlot({ slotNum: targetSlot, interleaved, chosen, statusEl: job.statusEl });
+            if (res && res.ok) done++;
+            globalStatus.textContent = `Importing (${done}/${jobs.length})…`;
+        } catch (e) {
+            job.statusEl.textContent = 'Error';
+            log(`Import error (slot ${job.slotNum}): ${e.message}`);
         }
+    }
 
-        await writeImportToSlot({ slotNum: targetSlot, interleaved, chosen, statusEl });
-    } catch(e) { statusEl.textContent = 'Error'; log(`Import error: ${e.message}`); }
-});
-
-document.getElementById('input-wav').addEventListener('change', e => {
-    const f = e.target.files[0];
-    document.getElementById('import-filename').textContent = f ? f.name : 'Choose WAV or MP3…';
+    globalStatus.textContent = `Done (${done}/${jobs.length})`;
 });
 
 // ── Stock Music ───────────────────────────────────────────────────────────────
@@ -3201,7 +3300,11 @@ async function handleStockTrackClick(track, displayTitle) {
             fileName: track.file,
             durationSec: frames / SAMPLE_RATE,
             frames,
-            initialSlot: parseInt(document.getElementById('input-slot-num').value, 10) || 1,
+            initialSlot: (() => {
+                const firstRow = document.querySelector('#import-rows .import-row');
+                const hidden   = firstRow && firstRow.querySelector('.input-slot-num');
+                return hidden ? (parseInt(hidden.value, 10) || 1) : 1;
+            })(),
         });
         if (!picked) { log('Stock import cancelled'); return; }
 
@@ -3408,7 +3511,7 @@ document.getElementById('btn-wipe-slots').addEventListener('click', async () => 
     const ok = await dialogConfirm(
         `Wipe all ${slots.length} memory slot${slots.length > 1 ? 's' : ''}?`,
         'This cannot be undone.',
-        { okLabel: 'Wipe all', okVariant: 'danger' },
+        { okLabel: 'Delete All', okVariant: 'danger' },
     );
     if (!ok) return;
     let deleted = 0;
@@ -3423,33 +3526,107 @@ document.getElementById('btn-wipe-slots').addEventListener('click', async () => 
     await refreshUI();
 });
 
-// ── Slot stepper ──────────────────────────────────────────────────────────────
-(function initSlotStepper() {
-    const valEl  = document.getElementById('slot-knob-val');
-    const hidden = document.getElementById('input-slot-num');
+// ── Import rows (multi-row importer) ─────────────────────────────────────────
+// Each row = slot stepper + file picker + remove (×) + per-row status. The
+// footer's single Import button iterates rows in sequence, skipping empty
+// ones silently. "Add Memory Slot" appends a new row pre-set to the first
+// empty slot that isn't already claimed by another row.
+function addImportRow(initialSlot = 1) {
+    const container = document.getElementById('import-rows');
+    const row = document.createElement('div');
+    row.className = 'import-row';
+    row.innerHTML = `
+        <div class="import-cell">
+            <div class="import-cell-label">Slot</div>
+            <div class="slot-stepper">
+                <div class="slot-display"><span class="seg-ghost">88</span><input class="slot-knob-val" type="number" min="1" max="99"></div>
+                <div class="slot-arrows">
+                    <button type="button" class="slot-up">▲</button>
+                    <button type="button" class="slot-down">▼</button>
+                </div>
+            </div>
+            <input class="input-slot-num" type="number" min="1" max="99" style="display:none">
+        </div>
+        <div class="import-cell grow">
+            <div class="import-cell-label">Source File</div>
+            <label class="import-file-zone">
+                <span class="import-filename">Choose WAV or MP3…</span>
+                <input type="file" class="input-wav" accept="audio/*">
+            </label>
+        </div>
+        <div class="import-cell action">
+            <button type="button" class="btn-remove-row" title="Remove this row">×</button>
+            <span class="row-status"></span>
+        </div>
+    `;
+
+    const hidden     = row.querySelector('.input-slot-num');
+    const knobInput  = row.querySelector('.slot-knob-val');
+    const fileInput  = row.querySelector('.input-wav');
+    const filenameEl = row.querySelector('.import-filename');
+    const statusEl   = row.querySelector('.row-status');
 
     function setSlot(v) {
         v = Math.max(1, Math.min(99, Math.round(v)));
-        hidden.value = v;
-        valEl.value  = String(v).padStart(2, '0');
+        hidden.value    = v;
+        knobInput.value = String(v).padStart(2, '0');
     }
     function stepSlot(delta) {
         const cur = parseInt(hidden.value) || 1;
         const next = cur + delta;
         setSlot(next < 1 ? 99 : next > 99 ? 1 : next);
     }
-
-    attachHoldRepeat(document.getElementById('slot-up'),   () => stepSlot(+1));
-    attachHoldRepeat(document.getElementById('slot-down'), () => stepSlot(-1));
-
-    valEl.addEventListener('input', () => {
-        const v = parseInt(valEl.value, 10);
+    attachHoldRepeat(row.querySelector('.slot-up'),   () => stepSlot(+1));
+    attachHoldRepeat(row.querySelector('.slot-down'), () => stepSlot(-1));
+    knobInput.addEventListener('input', () => {
+        const v = parseInt(knobInput.value, 10);
         if (v >= 1 && v <= 99) hidden.value = v;
     });
-    valEl.addEventListener('change', () => setSlot(parseInt(valEl.value, 10) || 1));
+    knobInput.addEventListener('change', () => setSlot(parseInt(knobInput.value, 10) || 1));
 
-    setSlot(1);
-})();
+    fileInput.addEventListener('change', () => {
+        filenameEl.textContent = fileInput.files[0] ? fileInput.files[0].name : 'Choose WAV or MP3…';
+        statusEl.textContent = '';
+    });
+
+    // Remove: if this is the only row, just clear its inputs instead.
+    row.querySelector('.btn-remove-row').addEventListener('click', () => {
+        const rows = container.querySelectorAll('.import-row');
+        if (rows.length <= 1) {
+            fileInput.value = '';
+            filenameEl.textContent = 'Choose WAV or MP3…';
+            statusEl.textContent = '';
+        } else {
+            row.remove();
+        }
+    });
+
+    setSlot(initialSlot);
+    container.appendChild(row);
+    return row;
+}
+
+// First slot number (1..99) that isn't filled on card AND isn't already
+// claimed by another row in the importer. Used by Add and by autoLoad.
+async function firstEmptyImportSlot() {
+    let onCard = new Set();
+    if (g_memorySlotsHandle) {
+        try { onCard = new Set((await listSlots()).map(s => s.slotNum)); } catch {}
+    }
+    const inRows = new Set(
+        Array.from(document.querySelectorAll('#import-rows .input-slot-num'))
+            .map(el => parseInt(el.value, 10) || 0)
+    );
+    let n = 1;
+    while (n <= 99 && (onCard.has(n) || inRows.has(n))) n++;
+    return Math.min(n, 99);
+}
+
+// Set up: one row to start + Add button handler.
+addImportRow(1);
+document.getElementById('btn-add-row').addEventListener('click', async () => {
+    addImportRow(await firstEmptyImportSlot());
+});
 
 // ── Card Status / Init ────────────────────────────────────────────────────────
 function setCardStatus(html) { document.getElementById('card-status').innerHTML = html; }
