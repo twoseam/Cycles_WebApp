@@ -4,6 +4,8 @@ name: Generate stock tracks manifest
 # changes. The webapp fetches this static manifest at runtime — no GitHub API
 # calls from the browser, no rate limit.
 on:
+  # Manual trigger — handy for testing without having to add/remove a track.
+  workflow_dispatch:
   push:
     branches: [main]
     # Trigger on any file under the stock-tracks folder EXCEPT tracks.json —
