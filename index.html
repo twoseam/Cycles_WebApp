@@ -34,8 +34,8 @@
 
         :root {
             /* Warm cream — vintage hardware panel (matches pedal screenprint) */
-            --bg:           #e2dac0;
-            --bg-panel:     #ddd4b6;
+            --bg:           #f1e7d2;
+            --bg-panel:     #e4dcbe;
             --bg-inset:     #f5f2e6;
             --bg-raised:    #eae3cc;
             --bg-screen:    #d6cdac;
@@ -67,7 +67,7 @@
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 12px;
-            background: var(--bg);
+            background-color: var(--bg);
             color: var(--fg);
         }
 
@@ -464,18 +464,51 @@
                 radial-gradient(circle at 10px calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px),
                 radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px);
         }
+        /* Embossed Dymo label — shiny black plastic tape. Letters are
+           HOLLOW: transparent fill with a pale blue-white stroke that
+           simulates the embossed rim catching light around the recessed
+           letter face. This is the signature Dymo look. */
         .module-code {
             position: absolute;
-            top: -8px;
-            left: 20px;
-            background: var(--bg-panel);
-            padding: 0 8px;
+            top: -13px;
+            left: 18px;
+            background: #0a0a0c;
+            /* Glossy top-edge highlight — crisp bright band along the top,
+               like a direct specular reflection, not a soft fade */
+            background-image: linear-gradient(to bottom,
+                rgba(255,255,255,0.30) 0%,
+                rgba(255,255,255,0.28) 9%,
+                rgba(255,255,255,0.04) 14%,
+                transparent 20%);
+            padding: 7px 20px 6px;
             font-family: 'Roboto Mono', 'Courier New', monospace;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            color: var(--fg-muted);
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            color: #6d747b;
+            -webkit-text-stroke: 0.9px #cdd9e3;
             text-transform: uppercase;
+            /* Subtle halo + recessed shadow per glyph */
+            text-shadow:
+                0 0 1.5px rgba(205,217,227,0.35),
+                0 1px 1px rgba(0,0,0,0.85);
+            /* Inset sheen stays inside the clip; outer drop moves to filter
+               so the shadow follows the off-square ends */
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.12),
+                inset 0 -1px 0 rgba(0,0,0,0.50);
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.40));
+            /* Slightly off-square cut — ends aren't perfectly perpendicular,
+               as if the Dymo cutter didn't bite square */
+            clip-path: polygon(0.8% 0%, 99.7% 0.3%, 100% 99.6%, 0.3% 100%);
+            transform: rotate(-0.4deg);
+            transform-origin: left center;
+        }
+        /* Alternate tiny tilt + mirrored cut angles per module. */
+        .module:nth-of-type(even) .module-code {
+            transform: rotate(0.3deg);
+            left: 22px;
+            clip-path: polygon(0.3% 0.3%, 100% 0%, 99.6% 100%, 0.6% 99.7%);
         }
 
         /* ── Slot grid ── */
@@ -3471,6 +3504,31 @@ async function init() {
         btn.textContent = dark ? 'Light' : 'Dark';
         localStorage.setItem('cycles-theme', dark ? 'dark' : 'light');
         if (g_viewerRaw) redrawViewer(getCurrentFrame());
+    });
+})();
+
+// ── Dymo letter jitter ────────────────────────────────────────────────────────
+// Wrap each glyph in .module-code labels in a span, then apply tiny random
+// translateY, rotation, and tracking offsets so the text reads as individually
+// stamped by a label maker rather than cleanly set by a font. pointer-events:
+// none on the spans preserves the parent's module-drag-handle behavior.
+(function() {
+    document.querySelectorAll('.module-code').forEach(el => {
+        const text = el.textContent;
+        el.textContent = '';
+        for (const ch of text) {
+            if (ch === ' ') { el.appendChild(document.createTextNode(' ')); continue; }
+            const span = document.createElement('span');
+            span.textContent = ch;
+            const ty  = (Math.random() - 0.5) * 0.5;   // -0.25 .. 0.25 px (barely off)
+            const rot = (Math.random() - 0.5) * 1.0;   // -0.5 .. 0.5 deg (subtle)
+            const mx  = (Math.random() - 0.3) * 0.06;  // small tracking jitter
+            span.style.cssText =
+                'display:inline-block;pointer-events:none;' +
+                `transform:translateY(${ty.toFixed(2)}px) rotate(${rot.toFixed(2)}deg);` +
+                `margin-right:${mx.toFixed(3)}em;`;
+            el.appendChild(span);
+        }
     });
 })();
 
