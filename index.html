@@ -2121,11 +2121,10 @@ function drawViewerWindow(playheadFrame = -1) {
     // full-height channel in red, centered on H/2. Min/max per column gives
     // true peak-to-peak shape regardless of content asymmetry.
     //
-    // Visual gain: imports normalize to −18 dBFS (~0.125 peak) to leave
-    // pedal-effect headroom, which makes the waveform look anemic at 1:1.
-    // Scale displayed samples ×2 and clamp to ±1 so they fill the channel
-    // bands — does NOT touch the audio data, only the render.
-    const VIEWER_GAIN = 4.0;
+    // Visual gain: imports normalize to −6 dBFS (~0.5 peak). A modest ×2
+    // makes peaks fill the channel bands without distorting the waveform
+    // shape — does NOT touch the audio data, only the render.
+    const VIEWER_GAIN = 2.0;
     const clamp1 = (v) => v > 1 ? 1 : (v < -1 ? -1 : v);
     ctx2d.lineWidth = 1;
     if (g_viewerIsMono) {
@@ -3225,8 +3224,8 @@ document.getElementById('btn-import').addEventListener('click', async () => {
             }
             const interleaved = await decodeToInterleaved(file);
             const peak = findPeak(interleaved);
-            normalizePeak(interleaved, -18);
-            log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -18 dBFS`);
+            normalizePeak(interleaved, -6);
+            log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -6 dBFS`);
 
             const frames = interleaved.length >>> 1;
             let chosen = null;
@@ -3291,8 +3290,8 @@ async function handleStockTrackClick(track, displayTitle) {
         log('Decoding…');
         const interleaved = await decodeToInterleaved(file);
         const peak = findPeak(interleaved);
-        normalizePeak(interleaved, -18);
-        log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -18 dBFS`);
+        normalizePeak(interleaved, -6);
+        log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -6 dBFS`);
 
         const frames = interleaved.length >>> 1;
         const picked = await askImportOption({
