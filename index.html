@@ -2121,10 +2121,10 @@ function drawViewerWindow(playheadFrame = -1) {
     // full-height channel in red, centered on H/2. Min/max per column gives
     // true peak-to-peak shape regardless of content asymmetry.
     //
-    // Visual gain: imports normalize to −6 dBFS (~0.5 peak). A modest ×2
+    // Visual gain: imports normalize to −6 dBFS (~0.5 peak). A modest ×1.5
     // makes peaks fill the channel bands without distorting the waveform
     // shape — does NOT touch the audio data, only the render.
-    const VIEWER_GAIN = 2.0;
+    const VIEWER_GAIN = 1.5;
     const clamp1 = (v) => v > 1 ? 1 : (v < -1 ? -1 : v);
     ctx2d.lineWidth = 1;
     if (g_viewerIsMono) {
