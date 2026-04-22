@@ -410,19 +410,16 @@
         }
 
         /* ── Slot grid ── */
-        #engine-section, #slot-section { margin-top: 64px; margin-bottom: 64px; }
+        #slot-section { margin-top: 64px; margin-bottom: 64px; }
 
-        #engine-grid, #slot-grid {
+        #slot-grid {
             display: grid;
             gap: 5px;
         }
-        /* Slot grid runs on a fixed 9-column track so 99 slots fill 11 even
-           rows — avoids a ragged last row when partially occupied. Engine
-           grid stays on flexible auto-fill since it has only a few items. */
-        #engine-grid { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
-        #slot-grid   { grid-template-columns: repeat(9, 1fr); }
-        @media (max-width: 900px) { #slot-grid { grid-template-columns: repeat(7, 1fr); } }
-        @media (max-width: 600px) { #slot-grid { grid-template-columns: repeat(5, 1fr); } }
+        /* Fixed-column grid — wider tiles give the delete ×, LED, and
+           stereo indicator room to co-exist without overlap. */
+        #slot-grid   { grid-template-columns: repeat(6, 1fr); }
+        @media (max-width: 600px) { #slot-grid { grid-template-columns: repeat(4, 1fr); } }
 
         .slot-thumb {
             background: var(--bg-raised);
@@ -457,7 +454,7 @@
 
         .slot-led {
             position: absolute;
-            bottom: 8px;
+            top: 8px;
             right: 8px;
             width: 10px;
             height: 10px;
@@ -472,7 +469,7 @@
         }
 
         .slot-num {
-            font-size: 14px;
+            font-size: 15.4px;
             font-family: 'Roboto Mono', 'Courier New', monospace;
             font-weight: 700;
             color: var(--fg);
@@ -487,15 +484,51 @@
         }
         .slot-thumb.active .slot-dur { color: var(--fg-dim); }
 
+        .slot-format {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+            margin-top: 3px;
+            font-size: 9px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            color: var(--fg-muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .slot-format-left {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .slot-format-dub             { color: #f48107; font-weight: 700; }
+        .slot-format-dub.no-dub      { color: var(--border-light); font-weight: 400; }
+        .slot-format-dots {
+            position: relative;
+            height: 7px;
+            width: 7px;
+        }
+        .slot-format-dots.stereo { width: 13px; }
+        .fmt-dot {
+            position: absolute;
+            top: 0;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+        .fmt-dot.red  { left: 0; background: #d43800; }
+        .fmt-dot.blue { left: 6px; background: #1e48d4; }
+        .slot-thumb.active .slot-format { color: var(--fg-dim); }
+
         .slot-delete {
             position: absolute;
-            top: 6px;
+            bottom: 4px;
             right: 6px;
             background: none;
             border: none;
             color: var(--fg-muted);
             cursor: pointer;
-            font-size: 15px;
+            font-size: 20px;
             line-height: 1;
             padding: 0;
             letter-spacing: 0;
@@ -769,7 +802,7 @@
             #viewer-counter { height: 40px; padding: 10px 16px; }
             .seg-val { top: 10px; left: 16px; }
             #btn-export { height: 40px; margin-left: auto; }
-            #engine-section, #slot-section { margin-top: 36px; margin-bottom: 36px; }
+            #slot-section { margin-top: 36px; margin-bottom: 36px; }
             #import-panel { flex-direction: column; }
             .import-cell { border-right: none; border-bottom: 1px solid var(--border); }
             .import-cell.action { border-bottom: none; }
@@ -1120,7 +1153,7 @@
 <!-- ── Header ─────────────────────────────────────────────────────────────── -->
 <div id="header">
     <div id="logo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136.73 23.06" width="220">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136.73 23.06" width="242">
           <defs><style>.st0{fill:#d43800}.st1{fill:#18191e}</style></defs>
           <g>
             <path class="st1" d="M20.33,7.28h-7.12c-1.85,0-3.23.26-4.14.77-1.19.67-1.78,1.84-1.78,3.52s.6,2.82,1.8,3.46c.88.47,2.25.71,4.11.71h11.89c.41,0,.94-.26,1.59-.77.09-.07.56-.48,1.4-1.24l-6.7-6.07c-.29-.26-.64-.39-1.05-.39ZM20.2,13.56h-6.99c-2.07,0-3.26-.31-3.58-.95-.1-.2-.15-.54-.15-1.03,0-.56.07-.95.21-1.18.38-.62,1.55-.92,3.51-.92h6.94l4.47,4.08h-4.42Z"/>
@@ -1185,15 +1218,6 @@
     <div class="spacer"></div>
     <div id="viewer-counter"><span class="seg-ghost">8:88</span><span class="seg-val" id="seg-val">0:00</span></div>
     <button id="btn-export">Export</button>
-</div>
-
-<!-- ── Working Files ──────────────────────────────────────────────────────── -->
-<div id="engine-section">
-    <div class="section-header">
-        <div class="section-label">Working File</div>
-        <button class="section-wipe" id="btn-wipe-working" title="Delete 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw">Delete</button>
-    </div>
-    <div id="engine-grid"></div>
 </div>
 
 <!-- ── Memory Slots ───────────────────────────────────────────────────────── -->
@@ -1725,24 +1749,6 @@ async function readRawFromHandle(dirHandle, filename) {
 }
 
 // ── Inspect ───────────────────────────────────────────────────────────────────
-const ENGINE_FILES = [
-    { filename: '01_Loop.raw',  label: 'Loop'  },
-];
-async function listEngineFiles() {
-    if (!g_cyclesHandle) return [];
-    const items = [];
-    for (const spec of ENGINE_FILES) {
-        try {
-            const fh   = await g_cyclesHandle.getFileHandle(spec.filename);
-            const file = await fh.getFile();
-            if (file.size === 0) continue;
-            const frames = file.size / DISK_BYTES_PER_FRAME;
-            items.push({ ...spec, byteSize: file.size, durationSec: frames / SAMPLE_RATE });
-        } catch { /* file missing — skip */ }
-    }
-    return items;
-}
-
 // Recognizes the four legal slot-file variants and reports format metadata
 // so downstream UI can tag mono/stream slots. Duration math branches on
 // channel count because mono files pack 3 B/frame vs stereo's 6 B/frame.
@@ -2327,37 +2333,8 @@ async function selectItem(dirHandle, filename, label, thumbEl) {
 
 // ── Refresh UI ────────────────────────────────────────────────────────────────
 async function refreshUI(autoLoad = false) {
-    const engineFiles = await listEngineFiles();
-    const slots       = await listSlots();
+    const slots = await listSlots();
     g_allItems = [];
-
-    const engineGrid = document.getElementById('engine-grid');
-    engineGrid.innerHTML = '';
-    for (const f of engineFiles) {
-        const thumb = document.createElement('div');
-        thumb.className = 'slot-thumb';
-        thumb.dataset.filename = f.filename;
-
-        const ledDot = document.createElement('span');
-        ledDot.className = 'slot-led';
-        thumb.appendChild(ledDot);
-
-        const nameLabel = document.createElement('div');
-        nameLabel.className = 'slot-num';
-        nameLabel.textContent = f.label;
-        thumb.appendChild(nameLabel);
-
-        const durLabel = document.createElement('div');
-        durLabel.className = 'slot-dur';
-        durLabel.textContent = formatDuration(f.durationSec);
-        thumb.appendChild(durLabel);
-
-        engineGrid.appendChild(thumb);
-        const label = `${f.label} — ${formatDuration(f.durationSec)} — ${formatBytes(f.byteSize)}`;
-        thumb.addEventListener('click', () => selectItem(g_cyclesHandle, f.filename, label, thumb));
-        g_allItems.push({ filename: f.filename, thumbEl: thumb });
-    }
-    if (!engineFiles.length) engineGrid.textContent = 'No working files on this card';
 
     const slotGrid = document.getElementById('slot-grid');
     slotGrid.innerHTML = '';
@@ -2460,6 +2437,36 @@ async function refreshUI(autoLoad = false) {
         durLabel.className = 'slot-dur';
         durLabel.textContent = formatDuration(s.durationSec);
         thumb.appendChild(durLabel);
+
+        const fmtRow = document.createElement('div');
+        fmtRow.className = 'slot-format';
+
+        const fmtLeft = document.createElement('div');
+        fmtLeft.className = 'slot-format-left';
+        const dots = document.createElement('span');
+        dots.className = `slot-format-dots ${s.isMono ? 'mono' : 'stereo'}`;
+        const redDot = document.createElement('span');
+        redDot.className = 'fmt-dot red';
+        dots.appendChild(redDot);
+        if (!s.isMono) {
+            const blueDot = document.createElement('span');
+            blueDot.className = 'fmt-dot blue';
+            dots.appendChild(blueDot);
+        }
+        const fmtText = document.createElement('span');
+        fmtText.textContent = s.isMono ? 'Mono' : 'Stereo';
+        fmtLeft.appendChild(fmtText);
+        fmtLeft.appendChild(dots);
+        fmtRow.appendChild(fmtLeft);
+
+        const shortCapSec = s.isMono ? 180 : 90;
+        const canDub = !s.isStream && s.durationSec <= shortCapSec;
+        const dubLabel = document.createElement('span');
+        dubLabel.className = `slot-format-dub ${canDub ? '' : 'no-dub'}`;
+        dubLabel.textContent = 'Overdub';
+        fmtRow.appendChild(dubLabel);
+
+        thumb.appendChild(fmtRow);
 
         slotGrid.appendChild(thumb);
         const label = `Slot ${String(s.slotNum).padStart(2,'0')} — ${formatDuration(s.durationSec)} — ${formatBytes(s.byteSize)}`;
@@ -2790,8 +2797,7 @@ document.getElementById('input-wav').addEventListener('change', e => {
 
 // ── Wipe ──────────────────────────────────────────────────────────────────────
 // File-level deletes only (File System Access API can't format a volume).
-// Working wipe clears all four engine files; slot wipe removes every Mem_NN.raw.
-const WORKING_FILE_NAMES = ['01_Loop.raw', '02_Mix.raw', '03_Dub_A.raw', '03_Dub_B.raw'];
+// Slot wipe removes every Mem_NN*.raw.
 
 function clearViewerAfterWipe(emptyMsg) {
     _killSource();
@@ -2806,25 +2812,6 @@ function clearViewerAfterWipe(emptyMsg) {
     emptyEl.textContent   = emptyMsg;
     document.getElementById('btn-play').innerHTML = ICON_PLAY;
 }
-
-document.getElementById('btn-wipe-working').addEventListener('click', async () => {
-    if (!g_cyclesHandle) { log('Card not connected'); return; }
-    const ok = await dialogConfirm(
-        'Wipe working file?',
-        'Deletes 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw.\nMemory slots are NOT affected.',
-        { okLabel: 'Wipe', okVariant: 'danger' },
-    );
-    if (!ok) return;
-    let deleted = 0;
-    for (const name of WORKING_FILE_NAMES) {
-        try { await g_cyclesHandle.removeEntry(name); deleted++; } catch { /* missing — fine */ }
-    }
-    if (g_selection && WORKING_FILE_NAMES.includes(g_selection.filename)) {
-        clearViewerAfterWipe('Working file wiped');
-    }
-    log(`Working file wiped (${deleted} deleted)`);
-    await refreshUI();
-});
 
 document.getElementById('btn-wipe-slots').addEventListener('click', async () => {
     if (!g_memorySlotsHandle) { log('Card not connected'); return; }
@@ -2858,9 +2845,14 @@ document.getElementById('btn-wipe-slots').addEventListener('click', async () => 
         hidden.value = v;
         valEl.value  = String(v).padStart(2, '0');
     }
+    function stepSlot(delta) {
+        const cur = parseInt(hidden.value) || 1;
+        const next = cur + delta;
+        setSlot(next < 1 ? 99 : next > 99 ? 1 : next);
+    }
 
-    document.getElementById('slot-up').addEventListener('click',   () => setSlot((parseInt(hidden.value) || 1) + 1));
-    document.getElementById('slot-down').addEventListener('click', () => setSlot((parseInt(hidden.value) || 1) - 1));
+    document.getElementById('slot-up').addEventListener('click',   () => stepSlot(+1));
+    document.getElementById('slot-down').addEventListener('click', () => stepSlot(-1));
 
     valEl.addEventListener('input', () => {
         const v = parseInt(valEl.value, 10);
