@@ -6,10 +6,13 @@ name: Generate stock tracks manifest
 on:
   push:
     branches: [main]
+    # Trigger on any file under the stock-tracks folder EXCEPT tracks.json —
+    # otherwise the bot's own auto-commit would re-trigger the workflow.
+    # GitHub requires these combined into one list with `!` exclusion; using
+    # `paths` + `paths-ignore` together produces "No jobs were run" skips.
     paths:
       - 'Assets/Stock_Tracks/**'
-    paths-ignore:
-      - 'Assets/Stock_Tracks/tracks.json'
+      - '!Assets/Stock_Tracks/tracks.json'
 
 permissions:
   contents: write
