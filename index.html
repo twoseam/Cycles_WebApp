@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYCLES — Data Managerr</title>
+    <title>CYCLES — Data Manager</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <style>
         /* Sophisticated monospace for labels, durations, the log — replaces
@@ -414,9 +414,15 @@
 
         #engine-grid, #slot-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
             gap: 5px;
         }
+        /* Slot grid runs on a fixed 9-column track so 99 slots fill 11 even
+           rows — avoids a ragged last row when partially occupied. Engine
+           grid stays on flexible auto-fill since it has only a few items. */
+        #engine-grid { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); }
+        #slot-grid   { grid-template-columns: repeat(9, 1fr); }
+        @media (max-width: 900px) { #slot-grid { grid-template-columns: repeat(7, 1fr); } }
+        @media (max-width: 600px) { #slot-grid { grid-template-columns: repeat(5, 1fr); } }
 
         .slot-thumb {
             background: var(--bg-raised);
@@ -431,6 +437,23 @@
             position: relative;
         }
         .slot-thumb:hover { background: var(--bg); border-color: var(--border-dark); }
+
+        /* Empty-slot placeholder: shown for gaps between occupied slot numbers
+           (e.g. if 01, 02, 05 exist, 03 and 04 render as empty slots). Muted
+           visuals so the eye latches onto real slots; clicking an empty slot
+           targets that slot number in the Import panel. */
+        .slot-thumb.empty {
+            background: transparent;
+            border-color: var(--border);
+            opacity: 0.45;
+        }
+        .slot-thumb.empty:hover {
+            background: var(--bg);
+            border-color: var(--border-dark);
+            opacity: 0.8;
+        }
+        .slot-thumb.empty .slot-num { color: var(--fg-muted); }
+        .slot-thumb.empty .slot-dur { color: var(--fg-muted); }
 
         .slot-led {
             position: absolute;
@@ -829,6 +852,211 @@
             margin-bottom: 0 !important;
         }
 
+        /* ── Import "track too long" popup (same shell as connect-prompt) ── */
+        #import-popup {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 110;
+        }
+        #import-popup-card {
+            max-width: 560px;
+            width: 100%;
+            padding: 32px 28px 24px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 6px 4px rgba(0,0,0,0.14);
+        }
+        #import-popup h1 {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--fg);
+            margin: 0 0 8px;
+        }
+        #import-popup .popup-sub {
+            font-size: 12px;
+            color: var(--fg-dim);
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+        #import-popup .popup-group-label {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+            text-align: left;
+            margin: 56px 0 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        /* First group label sits tighter against the subtitle. */
+        #import-popup-options > .popup-group-label:first-child {
+            margin-top: 4px;
+        }
+        .popup-opt {
+            display: block;
+            width: 100%;
+            padding: 26px 14px;
+            margin-bottom: 10px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border);
+        }
+        .popup-opt:hover { background: var(--bg); border-color: var(--border-dark); }
+        .popup-opt:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0 0 0 transparent;
+        }
+        .popup-opt-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--fg);
+        }
+        .popup-opt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .popup-opt-pill {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+        }
+        .popup-opt-pill.dub    { color: #1e48d4; border-color: #1e48d4; }
+        .popup-opt-pill.no-dub { color: #d43800; border-color: #d43800; }
+        #btn-import-cancel {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            padding: 12px 24px;
+            margin-top: 14px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: inherit;
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border);
+        }
+        #btn-import-cancel:hover { background: var(--bg); border-color: var(--border-dark); }
+        #btn-import-cancel:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0 0 0 transparent;
+        }
+
+        /* ── Generic modal (replaces window.confirm / window.alert) ── */
+        #modal-dialog {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 120;
+        }
+        #modal-card {
+            max-width: 460px;
+            width: 100%;
+            padding: 32px 28px 24px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 6px 4px rgba(0,0,0,0.14);
+        }
+        #modal-title {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--fg);
+            margin: 0 0 12px;
+        }
+        #modal-body {
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--fg-dim);
+            margin: 0 0 22px;
+            white-space: pre-line;
+            text-align: center;
+        }
+        #modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .modal-btn {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            padding: 12px 22px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: inherit;
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border);
+        }
+        .modal-btn:hover { background: var(--bg); border-color: var(--border-dark); }
+        .modal-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0 0 0 transparent;
+        }
+        /* Destructive action (Delete, Wipe, Overwrite): solid brand-red face,
+           white text — the prominent "this will remove something" button. */
+        .modal-btn.danger {
+            background: #d43800;
+            border-color: #d43800;
+            color: #fff;
+        }
+        .modal-btn.danger:hover { background: #b82f00; border-color: #b82f00; }
+        .modal-btn.primary { color: #1e48d4; border-color: #1e48d4; }
+        /* Cancel (.neutral) uses the base .modal-btn style unchanged —
+           default border and text, no red accent. */
+
         /* ── Unsupported-browser state ── */
         #unsupported {
             max-width: 520px;
@@ -1022,6 +1250,25 @@
     </div>
 </div>
 
+<!-- ── Import popup (shown when imported file exceeds 1:30 stereo cap) ───── -->
+<div id="import-popup">
+    <div id="import-popup-card">
+        <h1>Track too long for default import</h1>
+        <p class="popup-sub" id="import-popup-sub"><!-- filename + duration --></p>
+        <div id="import-popup-options"><!-- rendered dynamically --></div>
+        <button id="btn-import-cancel">Cancel</button>
+    </div>
+</div>
+
+<!-- ── Generic modal (confirm / alert / delete) ─────────────────────────── -->
+<div id="modal-dialog">
+    <div id="modal-card">
+        <h1 id="modal-title"></h1>
+        <p id="modal-body"></p>
+        <div id="modal-buttons"></div>
+    </div>
+</div>
+
 <script>
 'use strict';
 
@@ -1036,8 +1283,57 @@ const WAV_BYTES_PER_SAMPLE  = 4;                              // float32 WAV exp
 const SLOT_PREFIX           = 'Mem_';
 const SLOT_EXT              = '.raw';
 
+// Live-loop caps (mirror firmware v1.6.1 `SDRAM_*_LOOP_MAX_FRAMES`). Imports
+// longer than STEREO_SHORT trigger the "too long" popup so the user can pick
+// how to fit the file into the pedal's SDRAM. All values in frames @ 48 kHz.
+const LIVE_STEREO_SHORT_FRAMES = 90  * SAMPLE_RATE;   //  1:30 with overdub
+const LIVE_STEREO_LONG_FRAMES  = 180 * SAMPLE_RATE;   //  3:00 no overdub
+const LIVE_MONO_SHORT_FRAMES   = 180 * SAMPLE_RATE;   //  3:00 with overdub (mono)
+const LIVE_MONO_LONG_FRAMES    = 360 * SAMPLE_RATE;   //  6:00 no overdub (mono)
+
+// Slot filename variants. Firmware recognizes these four suffixes:
+//   .raw              stereo, SDRAM-loaded      (default)
+//   _mono.raw         mono,   SDRAM-loaded      (v1.6.1)
+//   _stream.raw       stereo, SD-streamed       (future v1.6.2)
+//   _mono_stream.raw  mono,   SD-streamed       (reserved; unlikely to ship)
+// Modifiers alphabetical when both present. Exclusivity: only one variant
+// may exist per slot number — save/import must unlink the other three.
+function slotFilenameVariant(n, { mono = false, stream = false } = {}) {
+    const nn   = String(n).padStart(2, '0');
+    const mods = (mono ? '_mono' : '') + (stream ? '_stream' : '');
+    return `${SLOT_PREFIX}${nn}${mods}${SLOT_EXT}`;
+}
+function slotAllVariants(n) {
+    return [
+        slotFilenameVariant(n),
+        slotFilenameVariant(n, { mono: true }),
+        slotFilenameVariant(n, { stream: true }),
+        slotFilenameVariant(n, { mono: true, stream: true }),
+    ];
+}
+
 // ── Disk format: int24 LE ↔ float32 ──────────────────────────────────────────
 // Matches firmware packInt24LE / unpackInt24LE exactly: full-scale = ±8388607.
+// True when `filename` is a mono-format slot (`Mem_NN_mono.raw` or
+// `Mem_NN_mono_stream.raw`). Used by viewer/export to branch channel layout.
+const MONO_SLOT_RE = /_mono(_stream)?\.raw$/i;
+
+// Read a slot file and return interleaved stereo Float32 samples. Stereo
+// files pass through unchanged; mono files are duplicated L=R so every
+// downstream consumer (waveform draw, AudioBuffer build, WAV export) can
+// treat the buffer as stereo-interleaved without branching.
+async function readSlotAsInterleavedStereo(dirHandle, filename) {
+    const raw  = await readRawFromHandle(dirHandle, filename);
+    const flat = unpackInt24BufferToFloat32(raw);
+    if (!MONO_SLOT_RE.test(filename)) return flat;
+    const stereo = new Float32Array(flat.length * 2);
+    for (let i = 0, j = 0; i < flat.length; i++, j += 2) {
+        stereo[j]     = flat[i];
+        stereo[j + 1] = flat[i];
+    }
+    return stereo;
+}
+
 function unpackInt24BufferToFloat32(ab) {
     const bytes  = new Uint8Array(ab);
     const frames = Math.floor(bytes.length / DISK_BYTES_PER_SAMPLE);
@@ -1072,7 +1368,8 @@ let g_selection         = null;
 let g_allItems          = [];
 
 // Viewer
-let g_viewerRaw         = null;   // Float32Array (interleaved)
+let g_viewerRaw         = null;   // Float32Array (always interleaved stereo — mono files are duplicated L=R at load)
+let g_viewerIsMono      = false;  // current file is a mono slot; drawing collapses to a single red channel
 let g_viewerOffset      = 0;      // left-edge scroll position in frames
 let g_viewerAudioBuf    = null;   // cached AudioBuffer (lazy, forward)
 let g_viewerAudioBufRev = null;   // cached AudioBuffer (lazy, reversed)
@@ -1387,9 +1684,10 @@ async function mountFromRoot(sdRoot, { allowCreate = false } = {}) {
         g_cyclesHandle = await sdRoot.getDirectoryHandle('Cycles', { create: false });
     } catch {
         if (!allowCreate) throw new Error(`No "Cycles" folder on "${sdRoot.name}". Wrong card?`);
-        const proceed = confirm(
-            `No "Cycles" folder found on "${sdRoot.name}".\n\n` +
-            `Create the folder structure (Cycles/ and Cycles/Memory_Slots/) so this card works with the pedal?`
+        const proceed = await dialogConfirm(
+            'Create CYCLES folder?',
+            `No "Cycles" folder found on "${sdRoot.name}".\n\nCreate the folder structure (Cycles/ and Cycles/Memory_Slots/) so this card works with the pedal?`,
+            { okLabel: 'Create', okVariant: 'primary' },
         );
         if (!proceed) throw new Error(`No "Cycles" folder on "${sdRoot.name}". Wrong card?`);
         g_cyclesHandle = await sdRoot.getDirectoryHandle('Cycles', { create: true });
@@ -1445,16 +1743,29 @@ async function listEngineFiles() {
     return items;
 }
 
+// Recognizes the four legal slot-file variants and reports format metadata
+// so downstream UI can tag mono/stream slots. Duration math branches on
+// channel count because mono files pack 3 B/frame vs stereo's 6 B/frame.
+const SLOT_FILENAME_RE = /^Mem_(\d{2})(_mono)?(_stream)?\.raw$/i;
 async function listSlots() {
     if (!g_memorySlotsHandle) return [];
     const slots = [];
     for await (const [name, handle] of g_memorySlotsHandle.entries()) {
         if (handle.kind !== 'file') continue;
-        const m = name.match(/^Mem_(\d{2})\.raw$/i);
+        const m = name.match(SLOT_FILENAME_RE);
         if (!m) continue;
-        const file = await handle.getFile();
-        const frames = file.size / DISK_BYTES_PER_FRAME;
-        slots.push({ slotNum: parseInt(m[1]), filename: name, byteSize: file.size, durationSec: frames / SAMPLE_RATE });
+        const file        = await handle.getFile();
+        const isMono      = !!m[2];
+        const isStream    = !!m[3];
+        const frameBytes  = isMono ? DISK_BYTES_PER_SAMPLE : DISK_BYTES_PER_FRAME;
+        const frames      = file.size / frameBytes;
+        slots.push({
+            slotNum:     parseInt(m[1]),
+            filename:    name,
+            byteSize:    file.size,
+            durationSec: frames / SAMPLE_RATE,
+            isMono, isStream,
+        });
     }
     return slots.sort((a,b) => a.slotNum - b.slotNum);
 }
@@ -1484,44 +1795,83 @@ function drawViewerWindow(playheadFrame = -1) {
     // scrolling (prior 8/px caused moiré) but bounded so very long loops stay fast.
     const stride       = Math.max(1, Math.floor(framesPerPx / 256));
 
-    // Guide lines
+    // Guide lines: three lines for stereo (quarter / center / three-quarter),
+    // single center line for mono — matches the single-channel render below.
     ctx2d.strokeStyle = cs.getPropertyValue('--wave-guide').trim(); ctx2d.lineWidth = 1;
     ctx2d.beginPath();
-    ctx2d.moveTo(0, halfH * 0.5); ctx2d.lineTo(W, halfH * 0.5);
-    ctx2d.moveTo(0, halfH);       ctx2d.lineTo(W, halfH);
-    ctx2d.moveTo(0, halfH * 1.5); ctx2d.lineTo(W, halfH * 1.5);
+    if (g_viewerIsMono) {
+        ctx2d.moveTo(0, halfH); ctx2d.lineTo(W, halfH);
+    } else {
+        ctx2d.moveTo(0, halfH * 0.5); ctx2d.lineTo(W, halfH * 0.5);
+        ctx2d.moveTo(0, halfH);       ctx2d.lineTo(W, halfH);
+        ctx2d.moveTo(0, halfH * 1.5); ctx2d.lineTo(W, halfH * 1.5);
+    }
     ctx2d.stroke();
 
-    // Waveform — L top half (red), R bottom half (blue). Min/max per column
-    // gives true peak-to-peak shape; single abs-peak mirrored around mid
-    // makes quiet asymmetric content look identical to louder symmetric content.
-    const amp  = halfH - 4;
-    const midL = halfH * 0.5, midR = halfH * 1.5;
+    // Waveform. Stereo: L top half (red), R bottom half (blue). Mono: one
+    // full-height channel in red, centered on H/2. Min/max per column gives
+    // true peak-to-peak shape regardless of content asymmetry.
+    //
+    // Visual gain: imports normalize to −18 dBFS (~0.125 peak) to leave
+    // pedal-effect headroom, which makes the waveform look anemic at 1:1.
+    // Scale displayed samples ×2 and clamp to ±1 so they fill the channel
+    // bands — does NOT touch the audio data, only the render.
+    const VIEWER_GAIN = 4.0;
+    const clamp1 = (v) => v > 1 ? 1 : (v < -1 ? -1 : v);
     ctx2d.lineWidth = 1;
-    for (let x = 0; x < W; x++) {
-        const sf = Math.floor(g_viewerOffset + x * framesPerPx);
-        const ef = Math.min(Math.floor(g_viewerOffset + (x + 1) * framesPerPx), totalFrames);
-        if (sf >= totalFrames) break;
-        let minL = Infinity, maxL = -Infinity;
-        let minR = Infinity, maxR = -Infinity;
-        for (let f = sf; f < ef; f += stride) {
-            const l = g_viewerRaw[f * 2];
-            const r = g_viewerRaw[f * 2 + 1];
-            if (l < minL) minL = l; if (l > maxL) maxL = l;
-            if (r < minR) minR = r; if (r > maxR) maxR = r;
+    if (g_viewerIsMono) {
+        const amp = H / 2 - 4;
+        const mid = H / 2;
+        for (let x = 0; x < W; x++) {
+            const sf = Math.floor(g_viewerOffset + x * framesPerPx);
+            const ef = Math.min(Math.floor(g_viewerOffset + (x + 1) * framesPerPx), totalFrames);
+            if (sf >= totalFrames) break;
+            let minS = Infinity, maxS = -Infinity;
+            for (let f = sf; f < ef; f += stride) {
+                const s = g_viewerRaw[f * 2];  // L=R for mono, read one channel
+                if (s < minS) minS = s;
+                if (s > maxS) maxS = s;
+            }
+            const xc = x + 0.5;
+            const gMax = clamp1(maxS * VIEWER_GAIN);
+            const gMin = clamp1(minS * VIEWER_GAIN);
+            ctx2d.strokeStyle = '#d43800';
+            ctx2d.beginPath();
+            ctx2d.moveTo(xc, mid - Math.max(gMax,  0.0005) * amp);
+            ctx2d.lineTo(xc, mid - Math.min(gMin, -0.0005) * amp);
+            ctx2d.stroke();
         }
-        // Guarantee at least 1 CSS pixel so quiet samples remain visible as a line on the mid axis.
-        const xc = x + 0.5;
-        ctx2d.strokeStyle = '#d43800';
-        ctx2d.beginPath();
-        ctx2d.moveTo(xc, midL - Math.max(maxL, 0.0005) * amp);
-        ctx2d.lineTo(xc, midL - Math.min(minL, -0.0005) * amp);
-        ctx2d.stroke();
-        ctx2d.strokeStyle = '#1e48d4';
-        ctx2d.beginPath();
-        ctx2d.moveTo(xc, midR - Math.max(maxR, 0.0005) * amp);
-        ctx2d.lineTo(xc, midR - Math.min(minR, -0.0005) * amp);
-        ctx2d.stroke();
+    } else {
+        const amp  = halfH - 4;
+        const midL = halfH * 0.5, midR = halfH * 1.5;
+        for (let x = 0; x < W; x++) {
+            const sf = Math.floor(g_viewerOffset + x * framesPerPx);
+            const ef = Math.min(Math.floor(g_viewerOffset + (x + 1) * framesPerPx), totalFrames);
+            if (sf >= totalFrames) break;
+            let minL = Infinity, maxL = -Infinity;
+            let minR = Infinity, maxR = -Infinity;
+            for (let f = sf; f < ef; f += stride) {
+                const l = g_viewerRaw[f * 2];
+                const r = g_viewerRaw[f * 2 + 1];
+                if (l < minL) minL = l; if (l > maxL) maxL = l;
+                if (r < minR) minR = r; if (r > maxR) maxR = r;
+            }
+            const xc = x + 0.5;
+            const gMaxL = clamp1(maxL * VIEWER_GAIN);
+            const gMinL = clamp1(minL * VIEWER_GAIN);
+            const gMaxR = clamp1(maxR * VIEWER_GAIN);
+            const gMinR = clamp1(minR * VIEWER_GAIN);
+            ctx2d.strokeStyle = '#d43800';
+            ctx2d.beginPath();
+            ctx2d.moveTo(xc, midL - Math.max(gMaxL,  0.0005) * amp);
+            ctx2d.lineTo(xc, midL - Math.min(gMinL, -0.0005) * amp);
+            ctx2d.stroke();
+            ctx2d.strokeStyle = '#1e48d4';
+            ctx2d.beginPath();
+            ctx2d.moveTo(xc, midR - Math.max(gMaxR,  0.0005) * amp);
+            ctx2d.lineTo(xc, midR - Math.min(gMinR, -0.0005) * amp);
+            ctx2d.stroke();
+        }
     }
 
     // Playhead
@@ -1596,8 +1946,8 @@ async function loadViewerWaveform(dirHandle, filename, label) {
     ctx2d.fillText('Loading…', cssW / 2 - 28, cssH / 2 + 4);
 
     try {
-        const raw   = await readRawFromHandle(dirHandle, filename);
-        g_viewerRaw = unpackInt24BufferToFloat32(raw);
+        g_viewerRaw    = await readSlotAsInterleavedStereo(dirHandle, filename);
+        g_viewerIsMono = MONO_SLOT_RE.test(filename);
 
         // Set zoom slider max to file duration, default to 5s or file length
         const durSec   = (g_viewerRaw.length / NUM_CHANNELS) / SAMPLE_RATE;
@@ -1930,8 +2280,7 @@ document.getElementById('btn-export').addEventListener('click', async () => {
     if (!g_selection) { log('Select a file first'); return; }
     const targetDbfs = -1;
     try {
-        const raw         = await readRawFromHandle(g_selection.dirHandle, g_selection.filename);
-        const interleaved = unpackInt24BufferToFloat32(raw);
+        const interleaved = await readSlotAsInterleavedStereo(g_selection.dirHandle, g_selection.filename);
         const peak        = findPeak(interleaved);
         normalizePeak(interleaved, targetDbfs);
         log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → ${targetDbfs} dBFS`);
@@ -2012,7 +2361,45 @@ async function refreshUI(autoLoad = false) {
 
     const slotGrid = document.getElementById('slot-grid');
     slotGrid.innerHTML = '';
-    for (const s of slots) {
+
+    // Build a lookup + figure out how high to render. We only render from
+    // slot 01 to the highest occupied slot — gaps in between become empty
+    // placeholders, but we don't spam 99 cells beyond the last real one.
+    const slotMap = new Map(slots.map(s => [s.slotNum, s]));
+    const maxSlot = slots.length ? Math.max(...slots.map(s => s.slotNum)) : 0;
+
+    for (let slotNum = 1; slotNum <= maxSlot; slotNum++) {
+        const s = slotMap.get(slotNum);
+        if (!s) {
+            // Empty-slot placeholder. Same dimensions as a real slot so the
+            // grid stays on its column rhythm.
+            const emptyThumb = document.createElement('div');
+            emptyThumb.className = 'slot-thumb empty';
+            const emptyHeader = document.createElement('div');
+            emptyHeader.className = 'slot-header';
+            const emptyHeaderLeft = document.createElement('div');
+            emptyHeaderLeft.className = 'slot-header-left';
+            const emptyNum = document.createElement('div');
+            emptyNum.className = 'slot-num';
+            emptyNum.textContent = String(slotNum).padStart(2, '0');
+            emptyHeaderLeft.appendChild(emptyNum);
+            emptyHeader.appendChild(emptyHeaderLeft);
+            emptyThumb.appendChild(emptyHeader);
+            const emptyDur = document.createElement('div');
+            emptyDur.className   = 'slot-dur';
+            emptyDur.textContent = 'EMPTY';
+            emptyThumb.appendChild(emptyDur);
+            // Clicking an empty placeholder sets that slot number as the
+            // Import target — quick way to "pick up" a gap for import.
+            emptyThumb.addEventListener('click', () => {
+                const hidden = document.getElementById('input-slot-num');
+                const valEl  = document.getElementById('slot-knob-val');
+                hidden.value = slotNum;
+                valEl.value  = String(slotNum).padStart(2, '0');
+            });
+            slotGrid.appendChild(emptyThumb);
+            continue;
+        }
         const thumb = document.createElement('div');
         thumb.className = 'slot-thumb';
         thumb.dataset.filename = s.filename;
@@ -2041,7 +2428,12 @@ async function refreshUI(autoLoad = false) {
         delBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const slotLabel = `Slot ${String(s.slotNum).padStart(2,'0')}`;
-            if (!confirm(`Delete ${slotLabel}?\n\nThis cannot be undone.`)) return;
+            const ok = await dialogConfirm(
+                `Delete ${slotLabel}?`,
+                'This cannot be undone.',
+                { okLabel: 'Delete', okVariant: 'danger' },
+            );
+            if (!ok) return;
             try {
                 await g_memorySlotsHandle.removeEntry(s.filename);
                 if (g_selection && g_selection.filename === s.filename) {
@@ -2058,7 +2450,7 @@ async function refreshUI(autoLoad = false) {
                 }
                 await refreshUI();
             } catch (err) {
-                alert(`Could not delete ${slotLabel}: ${err.message}`);
+                await dialogAlert(`Could not delete ${slotLabel}`, err.message);
             }
         });
         header.appendChild(delBtn);
@@ -2094,6 +2486,215 @@ function triggerDownload(blob, filename) {
 }
 
 // ── Import ────────────────────────────────────────────────────────────────────
+// ── Generic modal: replaces window.confirm / window.alert ─────────────────
+// showDialog renders the centered card, wires up one button per spec, and
+// resolves with the clicked button's id (or null if the user dismissed via
+// the backdrop). dialogConfirm / dialogAlert are the common shorthands.
+function showDialog({ title, body, buttons }) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById('modal-dialog');
+        const titleEl = document.getElementById('modal-title');
+        const bodyEl  = document.getElementById('modal-body');
+        const btnsEl  = document.getElementById('modal-buttons');
+        titleEl.textContent = title;
+        bodyEl.textContent  = body;
+        btnsEl.innerHTML    = '';
+
+        const finish = (id) => {
+            overlay.style.display = 'none';
+            overlay.removeEventListener('click', onBackdrop);
+            resolve(id);
+        };
+        const onBackdrop = (e) => { if (e.target === overlay) finish(null); };
+
+        for (const spec of buttons) {
+            const b = document.createElement('button');
+            b.className   = 'modal-btn ' + (spec.variant || 'neutral');
+            b.textContent = spec.label;
+            b.addEventListener('click', () => finish(spec.id));
+            btnsEl.appendChild(b);
+        }
+        overlay.addEventListener('click', onBackdrop);
+        overlay.style.display = 'flex';
+    });
+}
+async function dialogConfirm(title, body, { okLabel = 'OK', okVariant = 'primary', cancelLabel = 'Cancel' } = {}) {
+    const r = await showDialog({
+        title, body,
+        buttons: [
+            { id: 'cancel', label: cancelLabel, variant: 'neutral' },
+            { id: 'ok',     label: okLabel,     variant: okVariant },
+        ],
+    });
+    return r === 'ok';
+}
+async function dialogAlert(title, body, okLabel = 'OK') {
+    await showDialog({
+        title, body,
+        buttons: [{ id: 'ok', label: okLabel, variant: 'neutral' }],
+    });
+}
+
+// ── Import-popup processing helpers ────────────────────────────────────────
+// Stereo-interleaved input → mono (L+R)/2. Returns Float32Array sized
+// input.length / 2 (one sample per frame). Audio callback on the pedal
+// duplicates mono back to both channels on playback.
+function downmixStereoToMono(interleaved) {
+    const frames = interleaved.length >>> 1;
+    const out = new Float32Array(frames);
+    for (let i = 0, j = 0; i < frames; i++, j += 2) {
+        out[i] = 0.5 * (interleaved[j] + interleaved[j + 1]);
+    }
+    return out;
+}
+// Pack a mono Float32Array to int24 LE (3 bytes per sample) matching
+// firmware unpackInt24LE. Shared helper pattern with packFloat32ToInt24Buffer.
+function packFloat32MonoToInt24Buffer(mono) {
+    const out = new Uint8Array(mono.length * 3);
+    for (let i = 0, o = 0; i < mono.length; i++, o += 3) {
+        let x = mono[i];
+        if (x >  1) x =  1;
+        if (x < -1) x = -1;
+        const s = Math.round(x * 8388607) | 0;
+        out[o]     = s         & 0xFF;
+        out[o + 1] = (s >>  8) & 0xFF;
+        out[o + 2] = (s >> 16) & 0xFF;
+    }
+    return out;
+}
+// Format seconds as M:SS (matches firmware stopwatch convention).
+function formatDurMSS(sec) {
+    const s = Math.max(0, Math.round(sec));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+// Remove every format variant of slot NN. Enforces the one-file-per-slot
+// invariant before we write the chosen format — matches firmware
+// sdSaveSlot exclusivity rule (`Mem_NN.raw` XOR `Mem_NN_mono.raw` …).
+async function unlinkAllSlotVariants(dir, slotNum) {
+    for (const name of slotAllVariants(slotNum)) {
+        try { await dir.removeEntry(name); } catch { /* missing — fine */ }
+    }
+}
+
+// Build the dynamic option list for an oversized import. `frames` is stereo
+// frame count at SAMPLE_RATE. Returns an array of option objects; caller
+// renders them into buttons in the popup.
+function buildImportOptions(frames) {
+    const opts = [];
+    const mmss = formatDurMSS;
+
+    // A1 — stereo SDRAM-loaded, full length, no overdub. Hidden when file
+    //      exceeds the 3:00 SDRAM cap: C1 (stream) covers that case without
+    //      trimming, so A1 would be strictly worse.
+    if (frames <= LIVE_STEREO_LONG_FRAMES) {
+        opts.push({
+            group: 'stereo', id: 'A1',
+            title: 'Full length',
+            dur:   mmss(frames / SAMPLE_RATE),
+            dub:   false,
+            process: { mono: false, trimFrames: frames },
+        });
+    }
+    // A2 — stereo SDRAM-loaded, trimmed to 1:30, with overdub. Always
+    //      trims — caller only reaches this branch when frames > STEREO_SHORT.
+    opts.push({
+        group: 'stereo', id: 'A2',
+        title: 'Trim to 1:30',
+        dur:   mmss(LIVE_STEREO_SHORT_FRAMES / SAMPLE_RATE),
+        dub:   true,
+        process: { mono: false, trimFrames: LIVE_STEREO_SHORT_FRAMES },
+    });
+    // B1 — mono SDRAM-loaded, short-mode cap (3:00), with overdub. Trims
+    //      only when file exceeds the mono-short cap.
+    {
+        const outFrames = Math.min(frames, LIVE_MONO_SHORT_FRAMES);
+        opts.push({
+            group: 'mono', id: 'B1',
+            title: frames > LIVE_MONO_SHORT_FRAMES ? 'Trim to 3:00' : 'Full length',
+            dur:   mmss(outFrames / SAMPLE_RATE),
+            dub:   true,
+            process: { mono: true, trimFrames: outFrames },
+        });
+    }
+    // B2 — mono SDRAM-loaded, long-mode (6:00), no overdub. Only meaningful
+    //      when the file is 3:00–6:00: B1 would trim here, B2 keeps full
+    //      length. Hidden above 6:00 because C1 (stream) dominates that case.
+    if (frames > LIVE_MONO_SHORT_FRAMES && frames <= LIVE_MONO_LONG_FRAMES) {
+        opts.push({
+            group: 'mono', id: 'B2',
+            title: 'Full length',
+            dur:   mmss(frames / SAMPLE_RATE),
+            dub:   false,
+            process: { mono: true, trimFrames: frames },
+        });
+    }
+    // C1 — stereo full-length via SD streaming. Surfaced under the stereo
+    //      group so the user just sees "Full length" vs "Trim to 1:30" — the
+    //      SDRAM-vs-stream mechanism is invisible. Only shown when A1 can't
+    //      cover it (file > 3:00), otherwise the SDRAM-loaded A1 is strictly
+    //      better and C1 would be a duplicate-looking button.
+    if (frames > LIVE_STEREO_LONG_FRAMES) {
+        opts.push({
+            group: 'stereo', id: 'C1',
+            title: 'Full length',
+            dur:   mmss(frames / SAMPLE_RATE),
+            dub:   false,
+            process: { mono: false, stream: true, trimFrames: frames },
+        });
+    }
+    return opts;
+}
+
+// Show the popup, render options, resolve with user's chosen option or
+// null on cancel. Popup is modal — the rest of the UI stays live but the
+// backdrop blocks clicks.
+function askImportOption(fileName, durationSec, frames) {
+    return new Promise(resolve => {
+        const popup    = document.getElementById('import-popup');
+        const subEl    = document.getElementById('import-popup-sub');
+        const listEl   = document.getElementById('import-popup-options');
+        const cancelEl = document.getElementById('btn-import-cancel');
+
+        subEl.textContent = `${fileName} — ${formatDurMSS(durationSec)}`;
+        listEl.innerHTML = '';
+
+        const opts = buildImportOptions(frames);
+        const stereoOpts = opts.filter(o => o.group === 'stereo');
+        const monoOpts   = opts.filter(o => o.group === 'mono');
+
+        const renderGroup = (label, groupOpts) => {
+            if (!groupOpts.length) return;
+            const h = document.createElement('div');
+            h.className = 'popup-group-label';
+            h.textContent = label;
+            listEl.appendChild(h);
+            for (const opt of groupOpts) {
+                const btn = document.createElement('button');
+                btn.className = 'popup-opt';
+                // Button shows title + overdub pill. Duration is implied by
+                // the title ("Trim to 1:30" / "Full length — matches subtitle").
+                btn.innerHTML = `
+                    <div class="popup-opt-row">
+                        <span class="popup-opt-title">${opt.title}</span>
+                        <span class="popup-opt-pill ${opt.dub ? 'dub' : 'no-dub'}">${opt.dub ? 'With overdub' : 'No overdub'}</span>
+                    </div>`;
+                btn.addEventListener('click', () => { cleanup(); resolve(opt); });
+                listEl.appendChild(btn);
+            }
+        };
+        renderGroup('Keep as stereo', stereoOpts);
+        renderGroup('Convert to mono', monoOpts);
+
+        const onCancel = () => { cleanup(); resolve(null); };
+        function cleanup() {
+            popup.style.display = 'none';
+            cancelEl.removeEventListener('click', onCancel);
+        }
+        cancelEl.addEventListener('click', onCancel);
+        popup.style.display = 'flex';
+    });
+}
+
 document.getElementById('btn-import').addEventListener('click', async () => {
     const slotNum   = parseInt(document.getElementById('input-slot-num').value, 10);
     const fileInput = document.getElementById('input-wav');
@@ -2103,12 +2704,12 @@ document.getElementById('btn-import').addEventListener('click', async () => {
     const file = fileInput.files[0];
     const isMP3 = /\.mp3$/i.test(file.name) || file.type === 'audio/mpeg';
     if (isMP3) {
-        const proceed = confirm(
-            'MP3 files can cause subtle timing drift at loop boundaries.\n\n' +
+        const proceed = await dialogConfirm(
+            'MP3 loop timing caution',
             'MP3 encoding adds a small block of silence to the start and end of every file. ' +
             'This app does its best to strip it automatically, but the result may not be sample-accurate.\n\n' +
-            'For tight loops, export from your DAW as 24-bit WAV instead — that path is always sample-exact.\n\n' +
-            'Continue with MP3 anyway?'
+            'For tight loops, export from your DAW as 24-bit WAV instead — that path is always sample-exact.',
+            { okLabel: 'Continue with MP3', okVariant: 'primary' },
         );
         if (!proceed) return;
     }
@@ -2119,23 +2720,59 @@ document.getElementById('btn-import').addEventListener('click', async () => {
         const peak  = findPeak(interleaved);
         normalizePeak(interleaved, targetDbfs);
         log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → ${targetDbfs} dBFS`);
-        const filename = slotFilename(slotNum);
-        const dir      = await ensureMemorySlots();
-        // Check if slot already exists and confirm overwrite
-        let exists = false;
-        try { await dir.getFileHandle(filename, { create: false }); exists = true; } catch { /* new slot */ }
-        if (exists && !confirm(`Slot ${String(slotNum).padStart(2,'0')} already has content.\n\nOverwrite it?`)) {
-            statusEl.textContent = '';
-            return;
+
+        const frames = interleaved.length >>> 1;
+
+        // Decide output format. If the file fits the default stereo-short
+        // cap, no choice needed — write Mem_NN.raw and we're done.
+        let chosen = null;
+        if (frames > LIVE_STEREO_SHORT_FRAMES) {
+            chosen = await askImportOption(file.name, frames / SAMPLE_RATE, frames);
+            if (!chosen) { statusEl.textContent = ''; log('Import cancelled'); return; }
         }
+
+        // Build output buffer + filename. Stream path writes full-length
+        // stereo regardless of SDRAM cap — firmware v1.6.2 will read it in
+        // chunks off the SD card rather than preloading.
+        let outputBytes, filename;
+        const isMono   = !!(chosen && chosen.process.mono);
+        const isStream = !!(chosen && chosen.process.stream);
+        if (isMono) {
+            const trimmed = interleaved.subarray(0, chosen.process.trimFrames * 2);
+            const mono    = downmixStereoToMono(trimmed);
+            outputBytes   = packFloat32MonoToInt24Buffer(mono);
+        } else {
+            const trimFrames = chosen ? chosen.process.trimFrames : frames;
+            const trimmed = interleaved.subarray(0, trimFrames * 2);
+            outputBytes   = packFloat32ToInt24Buffer(trimmed);
+        }
+        filename = slotFilenameVariant(slotNum, { mono: isMono, stream: isStream });
+
+        // Enforce exclusivity: wipe ALL variants for this slot before writing
+        // the chosen one. Prompts to overwrite if ANY variant currently exists.
+        const dir = await ensureMemorySlots();
+        let existingName = null;
+        for (const v of slotAllVariants(slotNum)) {
+            try { await dir.getFileHandle(v, { create: false }); existingName = v; break; } catch { /* missing */ }
+        }
+        if (existingName) {
+            const ok = await dialogConfirm(
+                `Overwrite slot ${String(slotNum).padStart(2,'0')}?`,
+                `This slot already has content (${existingName}).`,
+                { okLabel: 'Overwrite', okVariant: 'danger' },
+            );
+            if (!ok) { statusEl.textContent = ''; return; }
+        }
+        await unlinkAllSlotVariants(dir, slotNum);
+
         const fh       = await dir.getFileHandle(filename, { create: true });
         const writable = await fh.createWritable();
-        await writable.write(packFloat32ToInt24Buffer(interleaved));
+        await writable.write(outputBytes);
         await writable.close();
-        log(`Done → ${filename}`);
+        log(`Done → ${filename}${chosen ? ` (${chosen.id})` : ''}`);
         statusEl.textContent = 'Done';
         await refreshUI();
-        // Auto-load the just-imported slot into the player
+        // Auto-load the just-imported slot into the player.
         const newThumb = document.querySelector(`.slot-thumb[data-filename="${filename}"]`);
         if (newThumb) newThumb.click();
         else {
@@ -2172,7 +2809,12 @@ function clearViewerAfterWipe(emptyMsg) {
 
 document.getElementById('btn-wipe-working').addEventListener('click', async () => {
     if (!g_cyclesHandle) { log('Card not connected'); return; }
-    if (!confirm('Wipe the working file?\n\nDeletes 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw.\nMemory slots are NOT affected.')) return;
+    const ok = await dialogConfirm(
+        'Wipe working file?',
+        'Deletes 01_Loop.raw, 02_Mix.raw, 03_Dub_A.raw, 03_Dub_B.raw.\nMemory slots are NOT affected.',
+        { okLabel: 'Wipe', okVariant: 'danger' },
+    );
+    if (!ok) return;
     let deleted = 0;
     for (const name of WORKING_FILE_NAMES) {
         try { await g_cyclesHandle.removeEntry(name); deleted++; } catch { /* missing — fine */ }
@@ -2188,13 +2830,18 @@ document.getElementById('btn-wipe-slots').addEventListener('click', async () => 
     if (!g_memorySlotsHandle) { log('Card not connected'); return; }
     const slots = await listSlots();
     if (!slots.length) { log('No memory slots to wipe'); return; }
-    if (!confirm(`Wipe all ${slots.length} memory slot${slots.length > 1 ? 's' : ''}?\n\nThis cannot be undone.`)) return;
+    const ok = await dialogConfirm(
+        `Wipe all ${slots.length} memory slot${slots.length > 1 ? 's' : ''}?`,
+        'This cannot be undone.',
+        { okLabel: 'Wipe all', okVariant: 'danger' },
+    );
+    if (!ok) return;
     let deleted = 0;
     for (const s of slots) {
         try { await g_memorySlotsHandle.removeEntry(s.filename); deleted++; }
         catch (e) { log(`Could not delete ${s.filename}: ${e.message}`); }
     }
-    if (g_selection && /^Mem_\d{2}\.raw$/i.test(g_selection.filename)) {
+    if (g_selection && SLOT_FILENAME_RE.test(g_selection.filename)) {
         clearViewerAfterWipe('All memory slots wiped');
     }
     log(`Memory slots wiped (${deleted} deleted)`);
