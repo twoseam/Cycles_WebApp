@@ -1023,28 +1023,37 @@
             top: 66px;
             bottom: 18px;
             right: 0;
-            width: 65px;
+            width: 35px;
             background: var(--bg-panel);
             border-left: 2px solid var(--border-dark);
             pointer-events: none;
             z-index: 2;
         }
-        #stock-grid { position: relative; }
-        #stock-grid::before {
-            content: '';
+        /* Left wall lives as a real element on #stock-section (not a
+           pseudo on #stock-grid) so it stays pinned while the grid
+           scrolls. Absolute children of a scroll container still scroll
+           with the content in practice — positioning it on the
+           non-scrolling section is the reliable fix. */
+        #stock-section .stock-wall-left {
             position: absolute;
-            top: 0;
-            bottom: 0;
+            top: 66px;
+            bottom: 18px;
             left: 0;
-            width: 65px;
+            width: 35px;
             background: var(--bg-panel);
             border-right: 2px solid var(--border-dark);
             pointer-events: none;
             z-index: 2;
-            display: none;     /* shown only when scrolled off the start */
+            /* Parked off-screen + invisible; slides into place when the
+               grid picks up `.has-scroll-left`. transform+opacity is
+               transition-friendly (display:none isn't). */
+            transform: translateX(-100%);
+            opacity: 0;
+            transition: transform 0.22s ease-out, opacity 0.22s ease-out;
         }
-        #stock-grid.has-scroll-left::before {
-            display: block;
+        #stock-section:has(#stock-grid.has-scroll-left) .stock-wall-left {
+            transform: translateX(0);
+            opacity: 1;
         }
         /* Hide wall + cover when there's nothing to scroll — `.has-scroll-*`
            classes are toggled by the carousel JS on the grid whenever
@@ -2466,6 +2475,7 @@
         </div>
     </div>
     <div id="stock-grid"></div>
+    <div class="stock-wall-left"><!-- pinned left-edge wall; shown when grid has `.has-scroll-left` --></div>
 </div>
 
 <!-- ── Log ────────────────────────────────────────────────────────────────── -->
