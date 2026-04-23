@@ -5024,7 +5024,12 @@ async function renderStockTracks() {
         const parts  = base.split(/\s+-\s+/);
         const artist = track.artist || parts[0] || null;
         const title  = track.title  || parts[1] || base;
-        const key    = track.key    || parts[2] || null;
+        // Replace musical flats in the key field — any lowercase `b`
+        // following a note letter (A–G) becomes the proper flat glyph.
+        // "Eb" → "E♭", "Bbm" → "B♭m", etc. Naturals and sharps are left
+        // alone.
+        let key      = track.key    || parts[2] || null;
+        if (key) key = key.replace(/([A-Ga-g])b/g, (_, note) => note + '♭');
         // Normalize "85bpm" → "85 bpm" so the CSS-uppercased render shows
         // a proper space between the number and its unit. Filename can
         // have either form; display is consistent.
