@@ -847,9 +847,12 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             min-height: calc(2 * 1.3em);
+            /* Extra breathing room between title and the band/meta stack
+               below (sits on top of .stock-thumb's 8 px gap). */
+            margin-bottom: 8px;
         }
         .stock-thumb .stock-artist {
-            font-size: 10px;
+            font-size: 10.5px;   /* +5 % bump from 10 px */
             font-family: 'Roboto Mono', 'Courier New', monospace;
             color: var(--fg-muted);
             letter-spacing: 0.06em;
@@ -863,14 +866,12 @@
             text-transform: uppercase;
             margin-top: 2px;
         }
-        /* Key / tempo row — slightly more prominent than the file-meta
-           lines so the musical info reads first. */
-        .stock-thumb .stock-info {
-            font-size: 10px;
-            font-family: 'Roboto Mono', 'Courier New', monospace;
-            color: var(--fg-dim);
-            letter-spacing: 0.08em;
-            margin-top: 2px;
+        /* Greyed-out placeholder when a meta field (tempo / key / ext)
+           is absent — shows the label name itself, dimmed so it reads
+           as "empty slot" without crowding the actual values. */
+        .stock-thumb .stock-meta.missing {
+            color: var(--fg-faint);
+            opacity: 0.55;
         }
 
         /* Memory slots carousel: tiles fill top-to-bottom in two fixed
@@ -5033,28 +5034,22 @@ async function renderStockTracks() {
             thumb.appendChild(artistEl);
         }
 
-        // Key + tempo share a single row when both present; either one
-        // alone renders on its own line. Raw values are kept as-is so
-        // they match whatever format the filename uses.
-        if (key || tempo) {
-            const infoEl = document.createElement('div');
-            infoEl.className = 'stock-info';
-            infoEl.textContent = [key, tempo].filter(Boolean).join(' · ');
-            thumb.appendChild(infoEl);
-        }
-
-        const ext = (track.file.match(/\.([^.]+)$/)?.[1] || 'file').toUpperCase();
+        // Each meta field gets its own line. Missing fields render the
+        // label name itself in a greyed-out style so every tile has the
+        // same vertical rhythm regardless of how much info the file
+        // carries.
+        const addMeta = (value, placeholder) => {
+            const el = document.createElement('div');
+            el.className = 'stock-meta' + (value ? '' : ' missing');
+            el.textContent = value || placeholder;
+            thumb.appendChild(el);
+        };
+        const ext = (track.file.match(/\.([^.]+)$/)?.[1] || '').toUpperCase();
         const dur = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
-        if (dur) {
-            const durEl = document.createElement('div');
-            durEl.className = 'stock-meta';
-            durEl.textContent = dur;
-            thumb.appendChild(durEl);
-        }
-        const extEl = document.createElement('div');
-        extEl.className = 'stock-meta';
-        extEl.textContent = ext;
-        thumb.appendChild(extEl);
+        addMeta(tempo, 'Tempo');
+        addMeta(key,   'Key');
+        addMeta(dur,   'Time');
+        addMeta(ext,   'Filetype');
 
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
 
