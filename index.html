@@ -860,12 +860,11 @@
             margin-bottom: 12px;
         }
         .stock-thumb .stock-meta {
-            font-size: 9px;
+            font-size: 10.5px;
             line-height: 1.2;
             font-family: 'Roboto Mono', 'Courier New', monospace;
             color: var(--fg-muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+            letter-spacing: 0.08em;
             margin-top: 0;
         }
         /* Pull adjacent meta lines closer — overrides the column gap for
@@ -880,11 +879,6 @@
         .stock-thumb .stock-meta.missing {
             color: var(--fg-faint);
             opacity: 0.35;
-        }
-        /* Key line carries pre-formatted text so the flat marker 'b'
-           stays lowercase next to the uppercased note letter. */
-        .stock-thumb .stock-meta.key-literal {
-            text-transform: none;
         }
 
         /* Memory slots carousel: tiles fill top-to-bottom in two fixed
@@ -970,10 +964,12 @@
             background: var(--bg-raised);
             border: 1px solid var(--border);
             cursor: pointer;
-            padding: 10px 10px 8px;
+            /* Padding + gap mirror .stock-thumb so the two carousels
+               share the same interior rhythm. */
+            padding: 18px 12px 12px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             user-select: none;
             transition: background 0.08s;
             position: relative;
@@ -1053,7 +1049,7 @@
         }
 
         .slot-dur {
-            font-size: 10px;
+            font-size: 10.5px;
             font-family: 'Roboto Mono', 'Courier New', monospace;
             color: var(--fg-muted);
             letter-spacing: 0.06em;
@@ -1064,13 +1060,12 @@
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: 3px;
-            margin-top: 3px;
-            font-size: 9px;
+            gap: 2px;
+            margin-top: 4px;
+            font-size: 10.5px;
             font-family: 'Roboto Mono', 'Courier New', monospace;
             color: var(--fg-muted);
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
         .slot-format-left {
             display: flex;
@@ -5055,24 +5050,18 @@ async function renderStockTracks() {
         // label name itself in a greyed-out style so every tile has the
         // same vertical rhythm regardless of how much info the file
         // carries.
-        const addMeta = (value, placeholder, extraClass = '') => {
+        const addMeta = (value, placeholder) => {
             const el = document.createElement('div');
-            el.className = 'stock-meta' + (value ? '' : ' missing') + (extraClass ? ' ' + extraClass : '');
+            el.className = 'stock-meta' + (value ? '' : ' missing');
             el.textContent = value || placeholder;
             thumb.appendChild(el);
         };
-        const ext = (track.file.match(/\.([^.]+)$/)?.[1] || '').toUpperCase();
+        const ext = (track.file.match(/\.([^.]+)$/)?.[1] || '');
         const dur = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
-        // Key is pre-formatted so a lowercase 'b' (flat marker) survives
-        // the row's uppercase CSS — everything else in the string is
-        // upper-cased manually before setting textContent.
-        const keyDisplay = key
-            ? key.split('').map(c => (c === 'b' ? 'b' : c.toUpperCase())).join('')
-            : null;
-        addMeta(tempo,      'Tempo');
-        addMeta(keyDisplay, 'Key',      'key-literal');
-        addMeta(dur,        'Time');
-        addMeta(ext,        'Filetype');
+        addMeta(tempo, 'Tempo');
+        addMeta(key,   'Key');
+        addMeta(dur,   'Time');
+        addMeta(ext,   'Filetype');
 
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
 
