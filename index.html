@@ -863,6 +863,15 @@
             text-transform: uppercase;
             margin-top: 2px;
         }
+        /* Key / tempo row — slightly more prominent than the file-meta
+           lines so the musical info reads first. */
+        .stock-thumb .stock-info {
+            font-size: 10px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            color: var(--fg-dim);
+            letter-spacing: 0.08em;
+            margin-top: 2px;
+        }
 
         /* Memory slots carousel: tiles fill top-to-bottom in two fixed
            rows, overflowing columns to the right. Same scroll behavior
@@ -4991,12 +5000,15 @@ async function renderStockTracks() {
     if (!tracks.length) { grid.textContent = 'No stock tracks available'; return; }
 
     for (const track of tracks) {
-        // Parse "Artist - Title.ext" from the filename. Manifest fields
-        // `title` / `artist` override the parsed values when present.
-        const base     = track.file.replace(/\.[^.]+$/, '');
-        const split    = base.match(/^(.+?)\s+-\s+(.+)$/);
-        const artist   = track.artist || (split ? split[1] : null);
-        const title    = track.title  || (split ? split[2] : base);
+        // Parse "Band - Track - Key - Tempo.ext" from the filename,
+        // with Key and Tempo optional. Manifest fields `title` /
+        // `artist` / `key` / `tempo` override parsed values when set.
+        const base   = track.file.replace(/\.[^.]+$/, '');
+        const parts  = base.split(/\s+-\s+/);
+        const artist = track.artist || parts[0] || null;
+        const title  = track.title  || parts[1] || base;
+        const key    = track.key    || parts[2] || null;
+        const tempo  = track.tempo  || parts[3] || null;
 
         const thumb = document.createElement('div');
         thumb.className = 'stock-thumb';
@@ -5011,6 +5023,16 @@ async function renderStockTracks() {
             artistEl.className = 'stock-artist';
             artistEl.textContent = artist;
             thumb.appendChild(artistEl);
+        }
+
+        // Key + tempo share a single row when both present; either one
+        // alone renders on its own line. Raw values are kept as-is so
+        // they match whatever format the filename uses.
+        if (key || tempo) {
+            const infoEl = document.createElement('div');
+            infoEl.className = 'stock-info';
+            infoEl.textContent = [key, tempo].filter(Boolean).join(' · ');
+            thumb.appendChild(infoEl);
         }
 
         const ext = (track.file.match(/\.([^.]+)$/)?.[1] || 'file').toUpperCase();
