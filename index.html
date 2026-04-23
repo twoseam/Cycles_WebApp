@@ -170,6 +170,66 @@
                 4px 4px 0 color-mix(in srgb, var(--brand-blue), black 25%);
         }
 
+        /* ── Dark mode ─────────────────────────────────────────────────
+           Warm charcoal variant of the vintage-hardware palette. Keeps
+           the same hue relationships — just inverts lightness. Brand
+           accents (red/blue) read well on both so they don't change.
+           Shadow-tactile's 6-step stack is redefined to ride on a dark
+           step color; without this the printed-shadow effect inverts
+           weirdly against a dark panel. */
+        body.dark {
+            --bg:         #22201b;
+            --bg-label:   #000000;
+            --bg-inset:   #131211;
+            --bg-raised:  #45423a;
+            --bg-panel:   #302d27;
+            --bg-hover:   #3a3731;
+            --bg-screen:  #42413d;
+
+            --fg:         #e6e6e6;
+            --fg-dim:     #e9e2e2;
+            --fg-muted:   #f4ecec;
+            --fg-faint:   #9a8c65;
+
+            --border:        #6e6c68;
+            --border-light:  #212121;
+            --border-dark:   #747272;
+            --border-strong: #e6e6e6;
+            --border-subtle: #2a241a;
+
+            --fmt-undo:   #c58af4;
+
+            --wave-guide: #525252;
+            --playhead:   rgba(230, 230, 230, 0.45);
+            --time-label: #949494;
+
+            --logo-dark:  #f1e7d2;
+
+            /* Re-derive accent-dim against a dark page (more transparent
+               so it doesn't blow out on the deeper bg). */
+            --accent-dim: color-mix(in srgb, var(--brand-red) 22%, transparent);
+
+            --shadow-tactile:
+                1px 1px 0 #0a0805,
+                2px 2px 0 #0a0805,
+                3px 3px 0 #0a0805,
+                4px 4px 0 #0a0805,
+                5px 5px 0 #0a0805,
+                6px 6px 0 #0a0805,
+                7px 8px 6px rgba(0, 0, 0, 0.55);
+            --shadow-card:
+                1px 1px 0 #0a0805,
+                2px 2px 0 #0a0805,
+                3px 3px 0 #0a0805,
+                4px 4px 0 #0a0805,
+                5px 6px 4px rgba(0, 0, 0, 0.45);
+            --shadow-button:
+                1px 1px 0 #0a0805,
+                2px 2px 0 #0a0805,
+                3px 3px 0 #0a0805,
+                4px 4px 0 #0a0805;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
@@ -199,8 +259,8 @@
         #logo svg .st1 { fill: var(--brand-blue); }
         #logo svg .st0 { fill: var(--brand-red); }
         #logo-sub {
-            font-size: 8px;
-            letter-spacing: 0.22em;
+            font-size: 9px;
+            letter-spacing: 0.14em;
             color: var(--fg-muted);
             text-transform: uppercase;
         }
@@ -240,7 +300,95 @@
         .led.red   { background: var(--led-red);   border-color: var(--led-red-border); }
         .led.amber { background: var(--accent);    border-color: var(--led-amber-border); }
 
-        #btn-theme { display: none; }
+        #theme-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        /* Sliding LIGHT/DARK toggle — wide rectangular track with a
+           chunky rectangular thumb sliding across one half. The current
+           mode name sits on the *opposite* half of the track (so the
+           exposed area carries the label). Label swaps + thumb
+           translates on state change. Matches the page's printed-panel
+           aesthetic: hard edges, monospace label, tactile shadow stack
+           on the thumb. */
+        .theme-toggle {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            user-select: none;
+        }
+        .theme-toggle input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+        .theme-toggle-track {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 22px;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-dark);
+            box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.14);
+        }
+        .theme-toggle-label {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: var(--fg);
+            pointer-events: none;
+        }
+        /* LIGHT label sits on the RIGHT half (thumb is on the left in
+           light mode, leaving the right side exposed for the label). */
+        .theme-toggle-label.light { right: 8px; }
+        /* DARK label sits on the LEFT half (thumb moves to the right
+           in dark mode, exposing the left side). */
+        .theme-toggle-label.dark  { left:  8px; display: none; }
+        .theme-toggle input:checked ~ .theme-toggle-track .theme-toggle-label.light { display: none; }
+        .theme-toggle input:checked ~ .theme-toggle-track .theme-toggle-label.dark  { display: block; }
+        .theme-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 36px;
+            height: 16px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border-dark);
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border);
+            transition: left 0.16s cubic-bezier(.4, 1.1, .5, 1), background 0.15s, box-shadow 0.15s;
+        }
+        /* Track inner = 78 px. Thumb 36 visual. Travel = 78 − 36 − 4 margin = 38. */
+        .theme-toggle input:checked ~ .theme-toggle-track .theme-toggle-thumb {
+            left: 40px;
+        }
+        .theme-toggle:active .theme-toggle-thumb {
+            box-shadow: 1px 1px 0 var(--border);
+            transform: translate(1px, 1px);
+        }
+        /* Customizer entry point hidden in production — the popup and
+           all its JS stay in place for bringing back later; just the
+           visible ⚙ button is taken out. */
+        #btn-theme-customize {
+            display: none;
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 7px 4px;
+            letter-spacing: 0;
+        }
+
+        /* Theme customizer lives in a detached browser window now — all
+           its styling is injected into the popup on open. No in-page
+           modal CSS here. */
+
 
         .card-ok {
             display: flex;
@@ -508,7 +656,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
-            margin-bottom: 8px;
+            margin-bottom: 16px;
         }
         .section-wipe {
             font-family: inherit;
@@ -594,6 +742,11 @@
         #slot-controls {
             display: flex;
             gap: 4px;
+            /* Push the arrows to the right end of the section-header so
+               both carousels have transport on the same side (Memory
+               Slots' Delete button sits on the left; Stock Tracks has
+               nothing else in its header, auto margin rails it right). */
+            margin-left: auto;
         }
         .stock-arrow {
             width: 34px;
@@ -635,40 +788,19 @@
             padding: 2px 6px 6px 2px;
             scrollbar-width: none;              /* Firefox */
         }
-        /* Hard vertical rule overlaid on the Stock Tracks panel — tiles
-           scroll behind it instead of fading out. Positioned inside
-           #stock-section (which is .module, already position:relative) so
-           we can place it independent of the grid's edges: inset from the
-           right, extending above and below the grid band. */
-        #stock-section::after {
-            content: '';
-            position: absolute;
-            top: 20px;
-            bottom: 10px;
-            right: 60px;
-            width: 2px;
-            background: var(--border-dark);
-            pointer-events: none;
-            z-index: 2;
-        }
+        /* Scroll-behind-a-wall — a chunky vertical rule overlaid near
+           the right edge of the carousel. Tiles pass behind it as they
+           scroll, giving a "slipping off-view behind a hardware rail"
+           look instead of a gradient fade. Shared rule for both
+           carousels lives below near #slot-grid; stock/slot only differ
+           in vertical extent, tuned via a per-section modifier. Nothing
+           needed here on #stock-grid itself. */
         #stock-grid::-webkit-scrollbar { display: none; }  /* Chromium */
         /* Each thumb takes exactly one-third of the viewport width
            (minus the two 5 px gaps between the three visible tiles
-           and the 8 px horizontal grid padding). Tactile shadow is
-           slightly bolder than the default token — one extra step
-           and a darker ground — to read as "lifted" against the
-           flat panel now that the fade mask is gone. */
+           and the 8 px horizontal grid padding). */
         #stock-grid .stock-thumb {
             flex: 0 0 calc((100% - 18px) / 3);
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 5px 0 var(--border),
-                6px 6px 0 var(--border),
-                7px 7px 0 var(--border),
-                9px 11px 10px rgba(0, 0, 0, 0.26);
         }
         /* Dummy placeholder tiles (during iteration) — muted appearance
            so they read as "not real content" while still filling the
@@ -690,10 +822,10 @@
             background: var(--bg-raised);
             border: 1px solid var(--border);
             cursor: pointer;
-            padding: 10px 12px;
+            padding: 18px 12px 22px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 8px;
             user-select: none;
             transition: background 0.08s;
         }
@@ -756,19 +888,49 @@
         #slot-grid.two-row {
             grid-template-rows: repeat(2, auto);
         }
+        /* When there are enough slots to scroll (>6), reserve 60 px of
+           padding on the right edge so the last tile can scroll past
+           the wall cover — keeps its delete button reachable. Tiles
+           shrink by 60/5 ≈ 12 px each while this is active. */
+        #slot-grid.has-scroll-tail {
+            padding-right: 66px;
+        }
         #slot-grid::-webkit-scrollbar { display: none; }
-        #slot-grid.has-scroll-right {
-                    mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
+
+        /* Shared "scroll-behind-a-wall" overlay for both carousels. A
+           chunky vertical rule sits inside the section at a fixed inset
+           from the right; tiles scroll behind it naturally because it's
+           an absolute overlay with z-index above them. Stock Tracks is
+           a single row, Memory Slots can grow to two rows, so each sets
+           its own top/bottom to match its band. */
+        /* Wall + cover — the wall is a thin vertical brown line, and to
+           the right of it a panel-colored rectangle hides any tile
+           content that extends past the wall. Tile sizes don't change
+           with wall position; the wall just cuts off the visible tile
+           row at its x. One pseudo-element does both: width = distance
+           from the section's right edge to the wall, background =
+           panel color (matches module fill), border-left = the wall
+           itself. Move the wall: change `width`. */
+        #stock-section::after,
+        #slot-section::after {
+            content: '';
+            position: absolute;
+            top: 66px;
+            bottom: 18px;
+            right: 0;
+            width: 65px;
+            background: var(--bg-panel);
+            border-left: 2px solid var(--border-dark);
+            pointer-events: none;
+            z-index: 2;
         }
-        #slot-grid.has-scroll-left {
-                    mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
-        }
-        #slot-grid.has-scroll-left.has-scroll-right {
-                    mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
-        }
+        /* Grids span the full section content-box — tile widths compute
+           off the full width (not narrowed by any margin), so the
+           tiles stay a constant size regardless of wall position. The
+           wall is a pure overlay: tiles scrolling past its x just get
+           visually covered by it, and the last tile peeks from behind
+           naturally because the grid's overflow clips at the section
+           edge, not at the wall. */
         @media (max-width: 600px) {
             #slot-grid { grid-auto-columns: calc((100% - 23px) / 4); }
         }
@@ -807,6 +969,21 @@
         .slot-thumb.empty .slot-format-left      { color: var(--border-light); }
         .slot-thumb.empty .slot-format-dub.no-dub { color: var(--fg-muted); }
         .slot-thumb.empty .slot-format-undo.no-undo { color: var(--fg-muted); }
+
+        /* Ghost placeholders mounted during a stock drag — fade/slide in
+           from slightly above so they don't pop into place abruptly. The
+           keyframe ends at opacity 0.45 so the native `.empty` styling
+           applies cleanly once the animation finishes (no `forwards` fill
+           means the inline end state doesn't persist). Staggered via an
+           inline `--ghost-idx` custom property set at mount time. */
+        .slot-thumb.drag-ghost {
+            animation: ghost-enter 0.22s ease-out both;
+            animation-delay: calc(var(--ghost-idx, 0) * 8ms);
+        }
+        @keyframes ghost-enter {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 0.45; transform: translateY(0); }
+        }
 
         /* Drop-target highlight (stock track dragged over a slot). Works
            for both filled and empty slot tiles. */
@@ -2038,7 +2215,17 @@
         <div id="logo-sub">Looper Workstation Data Manager</div>
     </div>
     <div id="header-right">
-        <button id="btn-theme">Dark</button>
+        <div id="theme-controls">
+            <label class="theme-toggle" title="Toggle dark mode">
+                <input type="checkbox" id="btn-theme" />
+                <span class="theme-toggle-track">
+                    <span class="theme-toggle-label light">LIGHT</span>
+                    <span class="theme-toggle-label dark">DARK</span>
+                    <span class="theme-toggle-thumb"></span>
+                </span>
+            </label>
+            <button id="btn-theme-customize" title="Customize colors">⚙</button>
+        </div>
         <div id="card-status">Checking for CYCLES card…</div>
     </div>
 </div>
@@ -2115,11 +2302,11 @@
 <div id="slot-section" class="module">
     <div class="module-code">Memory Slots</div>
     <div class="section-header">
+        <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
         <div id="slot-controls">
             <button id="btn-slot-prev" class="stock-arrow" type="button" aria-label="Previous">◀</button>
             <button id="btn-slot-next" class="stock-arrow" type="button" aria-label="Next">▶</button>
         </div>
-        <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
     </div>
     <div id="slot-grid"></div>
 </div>
@@ -2141,6 +2328,9 @@
 
 <!-- ── Log ────────────────────────────────────────────────────────────────── -->
 <pre id="log"></pre>
+
+<!-- Theme customizer opens as a detached browser window via ⚙ button;
+     no in-page modal markup needed. -->
 
 <!-- ── Connect prompt (full-screen, shown when no card is connected) ─────── -->
 <div id="connect-prompt" style="display:none">
@@ -3881,30 +4071,7 @@ async function refreshUI(autoLoad = false) {
             document.getElementById('viewer-empty').textContent = 'No memory slots on this card';
         }
     }
-    // Promote to a 2-row carousel only when there are 6+ tiles. Below
-    // that, a single row reads naturally without a half-empty second
-    // row. (Empty-slot placeholders count, so the count reflects the
-    // total visible tiles.)
-    const tiles   = slotGrid.children;
-    const twoRow  = tiles.length >= 6;
-    slotGrid.classList.toggle('two-row', twoRow);
-    // In two-row mode, place tiles explicitly so the reading order is
-    // row-first within a 5-wide "page": row 1 gets tiles 1-5, row 2
-    // gets 6-10, then tile 11 starts page 2 at row 1 col 6, etc. Each
-    // page stacks 10 tiles (2 rows × 5 cols) side-by-side horizontally.
-    for (let i = 0; i < tiles.length; i++) {
-        if (twoRow) {
-            const inPage = i % 10;
-            const page   = Math.floor(i / 10);
-            const row    = Math.floor(inPage / 5) + 1;       // 1 or 2
-            const col    = page * 5 + (inPage % 5) + 1;      // 1, 2, 3…
-            tiles[i].style.gridRow    = row;
-            tiles[i].style.gridColumn = col;
-        } else {
-            tiles[i].style.gridRow    = '';
-            tiles[i].style.gridColumn = '';
-        }
-    }
+    applySlotGridLayout();
     // Wire the horizontal carousel controls now that tiles are in place —
     // arrow enabled states, no-scroll hide, and edge-fade masks all
     // track scroll position from here.
@@ -4606,6 +4773,131 @@ document.getElementById('btn-import').addEventListener('click', async () => {
 const STOCK_BASE = 'https://cycleslooper.com/Assets/Stock_Tracks/';
 const STOCK_DRAG_MIME = 'application/x-cycles-stock-track';
 
+// Animate a height change on #slot-grid across a DOM mutation. Measures
+// the grid's height before and after `mutator()` runs, then forces a
+// transition between the two values so subsequent modules below the
+// grid slide into their new positions instead of jumping. The grid is
+// reverted to auto-height after the transition so content changes keep
+// sizing naturally.
+function animateSlotGridHeight(mutator) {
+    const slotGrid = document.getElementById('slot-grid');
+    if (!slotGrid) { mutator(); return; }
+    const from = slotGrid.offsetHeight;
+    mutator();
+    const to = slotGrid.offsetHeight;
+    if (from === to) return;
+    slotGrid.style.height = from + 'px';
+    // Force reflow so the starting height commits before the transition
+    // target is applied.
+    void slotGrid.offsetHeight;
+    slotGrid.style.transition = 'height 0.22s ease-out';
+    slotGrid.style.height = to + 'px';
+    const cleanup = () => {
+        slotGrid.style.height = '';
+        slotGrid.style.transition = '';
+    };
+    slotGrid.addEventListener('transitionend', cleanup, { once: true });
+    setTimeout(cleanup, 400);  // safety net if transitionend is missed
+}
+
+// Promote the slot grid to a 2-row carousel when there are 6+ tiles
+// (normal mode) or whenever a drag is in progress (force mode — keeps
+// newly-mounted ghost slots visible without scrolling on a sparse card).
+// In two-row mode tiles are placed explicitly so each 10-tile "page"
+// stacks 2 rows × 5 cols, reading left-to-right then next page.
+function applySlotGridLayout(forceTwoRow = false) {
+    const slotGrid = document.getElementById('slot-grid');
+    if (!slotGrid) return;
+    const tiles  = slotGrid.children;
+    const twoRow = forceTwoRow || tiles.length >= 6;
+    slotGrid.classList.toggle('two-row', twoRow);
+    // Add 60 px of scroll-tail padding when there are enough tiles to
+    // scroll — lets the last tile travel fully out from under the wall
+    // cover so its delete button stays reachable.
+    slotGrid.classList.toggle('has-scroll-tail', tiles.length > 6);
+    for (let i = 0; i < tiles.length; i++) {
+        if (twoRow) {
+            const inPage = i % 10;
+            const page   = Math.floor(i / 10);
+            const row    = Math.floor(inPage / 5) + 1;       // 1 or 2
+            const col    = page * 5 + (inPage % 5) + 1;      // 1, 2, 3…
+            tiles[i].style.gridRow    = row;
+            tiles[i].style.gridColumn = col;
+        } else {
+            tiles[i].style.gridRow    = '';
+            tiles[i].style.gridColumn = '';
+        }
+    }
+}
+
+// While a stock track is being dragged, expose every slot up to 99 as a
+// drop target — regardless of how few real slots the card currently has.
+// Ghost placeholders are marked `.drag-ghost` so we can yank them cleanly
+// on dragend (or let refreshUI replace them after a successful drop).
+function mountGhostEmptySlots() {
+    const slotGrid = document.getElementById('slot-grid');
+    if (!slotGrid) return;
+    const existing = new Set(
+        Array.from(slotGrid.querySelectorAll('.slot-thumb'))
+            .map(t => parseInt(t.dataset.slotNum, 10))
+            .filter(Number.isFinite)
+    );
+    const frag = document.createDocumentFragment();
+    let idx = 0;
+    for (let n = 1; n <= 99; n++) {
+        if (existing.has(n)) continue;
+        const el = document.createElement('div');
+        el.className = 'slot-thumb empty drag-ghost';
+        el.dataset.slotNum = n;
+        el.style.setProperty('--ghost-idx', idx++);
+        el.innerHTML = `
+            <div class="slot-header">
+                <div class="slot-header-left">
+                    <div class="slot-num">${String(n).padStart(2, '0')}</div>
+                </div>
+            </div>
+            <div class="slot-dur">EMPTY</div>
+            <div class="slot-format">
+                <div class="slot-format-left">
+                    <span>Stereo</span>
+                    <span class="slot-format-dots stereo">
+                        <span class="fmt-dot red"></span>
+                        <span class="fmt-dot blue"></span>
+                    </span>
+                </div>
+                <span class="slot-format-dub no-dub">Overdub</span>
+                <span class="slot-format-undo no-undo">Undo</span>
+            </div>
+        `;
+        frag.appendChild(el);
+    }
+    slotGrid.appendChild(frag);
+    // Push the two-row promotion out of the dragstart event — some browsers
+    // will cancel the drag if the DOM is mutated with inline-style writes
+    // on many elements synchronously inside dragstart. Height animates so
+    // the module grows smoothly and modules below slide down with it.
+    // Track the RAF so a quick dragend (user lets go immediately) can
+    // cancel the expansion before it applies.
+    if (g_ghostPromoteRAF !== null) cancelAnimationFrame(g_ghostPromoteRAF);
+    g_ghostPromoteRAF = requestAnimationFrame(() => {
+        g_ghostPromoteRAF = null;
+        animateSlotGridHeight(() => applySlotGridLayout(true));
+    });
+}
+let g_ghostPromoteRAF = null;
+function clearGhostEmptySlots() {
+    // If the user released before the expansion frame fired, cancel it so
+    // the grid doesn't pop open after they've already let go.
+    if (g_ghostPromoteRAF !== null) {
+        cancelAnimationFrame(g_ghostPromoteRAF);
+        g_ghostPromoteRAF = null;
+    }
+    animateSlotGridHeight(() => {
+        document.querySelectorAll('.slot-thumb.drag-ghost').forEach(el => el.remove());
+        applySlotGridLayout();
+    });
+}
+
 async function fetchStockTracks() {
     try {
         const resp = await fetch(STOCK_BASE + 'tracks.json', { cache: 'no-cache' });
@@ -4737,15 +5029,24 @@ async function renderStockTracks() {
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
 
         // Drag-drop: carry the track JSON + display title. Slot tiles
-        // listen for 'drop' and call handleStockTrackDrop.
+        // listen for 'drop' and call handleStockTrackDrop. During drag
+        // we also mount "ghost" empty slots beyond the current maxSlot
+        // so the user can drop into a brand-new slot position — the
+        // ghosts look like regular empty placeholders and clean up on
+        // dragend (or, after a successful drop, are replaced by the
+        // refreshUI re-render of the grid).
         thumb.draggable = true;
         thumb.addEventListener('dragstart', (e) => {
             const payload = JSON.stringify({ track, displayTitle: title });
             e.dataTransfer.setData(STOCK_DRAG_MIME, payload);
             e.dataTransfer.effectAllowed = 'copy';
             thumb.classList.add('dragging');
+            mountGhostEmptySlots();
         });
-        thumb.addEventListener('dragend', () => thumb.classList.remove('dragging'));
+        thumb.addEventListener('dragend', () => {
+            thumb.classList.remove('dragging');
+            clearGhostEmptySlots();
+        });
 
         grid.appendChild(thumb);
     }
@@ -4764,6 +5065,40 @@ async function renderStockTracks() {
         grid.appendChild(dummy);
     }
     setupStockCarousel();
+    teaseStockGrid();
+}
+
+// Subtle "there's more here" nudge — when the stock grid first becomes
+// visible in the viewport, scroll it right a touch then back to 0 so a
+// sliver of the next tile is revealed. scroll-behavior: smooth on the
+// grid handles the easing; we just set scrollLeft twice. Only fires
+// once per page load and only when there's actually overflow to scroll.
+let g_stockTeased = false;
+function teaseStockGrid() {
+    if (g_stockTeased) return;
+    const grid = document.getElementById('stock-grid');
+    if (!grid) return;
+    if (grid.scrollWidth <= grid.clientWidth + 4) return;  // nothing to reveal
+
+    const runTease = () => {
+        if (g_stockTeased) return;
+        g_stockTeased = true;
+        setTimeout(() => {
+            grid.scrollLeft = 90;
+            setTimeout(() => { grid.scrollLeft = 0; }, 520);
+        }, 280);
+    };
+
+    const rect       = grid.getBoundingClientRect();
+    const viewportH  = window.innerHeight || document.documentElement.clientHeight;
+    const alreadyVis = rect.top < viewportH && rect.bottom > 0;
+    if (alreadyVis) { runTease(); return; }
+    const obs = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+            if (e.isIntersecting) { obs.disconnect(); runTease(); break; }
+        }
+    }, { threshold: 0.3 });
+    obs.observe(grid);
 }
 
 // Wire up a horizontal-scroll carousel: prev/next arrows, trackpad
@@ -5234,15 +5569,383 @@ async function init() {
 (function() {
     const btn = document.getElementById('btn-theme');
     const saved = localStorage.getItem('cycles-theme');
-    if (saved === 'dark') { document.body.classList.add('dark'); btn.textContent = 'Light'; }
+    if (saved === 'dark') { document.body.classList.add('dark'); btn.checked = true; }
 
-    btn.addEventListener('click', () => {
-        const dark = document.body.classList.toggle('dark');
-        btn.textContent = dark ? 'Light' : 'Dark';
+    btn.addEventListener('change', () => {
+        const dark = btn.checked;
+        document.body.classList.toggle('dark', dark);
         localStorage.setItem('cycles-theme', dark ? 'dark' : 'light');
         if (g_viewerRaw) redrawViewer(getCurrentFrame());
     });
 })();
+
+// ── Theme customizer ──────────────────────────────────────────────────────────
+// Live color picker covering every meaningful token in the palette.
+// Customizations are saved per-mode (light vs dark) and re-applied
+// automatically via a dynamic <style> tag with `body:not(.dark)` /
+// `body.dark` rules — the existing dark-mode toggle continues to work
+// without extra wiring since the selectors switch themselves.
+const THEME_TOKENS = [
+    { group: 'Brand', rows: [
+        { n: '--brand-red',     l: 'Brand red',    light: '#d43800', dark: '#d43800' },
+        { n: '--brand-blue',    l: 'Brand blue',   light: '#1e48d4', dark: '#1e48d4' },
+    ]},
+    { group: 'Surfaces', rows: [
+        { n: '--bg',            l: 'Page',         light: '#f1e7d2', dark: '#22201b' },
+        { n: '--bg-label',      l: 'Label tag',    light: '#fffdf9', dark: '#000000' },
+        { n: '--bg-inset',      l: 'Inset',        light: '#f5f2e6', dark: '#131211' },
+        { n: '--bg-raised',     l: 'Raised',       light: '#eae3cc', dark: '#45423a' },
+        { n: '--bg-panel',      l: 'Module panel', light: '#e4dcbe', dark: '#302d27' },
+        { n: '--bg-hover',      l: 'Hover',        light: '#ddd4b6', dark: '#3a3731' },
+        { n: '--bg-screen',     l: 'Viewer bg',    light: '#d6cdac', dark: '#42413d' },
+    ]},
+    { group: 'Text', rows: [
+        { n: '--fg',            l: 'Primary',      light: '#1c1710', dark: '#e6e6e6' },
+        { n: '--fg-dim',        l: 'Dim',          light: '#3a2e18', dark: '#e9e2e2' },
+        { n: '--fg-muted',      l: 'Muted',        light: '#6a5c38', dark: '#f4ecec' },
+        { n: '--fg-faint',      l: 'Faint',        light: '#8a7c58', dark: '#9a8c65' },
+        { n: '--logo-dark',     l: 'Logo ink',     light: '#18191e', dark: '#f1e7d2' },
+    ]},
+    { group: 'Borders', rows: [
+        { n: '--border',        l: 'Default',      light: '#a09060', dark: '#6e6c68' },
+        { n: '--border-light',  l: 'Faint',        light: '#ccc4a0', dark: '#212121' },
+        { n: '--border-dark',   l: 'Emphasized',   light: '#706040', dark: '#747272' },
+        { n: '--border-strong', l: 'Strong',       light: '#1c1710', dark: '#e6e6e6' },
+    ]},
+    { group: 'Accents', rows: [
+        { n: '--fmt-overdub',   l: 'Overdub',      light: '#f48107', dark: '#f48107' },
+        { n: '--fmt-undo',      l: 'Undo',         light: '#8a3fc7', dark: '#c58af4' },
+        { n: '--led-green',     l: 'LED green',    light: '#44dd22', dark: '#44dd22' },
+        { n: '--led-red',       l: 'LED red',      light: '#cc2828', dark: '#cc2828' },
+    ]},
+    { group: 'Waveform', rows: [
+        { n: '--wave-guide',    l: 'Guide lines',  light: '#bfb596', dark: '#525252' },
+        { n: '--time-label',    l: 'Time labels',  light: '#6a5c38', dark: '#949494' },
+    ]},
+];
+
+function themeCurrentMode() {
+    return document.body.classList.contains('dark') ? 'dark' : 'light';
+}
+function themeLoadCustom(mode) {
+    try { return JSON.parse(localStorage.getItem('cycles-colors-' + mode) || '{}'); }
+    catch { return {}; }
+}
+function themeSaveCustom(mode, obj) {
+    localStorage.setItem('cycles-colors-' + mode, JSON.stringify(obj));
+}
+function themeApplyCustom() {
+    let el = document.getElementById('theme-custom-overrides');
+    if (!el) {
+        el = document.createElement('style');
+        el.id = 'theme-custom-overrides';
+        document.head.appendChild(el);
+    }
+    const light = themeLoadCustom('light');
+    const dark  = themeLoadCustom('dark');
+    const linesFor = (obj) => Object.entries(obj).map(([k, v]) => `    ${k}: ${v};`).join('\n');
+    const parts = [];
+    if (Object.keys(light).length) parts.push(`body:not(.dark) {\n${linesFor(light)}\n}`);
+    if (Object.keys(dark).length)  parts.push(`body.dark {\n${linesFor(dark)}\n}`);
+    el.textContent = parts.join('\n');
+    if (typeof g_viewerRaw !== 'undefined' && g_viewerRaw) redrawViewer(getCurrentFrame());
+}
+
+// Standalone popup window — detaches the customizer from the page so
+// the whole UI stays visible while you're picking colors, on a second
+// monitor if you like. Same-origin (about:blank) gives us full DOM
+// access from the opener, so changes can live-update the main page
+// by invoking themeApplyCustom() here after each save.
+const THEME_POPUP_CSS = `
+body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 12px; background: #2a241a; color: #e4dcbe; margin: 0; padding: 14px 18px 80px; }
+h1 { font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 2px; }
+.mode-tag { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: #8a7c58; margin-bottom: 14px; }
+.generator { background: #332b1e; border: 1px solid #4a3e28; padding: 10px 12px; margin-bottom: 18px; }
+.generator-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #8a7c58; margin-bottom: 8px; }
+.gen-row { display: grid; grid-template-columns: 48px 1fr 46px; align-items: center; gap: 8px; margin-bottom: 4px; }
+.gen-row:last-child { margin-bottom: 0; }
+.gen-row .gen-key { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: #bfb088; }
+.gen-row .gen-val { font-family: 'Roboto Mono', monospace; font-size: 10px; color: #d8cdaf; text-align: right; }
+.gen-row input[type="range"] { width: 100%; accent-color: #bfb088; }
+.gen-hue-track { height: 10px; background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%)); border: 1px solid #4a3e28; margin-top: -6px; position: relative; pointer-events: none; }
+.group { margin-bottom: 14px; }
+.group-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #8a7c58; margin-bottom: 6px; border-bottom: 1px solid #4a3e28; padding-bottom: 4px; }
+.row { display: grid; grid-template-columns: 22px 1fr 90px 26px 22px; align-items: center; gap: 8px; padding: 3px 0; }
+.swatch { width: 22px; height: 22px; border: 1px solid #706040; cursor: pointer; }
+.label { font-size: 10px; color: #d8cdaf; font-family: 'Roboto Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.label .token { opacity: 0.5; margin-left: 4px; }
+input[type="text"] { font-family: 'Roboto Mono', monospace; font-size: 10px; padding: 3px 6px; background: #181410; border: 1px solid #706040; color: #e4dcbe; text-transform: lowercase; width: 100%; box-sizing: border-box; }
+input[type="text"]:focus { outline: 1px solid #bfb088; }
+input[type="color"] { width: 26px; height: 22px; padding: 0; border: 1px solid #706040; background: transparent; cursor: pointer; }
+.reset { background: transparent; border: 1px solid #4a3e28; color: #8a7c58; padding: 2px 0; font-size: 13px; line-height: 1; cursor: pointer; opacity: 0.35; font-family: inherit; transition: opacity 0.1s, color 0.1s, border-color 0.1s; }
+.reset.customized { opacity: 1; color: #bfb088; border-color: #706040; }
+.reset:hover { color: #f1e7d2; border-color: #bfb088; }
+#actions { position: fixed; left: 0; right: 0; bottom: 0; background: #2a241a; padding: 10px 18px; border-top: 1px solid #4a3e28; display: flex; justify-content: flex-end; gap: 8px; }
+#actions button { background: #332b1e; border: 1px solid #706040; color: #e4dcbe; font-family: inherit; font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 5px 13px; cursor: pointer; }
+#actions button:hover { background: #3a3124; border-color: #bfb088; }
+`;
+
+let g_themePopup = null;
+let g_themeModeObserver = null;
+
+// Convert HSL (0–360, 0–100, 0–100) to a 6-char hex string. Used by
+// the palette generator below; hex is what the token system stores.
+function themeHslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const toHex = (n) => {
+        const k = (n + h / 30) % 12;
+        const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+        return Math.round(255 * c).toString(16).padStart(2, '0');
+    };
+    return '#' + toHex(0) + toHex(8) + toHex(4);
+}
+
+// Roll a coherent new palette for the given mode. Only touches
+// surfaces / text / borders / waveform — brand accents (red/blue) and
+// semantic colors (overdub orange, undo purple, LED green/red) stay
+// fixed across re-rolls so the UI's meaning stays consistent.
+// Pass {hue, saturation} to drive the generator from the popup's
+// sliders; omit for a fully random roll.
+function themeGeneratePalette(mode, opts = {}) {
+    const h = opts.hue != null
+        ? opts.hue
+        : Math.floor(Math.random() * 360);
+    // Saturation varies per roll so some palettes feel chromatic and
+    // some feel nearly monochrome. Dark mode stays lower-saturation.
+    const sat = opts.saturation != null
+        ? opts.saturation
+        : (mode === 'dark'
+            ? 14 + Math.floor(Math.random() * 18)  // 14–32
+            : 20 + Math.floor(Math.random() * 22)); // 20–42
+    const hsl = (s, l) => themeHslToHex(h, Math.max(0, Math.min(100, s)), Math.max(0, Math.min(100, l)));
+
+    if (mode === 'dark') {
+        return {
+            '--bg':            hsl(sat,        9),
+            '--bg-label':      hsl(sat - 6,    4),
+            '--bg-inset':      hsl(sat,        7),
+            '--bg-raised':     hsl(sat + 2,   13),
+            '--bg-panel':      hsl(sat + 4,   17),
+            '--bg-hover':      hsl(sat + 2,   21),
+            '--bg-screen':     hsl(sat - 2,   25),
+            '--fg':            hsl(sat - 6,   90),
+            '--fg-dim':        hsl(sat - 8,   80),
+            '--fg-muted':      hsl(sat - 8,   62),
+            '--fg-faint':      hsl(sat - 6,   48),
+            '--logo-dark':     hsl(sat - 6,   90),
+            '--border':        hsl(sat - 4,   28),
+            '--border-light':  hsl(sat - 4,   18),
+            '--border-dark':   hsl(sat - 6,   55),
+            '--border-strong': hsl(sat - 6,   90),
+            '--wave-guide':    hsl(sat - 6,   32),
+            '--time-label':    hsl(sat - 8,   58),
+        };
+    }
+    return {
+        '--bg':            hsl(sat,        89),
+        '--bg-label':      hsl(sat - 6,    97),
+        '--bg-inset':      hsl(sat - 6,    93),
+        '--bg-raised':     hsl(sat,        85),
+        '--bg-panel':      hsl(sat + 4,    80),
+        '--bg-hover':      hsl(sat + 4,    76),
+        '--bg-screen':     hsl(sat + 4,    72),
+        '--fg':            hsl(sat + 12,    8),
+        '--fg-dim':        hsl(sat + 6,    18),
+        '--fg-muted':      hsl(sat,        36),
+        '--fg-faint':      hsl(sat - 4,    50),
+        '--logo-dark':     hsl(sat + 12,    8),
+        '--border':        hsl(sat,        50),
+        '--border-light':  hsl(sat - 6,    70),
+        '--border-dark':   hsl(sat + 2,    38),
+        '--border-strong': hsl(sat + 12,    8),
+        '--wave-guide':    hsl(sat - 6,    60),
+        '--time-label':    hsl(sat,        36),
+    };
+}
+
+function themeOpenPopup() {
+    if (g_themePopup && !g_themePopup.closed) { g_themePopup.focus(); return; }
+    const win = window.open('', 'cycles-theme-customizer',
+        'width=560,height=780,resizable=yes,scrollbars=yes');
+    if (!win) { log('Theme popup blocked — allow popups on this site.'); return; }
+    g_themePopup = win;
+
+    const doc = win.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Cycles Colors</title><style>${THEME_POPUP_CSS}</style></head><body>
+        <h1>Customize Colors</h1>
+        <div class="mode-tag">Editing <span id="mode-name">${themeCurrentMode()}</span> mode</div>
+        <div class="generator">
+            <div class="generator-label">Generator</div>
+            <div class="gen-row">
+                <div class="gen-key">Hue</div>
+                <input type="range" id="gen-hue" min="0" max="359" value="30" />
+                <div class="gen-val" id="gen-hue-val">30°</div>
+            </div>
+            <div class="gen-hue-track"></div>
+            <div class="gen-row" style="margin-top: 8px;">
+                <div class="gen-key">Sat</div>
+                <input type="range" id="gen-sat" min="0" max="60" value="22" />
+                <div class="gen-val" id="gen-sat-val">22</div>
+            </div>
+        </div>
+        <div id="groups"></div>
+        <div id="actions">
+            <button id="generate">Generate</button>
+            <button id="reset">Reset Theme</button>
+            <button id="copy">Copy CSS</button>
+        </div>
+    </body></html>`);
+    doc.close();
+
+    themeRenderPopupRows(win);
+
+    const hueSlider = doc.getElementById('gen-hue');
+    const satSlider = doc.getElementById('gen-sat');
+    const hueVal    = doc.getElementById('gen-hue-val');
+    const satVal    = doc.getElementById('gen-sat-val');
+    const applyFromSliders = () => {
+        const hue = parseInt(hueSlider.value, 10);
+        const sat = parseInt(satSlider.value, 10);
+        hueVal.textContent = hue + '°';
+        satVal.textContent = sat;
+        const mode    = themeCurrentMode();
+        const rolled  = themeGeneratePalette(mode, { hue, saturation: sat });
+        const existing = themeLoadCustom(mode);
+        themeSaveCustom(mode, Object.assign({}, existing, rolled));
+        themeApplyCustom();
+        themeRenderPopupRows(win);
+    };
+    hueSlider.addEventListener('input', applyFromSliders);
+    satSlider.addEventListener('input', applyFromSliders);
+    doc.getElementById('generate').addEventListener('click', () => {
+        // Randomize the sliders — mode-appropriate saturation range —
+        // then regenerate so the slider positions reflect what produced
+        // the current palette.
+        const mode = themeCurrentMode();
+        hueSlider.value = Math.floor(Math.random() * 360);
+        satSlider.value = mode === 'dark'
+            ? 14 + Math.floor(Math.random() * 18)
+            : 20 + Math.floor(Math.random() * 22);
+        applyFromSliders();
+    });
+    doc.getElementById('reset').addEventListener('click', () => {
+        const mode = themeCurrentMode();
+        localStorage.removeItem('cycles-colors-' + mode);
+        themeApplyCustom();
+        themeRenderPopupRows(win);
+    });
+    doc.getElementById('copy').addEventListener('click', () => {
+        const mode = themeCurrentMode();
+        const custom = themeLoadCustom(mode);
+        const full = {};
+        for (const group of THEME_TOKENS) for (const row of group.rows) full[row.n] = custom[row.n] || row[mode];
+        const lines = Object.entries(full).map(([k, v]) => `    ${k}: ${v};`).join('\n');
+        const selector = mode === 'dark' ? 'body.dark' : ':root';
+        const css = `${selector} {\n${lines}\n}`;
+        (win.navigator.clipboard || navigator.clipboard).writeText(css)
+            .then(() => log(`Copied ${mode}-mode theme CSS to clipboard`))
+            .catch(e => log(`Clipboard copy failed: ${e.message}`));
+    });
+
+    // Re-render the rows whenever the main page toggles between light
+    // and dark — keeps the picker's "Editing X mode" label + defaults
+    // in sync with whatever the opener is showing.
+    if (g_themeModeObserver) g_themeModeObserver.disconnect();
+    g_themeModeObserver = new MutationObserver(() => {
+        if (win.closed) { g_themeModeObserver.disconnect(); g_themeModeObserver = null; return; }
+        const span = win.document.getElementById('mode-name');
+        if (span) span.textContent = themeCurrentMode();
+        themeRenderPopupRows(win);
+    });
+    g_themeModeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    win.addEventListener('beforeunload', () => {
+        if (g_themeModeObserver) { g_themeModeObserver.disconnect(); g_themeModeObserver = null; }
+        if (g_themePopup === win) g_themePopup = null;
+    });
+}
+
+function themeRenderPopupRows(win) {
+    const doc = win.document;
+    const host = doc.getElementById('groups');
+    if (!host) return;
+    const mode = themeCurrentMode();
+    const custom = themeLoadCustom(mode);
+    host.innerHTML = '';
+    for (const group of THEME_TOKENS) {
+        const g = doc.createElement('div');
+        g.className = 'group';
+        const label = doc.createElement('div');
+        label.className = 'group-label';
+        label.textContent = group.group;
+        g.appendChild(label);
+        for (const row of group.rows) {
+            const isCustom = Object.prototype.hasOwnProperty.call(custom, row.n);
+            const current  = isCustom ? custom[row.n] : row[mode];
+            const r = doc.createElement('div');
+            r.className = 'row';
+            // `baseline` = the value shown at render time — what per-row
+            // reset reverts to. Starts as the current (possibly custom)
+            // value so resets undo edits made in this session. Updated
+            // whenever rows re-render (popup open, Generate, global
+            // reset). `hardcoded` keeps the original mode default so the
+            // reset handler can cleanly drop the custom entry if the
+            // baseline happens to equal the original default.
+            r.dataset.baseline  = current;
+            r.dataset.hardcoded = row[mode];
+            r.innerHTML = `
+                <div class="swatch" style="background: ${current}"></div>
+                <div class="label">${row.l} <span class="token">${row.n}</span></div>
+                <input type="text" value="${current}" data-token="${row.n}" spellcheck="false" />
+                <input type="color" value="${current}" data-token="${row.n}" />
+                <button class="reset" data-token="${row.n}" title="Reset to last set value">↺</button>
+            `;
+            g.appendChild(r);
+        }
+        host.appendChild(g);
+    }
+    host.querySelectorAll('input[data-token]').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+            const token = e.target.dataset.token;
+            const value = e.target.value.trim();
+            if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
+            const r = e.target.closest('.row');
+            r.querySelector('.swatch').style.background = value;
+            r.querySelectorAll('input[data-token]').forEach(s => { if (s !== e.target) s.value = value; });
+            r.querySelector('.reset').classList.add('customized');
+            const mode = themeCurrentMode();
+            const custom = themeLoadCustom(mode);
+            custom[token] = value;
+            themeSaveCustom(mode, custom);
+            themeApplyCustom();
+        });
+    });
+    host.querySelectorAll('.reset').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const token = e.target.dataset.token;
+            const r = e.target.closest('.row');
+            const baseline = r.dataset.baseline;
+            r.querySelector('.swatch').style.background = baseline;
+            r.querySelectorAll('input[data-token]').forEach(inp => { inp.value = baseline; });
+            e.target.classList.remove('customized');
+            const mode = themeCurrentMode();
+            const custom = themeLoadCustom(mode);
+            // If the baseline equals the hardcoded default, drop the
+            // entry so localStorage stays clean; otherwise pin the
+            // baseline back in.
+            if (baseline === r.dataset.hardcoded) delete custom[token];
+            else custom[token] = baseline;
+            themeSaveCustom(mode, custom);
+            themeApplyCustom();
+        });
+    });
+}
+
+document.getElementById('btn-theme-customize').addEventListener('click', themeOpenPopup);
+
+themeApplyCustom();
 
 // ── Dymo letter jitter (disabled — kept for reference) ──────────────────────
 // Wraps each glyph in .module-code in a span, then applies tiny random
