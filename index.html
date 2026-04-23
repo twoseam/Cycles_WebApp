@@ -843,17 +843,69 @@
             align-items: center;
             justify-content: center;
             padding: 0;
-            background: var(--bg);
+            /* Always visible but muted until the tile is hovered. */
+            background: var(--border);
             border: 1px solid var(--border-dark);
-            color: var(--fg);
+            color: var(--bg-raised);
             cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.1s, background 0.08s;
-            z-index: 1;
+            transition: background 0.12s, border-color 0.12s, color 0.12s;
+            z-index: 2;
             letter-spacing: 0;
         }
-        .stock-thumb:hover .stock-play-btn { opacity: 1; }
-        .stock-thumb .stock-play-btn:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+        .stock-thumb:hover .stock-play-btn {
+            background: var(--brand-blue);
+            border-color: color-mix(in srgb, var(--brand-blue), black 25%);
+            color: var(--on-accent);
+        }
+        .stock-thumb:hover .stock-play-btn:hover {
+            background: color-mix(in srgb, var(--brand-blue), black 10%);
+        }
+        /* Press-in — hardline graphic style: solid stepped inset
+           shadows with no blur, matching the page's printed-panel
+           tactile aesthetic. Button fills darken hard, top-left stack
+           reads as the button sinking below the tile surface. */
+        .stock-thumb .stock-play-btn:active {
+            background: color-mix(in srgb, var(--brand-blue), black 50%);
+            border-color: color-mix(in srgb, var(--brand-blue), black 70%);
+            color: color-mix(in srgb, var(--on-accent), black 25%);
+            transform: translate(2px, 2px);
+            box-shadow:
+                inset 1px 1px 0 color-mix(in srgb, var(--brand-blue), black 78%),
+                inset 2px 2px 0 color-mix(in srgb, var(--brand-blue), black 65%),
+                inset 3px 3px 0 color-mix(in srgb, var(--brand-blue), black 55%);
+        }
+        /* Stock-thumb preview — shown inside the Import popup. Matches
+           a real Stock Tracks carousel tile (same tactile shadow, same
+           width, same text rhythm) but isn't interactive: no hover
+           highlight, no press-in transform, no play button, no click
+           handler. */
+        .stock-thumb-preview {
+            cursor: default;
+            width: 220px;
+            flex: none;
+            text-align: left;
+            /* The tile carries the 6-step tactile shadow, which eats
+               into the footer-info flex gap. Add a margin below so the
+               shadow doesn't visually crowd the Target Slot picker. */
+            margin-bottom: 20px;
+        }
+        .stock-thumb-preview,
+        .stock-thumb-preview:hover,
+        .stock-thumb-preview:active {
+            background: var(--bg-raised) !important;
+            border-color: var(--border) !important;
+            transform: none !important;
+        }
+        /* Suppress the press-in effect on the stock tile when the play
+           button inside it is the thing actually being pressed. Without
+           this, the tile translates down-right, shadows flatten, and
+           the background tone shifts along with the button. */
+        .stock-thumb:has(.stock-play-btn:active):active,
+        .stock-thumb:has(.stock-play-btn:active) {
+            transform: none !important;
+            box-shadow: var(--shadow-tactile) !important;
+            background: var(--bg) !important;
+        }
         .stock-thumb:hover  { background: var(--bg); border-color: var(--border-dark); }
         .stock-thumb:active { background: var(--bg-panel); }
         .stock-thumb .stock-title {
@@ -1841,7 +1893,7 @@
            subtitle centered together as a group under the cards. */
         #import-popup-footer-info {
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 22px;
@@ -1880,6 +1932,12 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+        /* When no format cards are rendered (slot-only popup for the
+           stock-track import), drop the 52 px reserved gap so the tile
+           preview below can sit closer to the header. */
+        #import-popup-options:empty {
+            margin-bottom: 0;
         }
         .card-grid {
             display: grid;
@@ -2454,6 +2512,7 @@
         <h1 id="import-popup-title">Choose a Format</h1>
         <div id="import-popup-options"><!-- rendered dynamically --></div>
         <div id="import-popup-footer-info">
+            <div id="import-popup-track" style="display:none"><!-- stock track card preview (populated by askImportOption) --></div>
             <div id="import-popup-slot">
                 <label>Target slot</label>
                 <div id="popup-slot-stepper">
@@ -2464,7 +2523,7 @@
                     </div>
                 </div>
             </div>
-            <p class="popup-sub" id="import-popup-sub"><!-- filename + duration --></p>
+            <p class="popup-sub" id="import-popup-sub"><!-- filename + duration (hidden when a stock track tile is rendered) --></p>
         </div>
         <div id="import-popup-actions">
             <button id="btn-import-cancel">Cancel</button>
@@ -4601,7 +4660,7 @@ function maybeShowImportTutorial(durationSec) {
 // Interaction: clicking a card selects it (others grey out); clicking
 // Import commits the selection. The recommended card is pre-selected on
 // open so a user who just wants "what the app suggests" can one-click.
-async function askImportOption({ title, fileName, durationSec, frames, initialSlot, slotOnly = false }) {
+async function askImportOption({ title, fileName, durationSec, frames, initialSlot, slotOnly = false, trackPreview = null }) {
     // First-time walkthrough — only when the file actually triggers the
     // "long loop" version of the popup (i.e., trimming is on the table).
     if (frames > LIVE_STEREO_SHORT_FRAMES) {
@@ -4611,13 +4670,25 @@ async function askImportOption({ title, fileName, durationSec, frames, initialSl
         const popup    = document.getElementById('import-popup');
         const titleEl  = document.getElementById('import-popup-title');
         const subEl    = document.getElementById('import-popup-sub');
+        const trackEl  = document.getElementById('import-popup-track');
         const listEl   = document.getElementById('import-popup-options');
         const cancelEl = document.getElementById('btn-import-cancel');
         const confirmEl= document.getElementById('btn-import-confirm');
         const slotInp  = document.getElementById('popup-slot-val');
 
         titleEl.textContent = slotOnly ? 'Import to Slot' : 'Choose a Format';
-        subEl.textContent   = `${fileName} — ${formatDurMSS(durationSec)}`;
+        // Show either a stock-track tile preview OR the filename subtitle,
+        // depending on which one the caller supplied.
+        if (trackPreview && trackPreview.track) {
+            subEl.style.display   = 'none';
+            trackEl.style.display = 'block';
+            trackEl.innerHTML = '';
+            trackEl.appendChild(buildStockTilePreview(trackPreview.track, trackPreview.displayTitle, durationSec));
+        } else {
+            subEl.style.display   = '';
+            trackEl.style.display = 'none';
+            subEl.textContent = `${fileName} — ${formatDurMSS(durationSec)}`;
+        }
         listEl.innerHTML = '';
         listEl.classList.add('has-selection');
         slotInp.value = String(Math.max(1, Math.min(99, initialSlot || 1))).padStart(2, '0');
@@ -5078,6 +5149,48 @@ async function fetchStockTracks() {
 
 // Fetch + decode + peak-normalize a stock track. Shared by the click and
 // drag-drop import paths. Returns { interleaved, frames } or null on error.
+// Build a non-interactive stock-thumb-style card for showing inside
+// the import popup. Mirrors the layout used in renderStockTracks but
+// without the click / drag / preview-button wiring — purely visual.
+function buildStockTilePreview(track, displayTitle, durationSec) {
+    const base   = track.file.replace(/\.[^.]+$/, '');
+    const parts  = base.split(/\s+-\s+/);
+    const artist = track.artist || parts[0] || null;
+    const title  = track.title  || parts[1] || displayTitle || base;
+    const key    = track.key    || parts[2] || null;
+    let tempo    = track.tempo  || parts[3] || null;
+    if (tempo) tempo = tempo.replace(/(\d)([A-Za-z])/, '$1 $2');
+    const ext = (track.file.match(/\.([^.]+)$/)?.[1] || '');
+    const dur = (durationSec != null) ? formatDuration(durationSec)
+              : (typeof track.durationSec === 'number' ? formatDuration(track.durationSec) : null);
+
+    const tile = document.createElement('div');
+    tile.className = 'stock-thumb stock-thumb-preview';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'stock-title';
+    titleEl.textContent = title;
+    tile.appendChild(titleEl);
+
+    if (artist) {
+        const a = document.createElement('div');
+        a.className = 'stock-artist';
+        a.textContent = artist;
+        tile.appendChild(a);
+    }
+    const addMeta = (value, placeholder) => {
+        const el = document.createElement('div');
+        el.className = 'stock-meta' + (value ? '' : ' missing');
+        el.textContent = value || placeholder;
+        tile.appendChild(el);
+    };
+    addMeta(tempo, 'Tempo');
+    addMeta(key,   'Key');
+    addMeta(dur,   'Time');
+    addMeta(ext,   'Filetype');
+    return tile;
+}
+
 async function fetchAndDecodeStockTrack(track) {
     log(`Fetching stock track: ${track.file}…`);
     const url = track.url || (STOCK_BASE + encodeURIComponent(track.file));
@@ -5112,6 +5225,7 @@ async function handleStockTrackClick(track, displayTitle) {
                 return hidden ? (parseInt(hidden.value, 10) || 1) : 1;
             })(),
             slotOnly: frames <= LIVE_STEREO_SHORT_FRAMES,
+            trackPreview: { track, displayTitle },
         });
         if (!picked) { log('Stock import cancelled'); return; }
 
@@ -5141,6 +5255,7 @@ async function handleStockTrackDrop(track, displayTitle, slotNum) {
             durationSec: frames / SAMPLE_RATE,
             frames,
             initialSlot: slotNum,
+            trackPreview: { track, displayTitle },
         });
         if (!picked) { log('Stock import cancelled'); return; }
 
@@ -5210,8 +5325,14 @@ async function renderStockTracks() {
         playBtn.className = 'stock-play-btn';
         playBtn.setAttribute('aria-label', 'Preview');
         playBtn.innerHTML = '<svg viewBox="0 0 12 14" width="10" height="12" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg>';
+        // Block mousedown/dragstart from reaching the tile so clicking
+        // the play button never triggers the tile's click (import) or
+        // starts a drag operation.
+        playBtn.addEventListener('mousedown',   (e) => e.stopPropagation());
+        playBtn.addEventListener('dragstart',   (e) => { e.preventDefault(); e.stopPropagation(); });
         playBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
+            e.stopImmediatePropagation();
             _killSource();
             document.getElementById('btn-play').innerHTML = ICON_PLAY;
             document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
