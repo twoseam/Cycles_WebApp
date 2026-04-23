@@ -795,6 +795,18 @@
         .slot-thumb.empty .slot-format-dub.no-dub { color: var(--fg-muted); }
         .slot-thumb.empty .slot-format-undo.no-undo { color: var(--fg-muted); }
 
+        /* Drop-target highlight (stock track dragged over a slot). Works
+           for both filled and empty slot tiles. */
+        .slot-thumb.drop-target {
+            background: var(--bg);
+            border-color: var(--accent, #4a9eff);
+            box-shadow: 0 0 0 2px var(--accent, #4a9eff) inset;
+            opacity: 1;
+        }
+        /* Source stock tile while it's being dragged — dim so user sees
+           it "lifted". */
+        .stock-thumb.dragging { opacity: 0.5; }
+
         .slot-led {
             position: absolute;
             top: 8px;
@@ -3686,6 +3698,7 @@ async function refreshUI(autoLoad = false) {
             // grid stays on its column rhythm.
             const emptyThumb = document.createElement('div');
             emptyThumb.className = 'slot-thumb empty';
+            emptyThumb.dataset.slotNum = slotNum;
             const emptyHeader = document.createElement('div');
             emptyHeader.className = 'slot-header';
             const emptyHeaderLeft = document.createElement('div');
@@ -3743,6 +3756,7 @@ async function refreshUI(autoLoad = false) {
         const thumb = document.createElement('div');
         thumb.className = 'slot-thumb';
         thumb.dataset.filename = s.filename;
+        thumb.dataset.slotNum = s.slotNum;
 
         const header = document.createElement('div');
         header.className = 'slot-header';
@@ -4577,6 +4591,7 @@ document.getElementById('btn-import').addEventListener('click', async () => {
 // .github/workflows/stock-tracks-manifest.yml whenever a file is added to or
 // removed from Assets/Stock_Tracks/ in the repo.
 const STOCK_BASE = 'https://cycleslooper.com/Assets/Stock_Tracks/';
+const STOCK_DRAG_MIME = 'application/x-cycles-stock-track';
 
 async function fetchStockTracks() {
     try {
@@ -4590,26 +4605,31 @@ async function fetchStockTracks() {
     }
 }
 
+// Fetch + decode + peak-normalize a stock track. Shared by the click and
+// drag-drop import paths. Returns { interleaved, frames } or null on error.
+async function fetchAndDecodeStockTrack(track) {
+    log(`Fetching stock track: ${track.file}…`);
+    const url = track.url || (STOCK_BASE + encodeURIComponent(track.file));
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const blob = await resp.blob();
+    const file = new File([blob], track.file, { type: blob.type || 'audio/wav' });
+
+    log('Decoding…');
+    const interleaved = await decodeToInterleaved(file);
+    const peak = findPeak(interleaved);
+    normalizePeak(interleaved, -6);
+    log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -6 dBFS`);
+    return { interleaved, frames: interleaved.length >>> 1 };
+}
+
 async function handleStockTrackClick(track, displayTitle) {
     if (!g_memorySlotsHandle) {
         await dialogAlert('No card connected', 'Connect your CYCLES card before importing a stock track.');
         return;
     }
     try {
-        log(`Fetching stock track: ${track.file}…`);
-        const url = track.url || (STOCK_BASE + encodeURIComponent(track.file));
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const blob = await resp.blob();
-        const file = new File([blob], track.file, { type: blob.type || 'audio/wav' });
-
-        log('Decoding…');
-        const interleaved = await decodeToInterleaved(file);
-        const peak = findPeak(interleaved);
-        normalizePeak(interleaved, -6);
-        log(`Normalized: ${(20 * Math.log10(peak)).toFixed(1)} dBFS → -6 dBFS`);
-
-        const frames = interleaved.length >>> 1;
+        const { interleaved, frames } = await fetchAndDecodeStockTrack(track);
         const picked = await askImportOption({
             title: `Import — ${displayTitle}`,
             fileName: track.file,
@@ -4621,6 +4641,35 @@ async function handleStockTrackClick(track, displayTitle) {
                 return hidden ? (parseInt(hidden.value, 10) || 1) : 1;
             })(),
             slotOnly: frames <= LIVE_STEREO_SHORT_FRAMES,
+        });
+        if (!picked) { log('Stock import cancelled'); return; }
+
+        await writeImportToSlot({ slotNum: picked.slot, interleaved, chosen: picked.option });
+    } catch (e) {
+        log(`Stock import error: ${e.message}`);
+    }
+}
+
+// Drop target: stock track dragged onto a slot tile. Short tracks (≤ 1:30)
+// import silently to the dropped slot. Long tracks still show the full
+// format picker, with the slot prefilled from the drop target.
+async function handleStockTrackDrop(track, displayTitle, slotNum) {
+    if (!g_memorySlotsHandle) {
+        await dialogAlert('No card connected', 'Connect your CYCLES card before importing a stock track.');
+        return;
+    }
+    try {
+        const { interleaved, frames } = await fetchAndDecodeStockTrack(track);
+        if (frames <= LIVE_STEREO_SHORT_FRAMES) {
+            await writeImportToSlot({ slotNum, interleaved, chosen: null });
+            return;
+        }
+        const picked = await askImportOption({
+            title: `Import — ${displayTitle}`,
+            fileName: track.file,
+            durationSec: frames / SAMPLE_RATE,
+            frames,
+            initialSlot: slotNum,
         });
         if (!picked) { log('Stock import cancelled'); return; }
 
@@ -4673,6 +4722,18 @@ async function renderStockTracks() {
         thumb.appendChild(extEl);
 
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
+
+        // Drag-drop: carry the track JSON + display title. Slot tiles
+        // listen for 'drop' and call handleStockTrackDrop.
+        thumb.draggable = true;
+        thumb.addEventListener('dragstart', (e) => {
+            const payload = JSON.stringify({ track, displayTitle: title });
+            e.dataTransfer.setData(STOCK_DRAG_MIME, payload);
+            e.dataTransfer.effectAllowed = 'copy';
+            thumb.classList.add('dragging');
+        });
+        thumb.addEventListener('dragend', () => thumb.classList.remove('dragging'));
+
         grid.appendChild(thumb);
     }
 
@@ -4738,6 +4799,52 @@ function setupCarousel(gridId, prevId, nextId) {
 function setupStockCarousel() { setupCarousel('stock-grid', 'btn-stock-prev', 'btn-stock-next'); }
 
 renderStockTracks();
+
+// ── Stock-track drag-drop onto slots ─────────────────────────────────────────
+// Delegated listeners on #slot-grid so re-renders don't require rewiring.
+// Stock tiles set STOCK_DRAG_MIME on dragstart; any .slot-thumb under the
+// grid becomes a drop target. Short tracks (≤ 1:30) import silently to the
+// dropped slot; long tracks open the format picker with the slot prefilled.
+(function initStockDropTargets() {
+    const slotGrid = document.getElementById('slot-grid');
+    if (!slotGrid) return;
+
+    const thumbUnder = (e) => e.target.closest('.slot-thumb');
+    const isStockDrag = (e) => Array.from(e.dataTransfer?.types || []).includes(STOCK_DRAG_MIME);
+    const clearHighlights = () => {
+        slotGrid.querySelectorAll('.slot-thumb.drop-target').forEach(t => t.classList.remove('drop-target'));
+    };
+
+    slotGrid.addEventListener('dragover', (e) => {
+        if (!isStockDrag(e)) return;
+        const thumb = thumbUnder(e);
+        if (!thumb) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        if (!thumb.classList.contains('drop-target')) {
+            clearHighlights();
+            thumb.classList.add('drop-target');
+        }
+    });
+    slotGrid.addEventListener('dragleave', (e) => {
+        // Only clear when leaving the grid entirely (relatedTarget outside).
+        if (!slotGrid.contains(e.relatedTarget)) clearHighlights();
+    });
+    slotGrid.addEventListener('drop', async (e) => {
+        if (!isStockDrag(e)) return;
+        const thumb = thumbUnder(e);
+        if (!thumb) return;
+        e.preventDefault();
+        clearHighlights();
+        const slotNum = parseInt(thumb.dataset.slotNum, 10);
+        if (!(slotNum >= 1 && slotNum <= 99)) return;
+        let payload;
+        try { payload = JSON.parse(e.dataTransfer.getData(STOCK_DRAG_MIME)); }
+        catch { return; }
+        if (!payload || !payload.track) return;
+        await handleStockTrackDrop(payload.track, payload.displayTitle || payload.track.file, slotNum);
+    });
+})();
 
 // ── Module reorder (drag the face panel) ────────────────────────────────────
 // Click the module's border / padding area (or its module-code tag) to grab
