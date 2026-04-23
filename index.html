@@ -822,7 +822,7 @@
             background: var(--bg-raised);
             border: 1px solid var(--border);
             cursor: pointer;
-            padding: 18px 12px 22px;
+            padding: 18px 12px 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -847,9 +847,6 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             min-height: calc(2 * 1.3em);
-            /* Extra breathing room between title and the band/meta stack
-               below (sits on top of .stock-thumb's 8 px gap). */
-            margin-bottom: 8px;
         }
         .stock-thumb .stock-artist {
             font-size: 10.5px;   /* +5 % bump from 10 px */
@@ -857,21 +854,32 @@
             color: var(--fg-muted);
             letter-spacing: 0.06em;
             text-transform: uppercase;
+            /* Tuck band name up toward the title, then open a break
+               before the meta block below. */
+            margin-top: -2px;
+            margin-bottom: 12px;
         }
         .stock-thumb .stock-meta {
             font-size: 9px;
+            line-height: 1.2;
             font-family: 'Roboto Mono', 'Courier New', monospace;
             color: var(--fg-muted);
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            margin-top: 2px;
+            margin-top: 0;
+        }
+        /* Pull adjacent meta lines closer — overrides the column gap for
+           the stacked tempo/key/time/filetype rows so they read as one
+           compact block instead of four widely-spaced lines. */
+        .stock-thumb .stock-meta + .stock-meta {
+            margin-top: -4px;
         }
         /* Greyed-out placeholder when a meta field (tempo / key / ext)
            is absent — shows the label name itself, dimmed so it reads
            as "empty slot" without crowding the actual values. */
         .stock-thumb .stock-meta.missing {
             color: var(--fg-faint);
-            opacity: 0.55;
+            opacity: 0.35;
         }
 
         /* Memory slots carousel: tiles fill top-to-bottom in two fixed
@@ -5017,7 +5025,11 @@ async function renderStockTracks() {
         const artist = track.artist || parts[0] || null;
         const title  = track.title  || parts[1] || base;
         const key    = track.key    || parts[2] || null;
-        const tempo  = track.tempo  || parts[3] || null;
+        // Normalize "85bpm" → "85 bpm" so the CSS-uppercased render shows
+        // a proper space between the number and its unit. Filename can
+        // have either form; display is consistent.
+        let tempo    = track.tempo  || parts[3] || null;
+        if (tempo) tempo = tempo.replace(/(\d)([A-Za-z])/, '$1 $2');
 
         const thumb = document.createElement('div');
         thumb.className = 'stock-thumb';
