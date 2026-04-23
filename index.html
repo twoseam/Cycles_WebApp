@@ -828,7 +828,32 @@
             gap: 8px;
             user-select: none;
             transition: background 0.08s;
+            position: relative;
         }
+        /* Hover-revealed preview button. Opacity-only reveal so layout
+           doesn't shift. Positioned in the tile's bottom-right corner;
+           z-index keeps it above the panel-colored drop-shadow stack. */
+        .stock-thumb .stock-play-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: var(--bg);
+            border: 1px solid var(--border-dark);
+            color: var(--fg);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.1s, background 0.08s;
+            z-index: 1;
+            letter-spacing: 0;
+        }
+        .stock-thumb:hover .stock-play-btn { opacity: 1; }
+        .stock-thumb .stock-play-btn:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
         .stock-thumb:hover  { background: var(--bg); border-color: var(--border-dark); }
         .stock-thumb:active { background: var(--bg-panel); }
         .stock-thumb .stock-title {
@@ -3111,6 +3136,47 @@ function redrawViewer(playheadFrame = -1) {
 }
 
 // ── Viewer: load ──────────────────────────────────────────────────────────────
+// Shared viewer setup from a pre-decoded interleaved Float32 stereo
+// buffer. Used by the Memory Slot loader (after reading from disk) and
+// the Stock Track preview flow (after fetch + decode). Mirrors the
+// state writes loadViewerWaveform makes after its file read completes.
+function loadViewerFromInterleaved(interleaved, label, isMono = false) {
+    const canvas = document.getElementById('viewer-canvas');
+    const empty  = document.getElementById('viewer-empty');
+    const footer = document.getElementById('viewer-footer');
+
+    canvas.style.width   = '';
+    canvas.style.display = 'block';
+    const dpr  = window.devicePixelRatio || 1;
+    const cssW = canvas.offsetWidth || canvas.parentElement.clientWidth || 860;
+    const cssH = 192;
+    canvas.width        = Math.round(cssW * dpr);
+    canvas.height       = Math.round(cssH * dpr);
+    canvas.style.height = cssH + 'px';
+    canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    g_viewerRaw         = interleaved;
+    g_viewerIsMono      = isMono;
+    g_viewerAudioBuf    = null;
+    g_viewerAudioBufRev = null;
+    g_viewerOffset      = 0;
+    g_pausedAtFrame     = 0;
+
+    empty.style.display  = 'none';
+    footer.style.display = 'flex';
+    document.getElementById('viewer-file-label').textContent = label;
+
+    const durSec  = (interleaved.length / NUM_CHANNELS) / SAMPLE_RATE;
+    const zoomMax = Math.max(1, Math.ceil(durSec));
+    const zoomDef = Math.min(5, zoomMax);
+    const slider  = document.getElementById('viewer-zoom');
+    slider.max    = zoomMax;
+    slider.value  = zoomDef;
+    g_zoomSeconds = zoomDef;
+    document.getElementById('viewer-zoom-val').textContent = `${zoomDef}s`;
+    redrawViewer(0);
+}
+
 async function loadViewerWaveform(dirHandle, filename, label) {
     const canvas = document.getElementById('viewer-canvas');
     const empty  = document.getElementById('viewer-empty');
@@ -5136,6 +5202,28 @@ async function renderStockTracks() {
         addMeta(key,   'Key');
         addMeta(dur,   'Time');
         addMeta(ext,   'Filetype');
+
+        // Hover-reveal play button — previews the track in the Playback
+        // module without importing. Click propagation is stopped so the
+        // tile's own click (which opens the import popup) doesn't fire.
+        const playBtn = document.createElement('button');
+        playBtn.className = 'stock-play-btn';
+        playBtn.setAttribute('aria-label', 'Preview');
+        playBtn.innerHTML = '<svg viewBox="0 0 12 14" width="10" height="12" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg>';
+        playBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            _killSource();
+            document.getElementById('btn-play').innerHTML = ICON_PLAY;
+            document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
+            g_selection = null;
+            try {
+                const { interleaved } = await fetchAndDecodeStockTrack(track);
+                loadViewerFromInterleaved(interleaved, title);
+            } catch (err) {
+                log(`Stock preview error: ${err.message}`);
+            }
+        });
+        thumb.appendChild(playBtn);
 
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
 
