@@ -33,38 +33,141 @@
         }
 
         :root {
-            /* ── Brand — change these two to re-paint all red/blue ────────── */
-            --brand-red:    #d43800;
-            --brand-blue:   #1e48d4;
+            /* ═══════════════════════════════════════════════════════════════
+               COLOR PALETTE
+               Every color used in the site lives here. Edit a value and
+               the whole page repaints. Grouped by what each color
+               affects so you can find things fast.
+               ═══════════════════════════════════════════════════════════════ */
 
-            /* Warm cream — vintage hardware panel (matches pedal screenprint) */
-            --bg:           #f1e7d2;
-            --bg-panel:     #e4dcbe;
-            --bg-label:     #fffdf9;   /* Module edge-tag labels (Playback, Import, etc.) */
-            --bg-inset:     #f5f2e6;
-            --bg-raised:    #eae3cc;
-            --bg-screen:    #d6cdac;
-            --fg:           #1c1710;
-            --fg-dim:       #3a2e18;
-            --fg-muted:     #6a5c38;
-            --fg-faint:     #8a7c58;
-            --accent:       var(--brand-red);
-            --accent-dim:   color-mix(in srgb, var(--brand-red) 30%, transparent);
-            --led-green:    #44dd22;
-            --led-red:      #cc2828;
-            --border:       #a09060;
-            --border-light: #ccc4a0;
-            --border-dark:  #706040;
-            /* canvas aliases — waveform on white */
-            --bg-alt:        #f5f2e6;
-            --bg-hover:     #ddd4b6;
-            --bg-counter:   #1c1710;
-            --border-strong: #1c1710;
-            --border-mid:   #a09060;
-            --border-subtle: #ddd4b6;
-            --wave-guide:   #bfb596;
-            --playhead:     rgba(28,23,10,0.45);
-            --time-label:   #6a5c38;
+            /* ── Brand accents ─────────────────────────────────────────
+               The two main brand colors.
+               Red  = destructive actions, warnings, the red of the CYCLES logo.
+               Blue = primary buttons, selected states, callouts,
+                      the blue of the CYCLES logo.
+               Change these two and most of the UI recolors. */
+            --brand-red:      #d43800;
+            --brand-blue:     #1e48d4;
+            /* Darker variant of brand-red for pressed/active-state outlines. */
+            --brand-red-dark: #a02800;
+
+            /* ── Page backgrounds ──────────────────────────────────────
+               Warm cream palette for the vintage-hardware look. Page body
+               sits on --bg; modules and tiles layer these other tones
+               on top. Lightest first, darkest last. */
+            --bg:         #f1e7d2;   /* page body (default background)              */
+            --bg-label:   #fffdf9;   /* little tag labels ("PLAYBACK", "IMPORT"…)   */
+            --bg-inset:   #f5f2e6;   /* input fields, recessed input zones           */
+            --bg-raised:  #eae3cc;   /* buttons, tiles, popup cards                  */
+            --bg-panel:   #e4dcbe;   /* each module's main face                      */
+            --bg-hover:   #ddd4b6;   /* button/tile hover state                      */
+            --bg-screen:  #d6cdac;   /* empty waveform viewer backdrop               */
+            --bg-counter: #1c1710;   /* black background behind the big 7-seg timer  */
+
+            /* ── Text / foreground ─────────────────────────────────────
+               Tiers from darkest to lightest. Use --fg for body copy
+               and fade down to --fg-faint for the least important text. */
+            --fg:         #1c1710;   /* primary copy and titles                      */
+            --fg-dim:     #3a2e18;   /* secondary copy                               */
+            --fg-muted:   #6a5c38;   /* labels, captions, "TARGET SLOT" tags         */
+            --fg-faint:   #8a7c58;   /* placeholders, almost-hidden hints            */
+            --on-accent:  #ffffff;   /* text drawn on top of brand-colored buttons   */
+
+            /* ── Borders & dividers ────────────────────────────────────
+               Button outlines, module frames, subtle section dividers. */
+            --border:        #a09060;   /* default outline                           */
+            --border-light:  #ccc4a0;   /* faint separators (inside slot tiles, etc) */
+            --border-dark:   #706040;   /* hover outlines, emphasized edges          */
+            --border-strong: #1c1710;   /* heavy borders (waveform canvas edge)      */
+            --border-subtle: #ddd4b6;   /* very faint canvas guide                   */
+
+            /* ── LEDs (the little round status dots) ───────────────────
+               Slot-active dot, card-connection LED, etc. Each has a main
+               color plus the darker outline ring that surrounds it. */
+            --led-green:        #44dd22;
+            --led-green-border: #2a9040;
+            --led-green-dark:   #1a8830;   /* stronger outline for "lit" state */
+            --led-red:          #cc2828;
+            --led-red-border:   #992222;
+            --led-amber-border: #a07810;
+
+            /* ── Memory-slot feature word colors ──────────────────────
+               The two colored words that appear on every slot tile:
+               "OVERDUB" (orange) and "UNDO" (purple). Fade to grey
+               when those features aren't available on that slot. */
+            --fmt-overdub: #f48107;   /* orange — Overdub label when active */
+            --fmt-undo:    #8a3fc7;   /* purple — Undo label when active    */
+
+            /* ── 7-segment displays (glowing red DSEG digits) ─────────
+               The clock-style numbers used for slot numbers and timers.
+               Dark backdrop, thin inner frame, neon-red digits on top. */
+            --seg-bg:       #23242c;
+            --seg-border:   #2a2c30;
+            --seg-text:     #ff4242;   /* softer red (small popup stepper)  */
+            --seg-text-hot: #ff3030;   /* harder red (main Import panel)    */
+
+            /* ── Waveform viewer (audio display area) ─────────────────
+               Guide lines, playhead marker, time-axis labels. */
+            --wave-guide: #bfb596;
+            --playhead:   rgba(28, 23, 10, 0.45);
+            --time-label: #6a5c38;
+
+            /* ── Logo ─────────────────────────────────────────────────
+               Colors inside the inline SVG logo in the header. Red uses
+               --brand-red automatically; dark text is here. */
+            --logo-dark: #18191e;
+
+            /* ── Derived / legacy aliases ─────────────────────────────
+               These point at other variables — kept so existing refs
+               don't break. You shouldn't need to touch these. */
+            --accent:     var(--brand-red);
+            --accent-dim: color-mix(in srgb, var(--brand-red) 30%, transparent);
+            --bg-alt:     var(--bg-inset);
+            --border-mid: var(--border);
+
+            /* ═══════════════════════════════════════════════════════════════
+               SHADOWS
+               Stacked hard-edged "printed panel" shadows give everything a
+               screen-printed-on-paper feel. Three standard sizes below —
+               use the token rather than writing a shadow by hand.
+               ═══════════════════════════════════════════════════════════════ */
+
+            /* Big tactile buttons + tiles that press into the page when
+               clicked (transport row, slot thumbs, stock thumbs, etc.).
+               6-step stack + a soft ground shadow to "lift" the block. */
+            --shadow-tactile:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 5px 0 var(--border),
+                6px 6px 0 var(--border),
+                7px 8px 6px rgba(0, 0, 0, 0.20);
+
+            /* Floating dialog / popup / modal cards sitting above the page.
+               4-step stack + a softer ground shadow. */
+            --shadow-card:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 6px 4px rgba(0, 0, 0, 0.14);
+
+            /* Small action buttons (Cancel, Import, modal buttons, etc.)
+               and mini-cards inside popups. 4-step stack, no ground shadow. */
+            --shadow-button:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border);
+
+            /* Brand-blue variant of --shadow-button for primary confirm
+               buttons. Uses a darker shade of brand-blue for the stack. */
+            --shadow-button-blue:
+                1px 1px 0 color-mix(in srgb, var(--brand-blue), black 25%),
+                2px 2px 0 color-mix(in srgb, var(--brand-blue), black 25%),
+                3px 3px 0 color-mix(in srgb, var(--brand-blue), black 25%),
+                4px 4px 0 color-mix(in srgb, var(--brand-blue), black 25%);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -85,28 +188,32 @@
         /* ── Header ── */
         #header {
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: space-between;
             padding-bottom: 16px;
             margin-bottom: 18px;
             border-bottom: 1px solid var(--border);
         }
 
-        #logo { display: flex; flex-direction: column; gap: 6px; }
+        #logo { display: flex; flex-direction: column; gap: 22px; }
         #logo svg .st1 { fill: var(--brand-blue); }
         #logo svg .st0 { fill: var(--brand-red); }
         #logo-sub {
             font-size: 8px;
-            padding-top: 0.42em;
             letter-spacing: 0.22em;
             color: var(--fg-muted);
             text-transform: uppercase;
         }
 
+        /* Card status pins to the bottom of the header-right column so the
+           LED + "connected" label visually aligns with the logo subtitle row.
+           (Theme button is display:none, so the column usually has one
+           child; flex-end keeps status at the bottom regardless.) */
         #header-right {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
+            justify-content: flex-end;
             gap: 8px;
         }
 
@@ -129,9 +236,9 @@
             border: 1px solid var(--border-dark);
             flex-shrink: 0;
         }
-        .led.green { background: var(--led-green); border-color: #2a9040; }
-        .led.red   { background: var(--led-red);   border-color: #992222; }
-        .led.amber { background: var(--accent);    border-color: #a07810; }
+        .led.green { background: var(--led-green); border-color: var(--led-green-border); }
+        .led.red   { background: var(--led-red);   border-color: var(--led-red-border); }
+        .led.amber { background: var(--accent);    border-color: var(--led-amber-border); }
 
         #btn-theme { display: none; }
 
@@ -170,7 +277,7 @@
         }
         #btn-loop.active {
             background: var(--accent);
-            border-color: #a02800;
+            border-color: var(--brand-red-dark);
             color: var(--bg-raised);
         }
 
@@ -317,14 +424,7 @@
         #btn-export, #btn-import,
         .slot-thumb,
         .stock-thumb {
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 5px 0 var(--border),
-                6px 6px 0 var(--border),
-                7px 8px 6px rgba(0,0,0,0.20);
+            box-shadow: var(--shadow-tactile);
             transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
         }
         #transport button:active,
@@ -340,8 +440,8 @@
         #viewer-counter {
             position: relative;
             display: inline-block;
-            background: #23242c;
-            border: 1px solid #2a2c30;
+            background: var(--seg-bg);
+            border: 1px solid var(--seg-border);
             padding: 14px 22px;
             height: 52px;
             box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
@@ -374,7 +474,7 @@
             font-weight: 700;
             font-size: 24px;
             letter-spacing: 2px;
-            color: #44dd22;
+            color: var(--led-green);
             text-shadow:
                 0 0 2px rgba(80,255,80,0.4),
                 0 0 6px rgba(50,220,50,0.25);
@@ -407,7 +507,7 @@
            aligns any action buttons. */
         .section-header {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
             gap: 10px;
             margin-bottom: 8px;
@@ -478,65 +578,102 @@
             background: var(--bg-label);
             padding: 6px 10px;
             font-family: 'Roboto Mono', 'Courier New', monospace;
-            font-size: 16px;
+            font-size: 14.4px;
             font-weight: 700;
             letter-spacing: 0.2em;
             color: var(--fg-muted);
             text-transform: uppercase;
         }
 
-        /* ── Dymo label alternative (commented out, kept for reference) ──
-           Embossed shiny black plastic tape with hollow outlined letters,
-           crisp gloss highlight, slightly off-square cut ends, per-letter
-           jitter via the script block at the end of this file. To enable:
-           uncomment the .module-code + :nth-of-type rules below (they will
-           shadow the simple rule above) AND uncomment the Dymo letter
-           jitter IIFE near the bottom of the <script> block.
-
-        .module-code {
-            position: absolute;
-            top: -13px;
-            left: 18px;
-            background: #0a0a0c;
-            background-image: linear-gradient(to bottom,
-                rgba(255,255,255,0.30) 0%,
-                rgba(255,255,255,0.28) 9%,
-                rgba(255,255,255,0.04) 14%,
-                transparent 20%);
-            padding: 7px 20px 6px;
-            font-family: 'Roboto Mono', 'Courier New', monospace;
-            font-size: 13px;
-            font-weight: 900;
-            letter-spacing: 0.14em;
-            color: #6d747b;
-            -webkit-text-stroke: 0.9px #cdd9e3;
-            text-transform: uppercase;
-            text-shadow:
-                0 0 1.5px rgba(205,217,227,0.35),
-                0 1px 1px rgba(0,0,0,0.85);
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,0.12),
-                inset 0 -1px 0 rgba(0,0,0,0.50);
-            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.40));
-            clip-path: polygon(0.8% 0%, 99.7% 0.3%, 100% 99.6%, 0.3% 100%);
-            transform: rotate(-0.4deg);
-            transform-origin: left center;
-        }
-        .module:nth-of-type(even) .module-code {
-            transform: rotate(0.3deg);
-            left: 22px;
-            clip-path: polygon(0.3% 0.3%, 100% 0%, 99.6% 100%, 0.6% 99.7%);
-        }
-        ── end Dymo block ── */
-
         /* ── Slot grid ── */
 
-        #stock-grid {
-            display: grid;
-            gap: 5px;
-            grid-template-columns: repeat(5, 1fr);
+        /* Stock tracks carousel: three tiles visible at a time. Prev/
+           next arrows sit in a toolbar row under the "Stock Tracks"
+           module title, left-aligned. Tiles live in a single horizontal
+           flex row with native trackpad scroll plus JS-handled wheel
+           events so the mouse wheel also scrolls horizontally. */
+        #stock-controls,
+        #slot-controls {
+            display: flex;
+            gap: 4px;
         }
-        @media (max-width: 600px) { #stock-grid { grid-template-columns: repeat(3, 1fr); } }
+        .stock-arrow {
+            width: 34px;
+            height: 22px;
+            padding: 0;
+            font-size: 10px;
+            line-height: 1;
+            letter-spacing: 0;
+            text-transform: none;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.08s, opacity 0.15s;
+        }
+        .stock-arrow:hover:not(.disabled) { background: var(--bg); border-color: var(--border-dark); }
+        .stock-arrow.disabled { opacity: 0.28; cursor: not-allowed; pointer-events: none; }
+        /* When there's nothing to scroll in either direction, fade the
+           whole arrow pair out entirely — no visual clutter on a grid
+           that already fits within view. */
+        #stock-controls.no-scroll,
+        #slot-controls.no-scroll {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        #stock-grid {
+            display: flex;
+            gap: 5px;
+            /* Native horizontal scroll for trackpad + JS for mouse wheel.
+               overflow-x: auto lets the trackpad two-finger-swipe scroll
+               horizontally; overflow-y: hidden keeps the vertical scroll
+               bar hidden. Padding below/right preserves the tiles'
+               chunky drop-shadows at the clip edges. */
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            padding: 2px 6px 6px 2px;
+            scrollbar-width: none;              /* Firefox */
+        }
+        /* "Behind the wall" fade: when there's more content to scroll
+           to the right, the rightmost ~48 px of the grid fades out,
+           hinting that tiles are slipping off-view. Toggled by JS. */
+        #stock-grid.has-scroll-right {
+                    mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
+        }
+        #stock-grid.has-scroll-left {
+                    mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
+        }
+        #stock-grid.has-scroll-left.has-scroll-right {
+                    mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
+        }
+        #stock-grid::-webkit-scrollbar { display: none; }  /* Chromium */
+        /* Each thumb takes exactly one-third of the viewport width
+           (minus the two 5 px gaps between the three visible tiles
+           and the 8 px horizontal grid padding). */
+        #stock-grid .stock-thumb {
+            flex: 0 0 calc((100% - 18px) / 3);
+        }
+        /* Dummy placeholder tiles (during iteration) — muted appearance
+           so they read as "not real content" while still filling the
+           carousel row for scrolling tests. */
+        #stock-grid .stock-thumb.dummy {
+            opacity: 0.35;
+            cursor: default;
+        }
+        #stock-grid .stock-thumb.dummy:hover {
+            background: var(--bg-raised);
+            border-color: var(--border);
+        }
+        @media (max-width: 600px) {
+            .stock-arrow { flex-basis: 30px; }
+            #stock-grid .stock-thumb { flex: 0 0 calc((100% - 13px) / 2); }
+        }
 
         .stock-thumb {
             background: var(--bg-raised);
@@ -584,14 +721,46 @@
             margin-top: 2px;
         }
 
+        /* Memory slots carousel: tiles fill top-to-bottom in two fixed
+           rows, overflowing columns to the right. Same scroll behavior
+           as the stock-tracks carousel — trackpad horizontal swipe +
+           mouse wheel + explicit prev/next arrows, plus the "behind
+           the wall" edge fades when more content exists off-screen.
+           Arrow toolbar lives in the section-header above the grid. */
         #slot-grid {
             display: grid;
+            grid-template-rows: auto;
+            grid-auto-flow: column;
+            grid-auto-columns: calc((100% - 28px) / 5);
             gap: 5px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            padding: 2px 6px 6px 2px;
+            scrollbar-width: none;
         }
-        /* Fixed-column grid — wider tiles give the delete ×, LED, and
-           stereo indicator room to co-exist without overlap. */
-        #slot-grid   { grid-template-columns: repeat(6, 1fr); }
-        @media (max-width: 600px) { #slot-grid { grid-template-columns: repeat(4, 1fr); } }
+        /* Tile count ≥ 6 → promote to a two-row carousel. Below that
+           threshold the default single-row layout reads naturally and
+           doesn't leave a half-empty second row. */
+        #slot-grid.two-row {
+            grid-template-rows: repeat(2, auto);
+        }
+        #slot-grid::-webkit-scrollbar { display: none; }
+        #slot-grid.has-scroll-right {
+                    mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
+        }
+        #slot-grid.has-scroll-left {
+                    mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
+        }
+        #slot-grid.has-scroll-left.has-scroll-right {
+                    mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
+        }
+        @media (max-width: 600px) {
+            #slot-grid { grid-auto-columns: calc((100% - 23px) / 4); }
+        }
 
         .slot-thumb {
             background: var(--bg-raised);
@@ -640,7 +809,7 @@
         }
         .slot-thumb.active .slot-led {
             background: var(--led-green);
-            border-color: #1a8830;
+            border-color: var(--led-green-dark);
             box-shadow: 0 0 5px rgba(68,221,34,0.6);
         }
 
@@ -677,9 +846,9 @@
             align-items: center;
             gap: 5px;
         }
-        .slot-format-dub             { color: #f48107; font-weight: 700; }
+        .slot-format-dub             { color: var(--fmt-overdub); font-weight: 700; }
         .slot-format-dub.no-dub      { color: var(--border-light); font-weight: 400; }
-        .slot-format-undo            { color: #8a3fc7; font-weight: 700; }
+        .slot-format-undo            { color: var(--fmt-undo); font-weight: 700; }
         .slot-format-undo.no-undo    { color: var(--border-light); font-weight: 400; }
         .slot-format-dots {
             position: relative;
@@ -849,7 +1018,8 @@
             font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            padding: 8px 14px;
+            height: 40px;
+            padding: 0 16px;
             background: var(--bg-raised);
             border: 1px solid var(--border-dark);
             color: var(--fg);
@@ -884,6 +1054,32 @@
             box-sizing: border-box;
         }
         .btn-remove-row:hover { color: var(--brand-red); border-color: var(--brand-red); }
+        /* Inline "+" button in the action cell — mirrors .btn-remove-row
+           but adds another import row. Only visible on the first row
+           (which can't be removed); hidden on all later rows. */
+        .btn-add-row-inline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--fg-muted);
+            font-family: sans-serif;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1;
+            letter-spacing: 0;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        .btn-add-row-inline:hover { color: var(--fg); border-color: var(--fg-muted); }
+        /* First row is always present (can't be removed), so swap the X
+           for the inline + button. Later rows do the opposite. */
+        .import-row:first-child .btn-remove-row    { display: none; }
+        .import-row:not(:first-child) .btn-add-row-inline { display: none; }
 
         .row-status {
             font-size: 8px;
@@ -903,7 +1099,9 @@
             border-right: 1px solid var(--border);
         }
         .import-cell.grow { flex: 1; }
-        .import-cell.action { border-right: none; gap: 4px; padding: 10px 14px; justify-content: center; align-items: center; min-width: 68px; }
+        /* Fixed width (not min-width) so the cell stays the same size
+           whether .row-status is empty, "Done", "Importing…", etc. */
+        .import-cell.action { flex: 0 0 96px; border-right: none; gap: 4px; padding: 10px 14px; justify-content: center; align-items: center; }
 
         .import-cell-label {
             font-size: 8px;
@@ -915,9 +1113,9 @@
 
         .input-slot-num {
             width: 2.8em;
-            background: #23242c;
-            color: #ff3030;
-            border: 1px solid #2a2c30;
+            background: var(--seg-bg);
+            color: var(--seg-text-hot);
+            border: 1px solid var(--seg-border);
             padding: 5px 6px;
             font-family: 'DSEG7 Classic', 'Courier New', monospace;
             font-size: 20px;
@@ -963,7 +1161,7 @@
             letter-spacing: 0.06em;
         }
         #btn-export { height: 44px; }
-        #btn-import { height: auto; padding: 9px 18px; }
+        #btn-import { height: 40px; padding: 0 18px; }
         #btn-export { margin-left: 10px; }
 
         #label-import {
@@ -1004,8 +1202,8 @@
         .slot-display,
         #popup-slot-display {
             position: relative;
-            background: #23242c;
-            border: 1px solid #2a2c30;
+            background: var(--seg-bg);
+            border: 1px solid var(--seg-border);
             padding: 13px 14px 11px;
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
         }
@@ -1019,7 +1217,7 @@
             font-weight: 700;
             font-size: 18px;
             letter-spacing: 2px;
-            color: #ff4242;
+            color: var(--seg-text);
             text-shadow:
                 0 0 2px rgba(255,80,80,0.4),
                 0 0 5px rgba(255,50,50,0.2);
@@ -1080,12 +1278,7 @@
             background: var(--bg-raised);
             border: 1px solid var(--border);
             text-align: center;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 6px 4px rgba(0,0,0,0.14);
+            box-shadow: var(--shadow-card);
         }
         .connect-logo { margin-bottom: 24px; }
         .connect-logo svg { width: 100%; max-width: 260px; height: auto; }
@@ -1109,19 +1302,15 @@
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.14em;
-            padding: 14px 28px;
+            height: 40px;
+            padding: 0 28px;
             margin: 6px 0 22px;
             background: var(--brand-blue);
             border: 1px solid var(--brand-blue);
             color: #fff;
             cursor: pointer;
             text-transform: uppercase;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 6px 4px rgba(0,0,0,0.14);
+            box-shadow: var(--shadow-card);
             transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
         }
         #btn-connect-prompt:hover {
@@ -1159,124 +1348,332 @@
             background: var(--bg-raised);
             border: 1px solid var(--border);
             text-align: center;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 6px 4px rgba(0,0,0,0.14);
+            box-shadow: var(--shadow-card);
         }
+        /* "CHOOSE A FORMAT" is now the primary header for the popup —
+           substantial size, generous breathing room below. Slot picker
+           and filename subtitle live in a footer row below the cards
+           (see #import-popup-footer-info). */
         #import-popup h1 {
-            font-size: 13px;
+            font-size: 18px;
             font-weight: 700;
-            letter-spacing: 0.22em;
+            letter-spacing: 0.28em;
             text-transform: uppercase;
             color: var(--fg);
-            margin: 0 0 8px;
+            margin: 0 0 28px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
         }
         #import-popup .popup-sub {
             font-size: 12px;
             color: var(--fg-dim);
-            margin-bottom: 20px;
+            margin: 0;
             word-break: break-all;
+            text-align: center;
         }
-        #import-popup-slot {
+        /* Footer info row (below the card blocks): slot picker + filename
+           subtitle centered together as a group under the cards. */
+        #import-popup-footer-info {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            gap: 6px;
-            margin-bottom: 14px;
+            justify-content: center;
+            gap: 22px;
+            margin-bottom: 40px;
+        }
+        /* Slot picker: the stepper is the visual anchor so the
+           "TARGET SLOT" label is absolutely positioned above it. */
+        #import-popup-slot {
+            position: relative;
+            flex-shrink: 0;
         }
         #import-popup-slot label {
+            position: absolute;
+            bottom: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            text-align: center;
             font-size: 10px;
             letter-spacing: 0.2em;
             text-transform: uppercase;
             color: var(--fg-muted);
+            white-space: nowrap;
         }
-        #import-popup .popup-group-label {
-            font-size: 10px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--fg-muted);
-            text-align: left;
-            margin: 56px 0 10px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid var(--border);
+        /* ── Card-grid option picker ──
+           Visually a slot-thumbnail: chunky 4-step shadow, Roboto Mono
+           number + dur, then the same slot-format block (channel dots,
+           Overdub in orange, Undo in purple; greyed when unavailable).
+           Dominated options (e.g. stream when SDRAM fits full) are
+           omitted by the JS builder. Recommended card: brand-blue frame. */
+        /* Card-grid container holds two independent .card-grid rows:
+           one for full-length options, one for shortened options. Each
+           row lays out in 3 columns (2 at narrow widths) so full-length
+           cards never mix with shortened on the same row. */
+        #import-popup-options {
+            margin-bottom: 52px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
-        /* First group label sits tighter against the subtitle. */
-        #import-popup-options > .popup-group-label:first-child {
-            margin-top: 4px;
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
         }
-        .popup-opt {
-            display: block;
-            width: 100%;
-            padding: 26px 14px;
-            margin-bottom: 10px;
+        .import-card {
             background: var(--bg-raised);
             border: 1px solid var(--border);
             color: var(--fg);
             cursor: pointer;
+            padding: 10px 10px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            user-select: none;
             text-align: left;
             font-family: inherit;
-            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border);
+            position: relative;
+            transition: background 0.08s, transform 0.06s ease, box-shadow 0.06s ease;
+            box-shadow: var(--shadow-tactile);
         }
-        .popup-opt:hover { background: var(--bg); border-color: var(--border-dark); }
-        .popup-opt:active {
-            transform: translate(3px, 3px);
+        .import-card:hover { background: var(--bg); border-color: var(--border-dark); }
+        .import-card:active {
+            transform: translate(6px, 6px);
             box-shadow: 0 0 0 transparent;
         }
-        .popup-opt-title {
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--fg);
+        /* Selection signal is pure contrast: the selected card stays at
+           full color while every other card fades. No blue accent — the
+           picked card just reads as the only "alive" one. Greyed cards
+           stay clickable so the user can switch selection. */
+        #import-popup-options.has-selection .import-card:not(.selected) {
+            opacity: 0.35;
         }
-        .popup-opt-row {
+        #import-popup-options.has-selection .import-card:not(.selected):hover {
+            opacity: 0.7;
+            background: var(--bg-raised);
+            border-color: var(--border);
+        }
+        @media (max-width: 560px) {
+            .card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        #import-popup-actions {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 18px;
         }
-        .popup-opt-pill {
-            font-size: 9px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            padding: 2px 8px;
-            border: 1px solid var(--border);
-            border-radius: 2px;
-        }
-        .popup-opt-pill.dub    { color: var(--brand-blue); border-color: var(--brand-blue); }
-        .popup-opt-pill.no-dub { color: var(--brand-red);  border-color: var(--brand-red); }
-        #btn-import-cancel {
+        #btn-import-cancel,
+        #btn-import-confirm {
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.14em;
-            padding: 12px 24px;
-            margin-top: 14px;
-            background: var(--bg-raised);
-            border: 1px solid var(--border);
-            color: var(--fg);
+            height: 40px;
+            padding: 0 24px;
             cursor: pointer;
             text-transform: uppercase;
             font-family: inherit;
             transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border);
+        }
+        #btn-import-cancel {
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            box-shadow: var(--shadow-button);
         }
         #btn-import-cancel:hover { background: var(--bg); border-color: var(--border-dark); }
         #btn-import-cancel:active {
             transform: translate(3px, 3px);
             box-shadow: 0 0 0 transparent;
         }
+        #btn-import-confirm {
+            background: var(--brand-blue);
+            border: 1px solid var(--brand-blue);
+            color: var(--on-accent);
+            box-shadow: var(--shadow-button-blue);
+        }
+        #btn-import-confirm:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--brand-blue), black 12%);
+            border-color: color-mix(in srgb, var(--brand-blue), black 12%);
+        }
+        #btn-import-confirm:active:not(:disabled) {
+            transform: translate(3px, 3px);
+            box-shadow: 0 0 0 transparent;
+        }
+        #btn-import-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
 
+        /* ── First-time tutorial (long-loop import walk-through) ──
+           Full-screen overlay. Click anywhere (except Back / Skip)
+           advances. Preview is a scaled-up memory-slot card; each step
+           highlights one aspect by dimming the rest. */
+        #import-tutorial {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.62);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 125;
+            cursor: pointer;
+        }
+        #import-tutorial-card {
+            max-width: 540px;
+            width: 100%;
+            padding: 44px 40px 28px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            text-align: center;
+            position: relative;
+            box-shadow: var(--shadow-card);
+            cursor: pointer;
+        }
+        #btn-tutorial-skip {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            background: transparent;
+            border: none;
+            color: var(--fg-muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: color 0.08s;
+        }
+        #btn-tutorial-skip:hover { color: var(--fg); background: transparent; }
+        /* Tutorial body is populated by JS per step. Fixed min-height so
+           the overall popup size doesn't jump between the intro-only
+           step and the diagram steps. */
+        #import-tutorial-body {
+            margin-bottom: 24px;
+            min-height: 240px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Step 0 — intro text alone, centered. Larger + slightly
+           heavier so it reads as the headline for the whole walk-through. */
+        .tutorial-intro-only {
+            font-size: 20px;
+            line-height: 1.5;
+            font-weight: 500;
+            color: var(--fg);
+            text-align: center;
+            padding: 28px 12px;
+            margin: 0;
+            max-width: 480px;
+            letter-spacing: 0.01em;
+        }
+        /* Steps 1-5 — a two-column stage: blown-up slot preview on the
+           left, callout text floating on the right at the vertical
+           center of whichever aspect is being taught. */
+        .tutorial-stage {
+            display: flex;
+            align-items: flex-start;
+            gap: 26px;
+            justify-content: center;
+            width: 100%;
+        }
+        .tutorial-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 22px 28px 18px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            text-align: left;
+            flex: 0 0 240px;
+            box-shadow: var(--shadow-button);
+        }
+        /* Scale up the slot-thumbnail typography for the preview. */
+        .tutorial-preview .slot-num    { font-size: 22px; }
+        .tutorial-preview .slot-dur    { font-size: 13px; }
+        .tutorial-preview .slot-format { font-size: 11px; gap: 4px; }
+        .tutorial-preview .slot-format-dots    { height: 9px; width: 9px; }
+        .tutorial-preview .slot-format-dots.stereo { width: 18px; }
+        .tutorial-preview .fmt-dot     { width: 9px; height: 9px; }
+        .tutorial-preview .fmt-dot.blue { left: 9px; }
+        /* Highlight vs. dim: only the aspect being taught stays at full
+           opacity; others drop to 0.18 so attention snaps to the lesson. */
+        .tutorial-preview .tutor-dim { opacity: 0.18; transition: opacity 0.25s; }
+        .tutorial-preview .tutor-hl  { opacity: 1;    transition: opacity 0.25s; }
+        /* In-step animations on steps 1-5 — opacity fades for the text
+           swaps (header, duration, channel), color crossfade for the
+           Overdub/Undo state toggles. font-weight 700 is preserved so
+           only color eases (weight can't transition in CSS). */
+        .tutorial-preview [data-aspect="header"],
+        .tutorial-preview [data-aspect="duration"],
+        .tutorial-preview [data-aspect="channel"] { transition: opacity 0.3s ease; }
+        .tutorial-preview .slot-format-dub,
+        .tutorial-preview .slot-format-undo { font-weight: 700; transition: color 0.3s ease; }
+        /* Trimmed-duration highlight for step 2 — the number flashes
+           red to signal that choosing "Shortened" drops the length. */
+        .tutorial-preview [data-aspect="duration"].trimmed-highlight { color: var(--brand-red); }
+
+        .tutorial-callout-col {
+            flex: 0 0 200px;
+            position: relative;
+            align-self: stretch;
+        }
+        .tutorial-callout {
+            position: absolute;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: top 0.28s ease;
+        }
+        .callout-arrow {
+            color: var(--brand-blue);
+            font-size: 16px;
+            line-height: 1;
+            flex: 0 0 auto;
+        }
+        .callout-text {
+            font-size: 13px;
+            line-height: 1.45;
+            color: var(--fg);
+            margin: 0;
+            text-align: left;
+        }
+        #import-tutorial-nav {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        #btn-tutorial-back,
+        #btn-tutorial-next {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            height: 40px;
+            padding: 0 22px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.1s ease, color 0.1s ease, opacity 0.1s ease;
+        }
+        #btn-tutorial-back {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--fg-muted);
+        }
+        #btn-tutorial-back:hover:not(:disabled) { background: var(--bg); color: var(--fg); }
+        #btn-tutorial-back:disabled { opacity: 0.3; cursor: not-allowed; }
+        #btn-tutorial-next {
+            background: var(--brand-blue);
+            border: 1px solid var(--brand-blue);
+            color: #fff;
+        }
+        #btn-tutorial-next:hover {
+            background: color-mix(in srgb, var(--brand-blue), black 12%);
+            border-color: color-mix(in srgb, var(--brand-blue), black 12%);
+        }
         /* ── Generic modal (replaces window.confirm / window.alert) ── */
         #modal-dialog {
             position: fixed;
@@ -1295,12 +1692,7 @@
             background: var(--bg-raised);
             border: 1px solid var(--border);
             text-align: center;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 6px 4px rgba(0,0,0,0.14);
+            box-shadow: var(--shadow-card);
         }
         #modal-title {
             font-size: 13px;
@@ -1328,7 +1720,8 @@
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.14em;
-            padding: 12px 22px;
+            height: 40px;
+            padding: 0 22px;
             background: var(--bg-raised);
             border: 1px solid var(--border);
             color: var(--fg);
@@ -1336,11 +1729,7 @@
             text-transform: uppercase;
             font-family: inherit;
             transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border);
+            box-shadow: var(--shadow-button);
         }
         .modal-btn:hover { background: var(--bg); border-color: var(--border-dark); }
         .modal-btn:active {
@@ -1382,12 +1771,7 @@
             background: var(--bg-raised);
             border: 1px solid var(--border);
             text-align: center;
-            box-shadow:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 6px 4px rgba(0,0,0,0.14);
+            box-shadow: var(--shadow-card);
         }
         .unsupported-logo { margin-bottom: 24px; }
         .unsupported-logo svg { width: 100%; max-width: 260px; height: auto; }
@@ -1438,7 +1822,7 @@
 <div id="header">
     <div id="logo">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136.73 23.06" width="28em">
-          <defs><style>.st0{fill:var(--brand-red)}.st1{fill:#18191e}</style></defs>
+          <defs><style>.st0{fill:var(--brand-red)}.st1{fill:var(--logo-dark)}</style></defs>
           <g>
             <path class="st1" d="M20.33,7.28h-7.12c-1.85,0-3.23.26-4.14.77-1.19.67-1.78,1.84-1.78,3.52s.6,2.82,1.8,3.46c.88.47,2.25.71,4.11.71h11.89c.41,0,.94-.26,1.59-.77.09-.07.56-.48,1.4-1.24l-6.7-6.07c-.29-.26-.64-.39-1.05-.39ZM20.2,13.56h-6.99c-2.07,0-3.26-.31-3.58-.95-.1-.2-.15-.54-.15-1.03,0-.56.07-.95.21-1.18.38-.62,1.55-.92,3.51-.92h6.94l4.47,4.08h-4.42Z"/>
             <path class="st1" d="M103.36,0h-18.79c-2.13,0-3.96.74-5.47,2.22-1.52,1.48-2.27,3.29-2.27,5.41v5.92h-5.92V0h-2.19v13.54c0,.61.21,1.13.64,1.56.43.43.95.65,1.55.65h8.15c-.01-.15-.04-.3-.04-.46v-7.54c0-1.53.54-2.83,1.63-3.92,1.09-1.09,2.4-1.63,3.92-1.63h52.15V0h-33.36Z"/>
@@ -1526,6 +1910,10 @@
 <div id="slot-section" class="module">
     <div class="module-code">Memory Slots</div>
     <div class="section-header">
+        <div id="slot-controls">
+            <button id="btn-slot-prev" class="stock-arrow" type="button" aria-label="Previous">◀</button>
+            <button id="btn-slot-next" class="stock-arrow" type="button" aria-label="Next">▶</button>
+        </div>
         <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
     </div>
     <div id="slot-grid"></div>
@@ -1537,6 +1925,12 @@
      or removed from that folder. The webapp always reads the live copy. -->
 <div id="stock-section" class="module">
     <div class="module-code">Stock Tracks</div>
+    <div class="section-header">
+        <div id="stock-controls">
+            <button id="btn-stock-prev" class="stock-arrow" type="button" aria-label="Previous">◀</button>
+            <button id="btn-stock-next" class="stock-arrow" type="button" aria-label="Next">▶</button>
+        </div>
+    </div>
     <div id="stock-grid"></div>
 </div>
 
@@ -1557,20 +1951,37 @@
 <!-- ── Import popup (format + slot selector; also used for stock tracks) ──── -->
 <div id="import-popup">
     <div id="import-popup-card">
-        <h1 id="import-popup-title">Track too long for default import</h1>
-        <p class="popup-sub" id="import-popup-sub"><!-- filename + duration --></p>
-        <div id="import-popup-slot">
-            <label>Target slot</label>
-            <div id="popup-slot-stepper">
-                <div id="popup-slot-display"><span class="seg-ghost">88</span><input id="popup-slot-val" type="number" min="1" max="99" value="1"></div>
-                <div id="popup-slot-arrows">
-                    <button id="popup-slot-up">▲</button>
-                    <button id="popup-slot-down">▼</button>
+        <h1 id="import-popup-title">Choose a Format</h1>
+        <div id="import-popup-options"><!-- rendered dynamically --></div>
+        <div id="import-popup-footer-info">
+            <div id="import-popup-slot">
+                <label>Target slot</label>
+                <div id="popup-slot-stepper">
+                    <div id="popup-slot-display"><span class="seg-ghost">88</span><input id="popup-slot-val" type="number" min="1" max="99" value="1"></div>
+                    <div id="popup-slot-arrows">
+                        <button id="popup-slot-up">▲</button>
+                        <button id="popup-slot-down">▼</button>
+                    </div>
                 </div>
             </div>
+            <p class="popup-sub" id="import-popup-sub"><!-- filename + duration --></p>
         </div>
-        <div id="import-popup-options"><!-- rendered dynamically --></div>
-        <button id="btn-import-cancel">Cancel</button>
+        <div id="import-popup-actions">
+            <button id="btn-import-cancel">Cancel</button>
+            <button id="btn-import-confirm">Import</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── First-time tutorial for the long-loop import popup ──────────────── -->
+<div id="import-tutorial">
+    <div id="import-tutorial-card">
+        <button id="btn-tutorial-skip" type="button">Skip</button>
+        <div id="import-tutorial-body"><!-- step content rendered by JS --></div>
+        <div id="import-tutorial-nav">
+            <button id="btn-tutorial-back" type="button">Back</button>
+            <button id="btn-tutorial-next" type="button">Next</button>
+        </div>
     </div>
 </div>
 
@@ -2840,6 +3251,34 @@ async function refreshUI(autoLoad = false) {
             document.getElementById('viewer-empty').textContent = 'No memory slots on this card';
         }
     }
+    // Promote to a 2-row carousel only when there are 6+ tiles. Below
+    // that, a single row reads naturally without a half-empty second
+    // row. (Empty-slot placeholders count, so the count reflects the
+    // total visible tiles.)
+    const tiles   = slotGrid.children;
+    const twoRow  = tiles.length >= 6;
+    slotGrid.classList.toggle('two-row', twoRow);
+    // In two-row mode, place tiles explicitly so the reading order is
+    // row-first within a 5-wide "page": row 1 gets tiles 1-5, row 2
+    // gets 6-10, then tile 11 starts page 2 at row 1 col 6, etc. Each
+    // page stacks 10 tiles (2 rows × 5 cols) side-by-side horizontally.
+    for (let i = 0; i < tiles.length; i++) {
+        if (twoRow) {
+            const inPage = i % 10;
+            const page   = Math.floor(i / 10);
+            const row    = Math.floor(inPage / 5) + 1;       // 1 or 2
+            const col    = page * 5 + (inPage % 5) + 1;      // 1, 2, 3…
+            tiles[i].style.gridRow    = row;
+            tiles[i].style.gridColumn = col;
+        } else {
+            tiles[i].style.gridRow    = '';
+            tiles[i].style.gridColumn = '';
+        }
+    }
+    // Wire the horizontal carousel controls now that tiles are in place —
+    // arrow enabled states, no-scroll hide, and edge-fade masks all
+    // track scroll position from here.
+    setupCarousel('slot-grid', 'btn-slot-prev', 'btn-slot-next');
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -2940,166 +3379,406 @@ async function unlinkAllSlotVariants(dir, slotNum) {
     }
 }
 
-// Build the dynamic option list for an oversized import. `frames` is stereo
-// frame count at SAMPLE_RATE. Returns an array of option objects; caller
-// renders them into buttons in the popup.
-function buildImportOptions(frames) {
-    const opts = [];
-    const mmss = formatDurMSS;
-
-    // File already fits the 1:30 stereo-short cap — no trimming needed.
-    // Present the two "default" options (stereo-with-dub and mono-with-dub)
-    // so the stock-track dialog always has something to show.
-    if (frames <= LIVE_STEREO_SHORT_FRAMES) {
-        opts.push({
-            group: 'stereo', id: 'A2',
-            title: 'Full length',
-            dur:   mmss(frames / SAMPLE_RATE),
-            dub:   true,
-            process: { mono: false, trimFrames: frames },
-        });
-        opts.push({
-            group: 'mono', id: 'B1',
-            title: 'Full length',
-            dur:   mmss(frames / SAMPLE_RATE),
-            dub:   true,
-            process: { mono: true, trimFrames: frames },
-        });
-        return opts;
-    }
-
-    // A1 — stereo SDRAM-loaded, full length, no overdub. Hidden when file
-    //      exceeds the 3:00 SDRAM cap: C1 (stream) covers that case without
-    //      trimming, so A1 would be strictly worse.
-    if (frames <= LIVE_STEREO_LONG_FRAMES) {
-        opts.push({
-            group: 'stereo', id: 'A1',
-            title: 'Full length',
-            dur:   mmss(frames / SAMPLE_RATE),
-            dub:   false,
-            process: { mono: false, trimFrames: frames },
-        });
-    }
-    // A2 — stereo SDRAM-loaded, trimmed to 1:30, with overdub. Always
-    //      trims — caller only reaches this branch when frames > STEREO_SHORT.
-    opts.push({
-        group: 'stereo', id: 'A2',
-        title: 'Trim to 1:30',
-        dur:   mmss(LIVE_STEREO_SHORT_FRAMES / SAMPLE_RATE),
-        dub:   true,
-        process: { mono: false, trimFrames: LIVE_STEREO_SHORT_FRAMES },
+// Build the set of non-dominated import options for a file of length
+// `frames` (stereo frames @ SAMPLE_RATE). Each option is one of the six
+// firmware-supported output tiers — stereo/mono × short/long/stream —
+// but tiers that would be strictly worse than another for this file are
+// omitted (e.g., stereo stream is hidden when stereo long can hold the
+// full file without loss). Every returned card carries a `process` in
+// the shape writeImportToSlot expects.
+function buildImportCards(frames) {
+    const cards = [];
+    const push = (partial) => cards.push({
+        ...partial,
+        trimmed: partial.outFrames < frames,
     });
-    // B1 — mono SDRAM-loaded, short-mode cap (3:00), with overdub + undo.
-    //      Trims when file exceeds the mono-short cap. Keeps the undo-capable
-    //      slot as an explicit option even when B2 could hold the full length,
-    //      so the user can choose "give up length to keep undo."
-    {
-        const outFrames = Math.min(frames, LIVE_MONO_SHORT_FRAMES);
-        opts.push({
-            group: 'mono', id: 'B1',
-            title: frames > LIVE_MONO_SHORT_FRAMES ? 'Trim to 3:00' : 'Full length',
-            dur:   mmss(outFrames / SAMPLE_RATE),
-            dub:   true,
-            process: { mono: true, trimFrames: outFrames },
+
+    // Stereo short (1:30, overdub + undo).
+    push({
+        channel: 'Stereo', cap: 'short',
+        outFrames: Math.min(frames, LIVE_STEREO_SHORT_FRAMES),
+        overdub: true, undo: true,
+        process: { mono: false, trimFrames: Math.min(frames, LIVE_STEREO_SHORT_FRAMES) },
+    });
+    // Stereo long (3:00, destructive overdub, no undo). Only useful once
+    // the file exceeds the stereo-short cap — otherwise "short full-length"
+    // strictly dominates it (same length with undo preserved).
+    if (frames > LIVE_STEREO_SHORT_FRAMES) {
+        push({
+            channel: 'Stereo', cap: 'long',
+            outFrames: Math.min(frames, LIVE_STEREO_LONG_FRAMES),
+            overdub: true, undo: false,
+            process: { mono: false, trimFrames: Math.min(frames, LIVE_STEREO_LONG_FRAMES) },
         });
     }
-    // B2 — mono SDRAM-loaded, long-mode cap (6:00), destructive overdub.
-    //      v1.6.3+. Fires only when the file exceeds the mono-short cap but
-    //      still fits in the mono-long cap. Gives up undo in exchange for
-    //      keeping full length. Files > 6:00 fall through to B3 (stream).
-    if (frames > LIVE_MONO_SHORT_FRAMES && frames <= LIVE_MONO_LONG_FRAMES) {
-        opts.push({
-            group: 'mono', id: 'B2',
-            title: 'Full length',
-            dur:   mmss(frames / SAMPLE_RATE),
-            dub:   false,
-            process: { mono: true, trimFrames: frames },
-        });
-    }
-    // C1 — stereo full-length via SD streaming. Surfaced under the stereo
-    //      group so the user just sees "Full length" vs "Trim to 1:30" — the
-    //      SDRAM-vs-stream mechanism is invisible. Only shown when A1 can't
-    //      cover it (file > 3:00), otherwise the SDRAM-loaded A1 is strictly
-    //      better and C1 would be a duplicate-looking button.
+    // Stereo stream (play-only). Only useful when file exceeds stereo-long.
     if (frames > LIVE_STEREO_LONG_FRAMES) {
-        opts.push({
-            group: 'stereo', id: 'C1',
-            title: 'Full length',
-            dur:   mmss(frames / SAMPLE_RATE),
-            dub:   false,
+        push({
+            channel: 'Stereo', cap: 'stream',
+            outFrames: frames,
+            overdub: false, undo: false,
             process: { mono: false, stream: true, trimFrames: frames },
         });
     }
-    // B3 — mono full-length via SD streaming. Mirrors C1 for the mono group.
-    //      No overdub (streams are read-only). Only offered when the file
-    //      exceeds B2's 6:00 SDRAM cap — for files ≤ 6:00, B2 strictly
-    //      dominates (same length, overdub-capable even if destructive).
+    // Mono short (3:00, overdub + undo).
+    push({
+        channel: 'Mono', cap: 'short',
+        outFrames: Math.min(frames, LIVE_MONO_SHORT_FRAMES),
+        overdub: true, undo: true,
+        process: { mono: true, trimFrames: Math.min(frames, LIVE_MONO_SHORT_FRAMES) },
+    });
+    // Mono long (6:00, destructive overdub, no undo). Only useful once
+    // file exceeds mono-short cap.
+    if (frames > LIVE_MONO_SHORT_FRAMES) {
+        push({
+            channel: 'Mono', cap: 'long',
+            outFrames: Math.min(frames, LIVE_MONO_LONG_FRAMES),
+            overdub: true, undo: false,
+            process: { mono: true, trimFrames: Math.min(frames, LIVE_MONO_LONG_FRAMES) },
+        });
+    }
+    // Mono stream (play-only). Only useful when file exceeds mono-long.
     if (frames > LIVE_MONO_LONG_FRAMES) {
-        opts.push({
-            group: 'mono', id: 'B3',
-            title: 'Full length',
-            dur:   mmss(frames / SAMPLE_RATE),
-            dub:   false,
+        push({
+            channel: 'Mono', cap: 'stream',
+            outFrames: frames,
+            overdub: false, undo: false,
             process: { mono: true, stream: true, trimFrames: frames },
         });
     }
-    return opts;
+
+    // Sort: full-length options first, then by feature count (overdub +
+    // undo), then by output length (longer first), then stereo over mono
+    // as the final tiebreaker. Position 0 becomes the recommended
+    // default — the "keep full length with the most you can do" pick.
+    cards.sort((a, b) => {
+        if (a.trimmed !== b.trimmed) return a.trimmed ? 1 : -1;
+        const aFeat = (a.overdub ? 1 : 0) + (a.undo ? 1 : 0);
+        const bFeat = (b.overdub ? 1 : 0) + (b.undo ? 1 : 0);
+        if (aFeat !== bFeat) return bFeat - aFeat;
+        if (a.outFrames !== b.outFrames) return b.outFrames - a.outFrames;
+        if (a.channel !== b.channel) return a.channel === 'Stereo' ? -1 : 1;
+        return 0;
+    });
+    return cards;
 }
 
-// Show the popup, render options + slot selector, resolve with {slot, option}
-// on confirm or null on cancel. Popup is modal — backdrop blocks clicks.
-// Used by both the normal Import flow (when the file exceeds the 1:30 cap)
-// and the Stock Music flow (always shown on track click).
-function askImportOption({ title, fileName, durationSec, frames, initialSlot }) {
+// ── First-time tutorial for the long-loop import flow ─────────────────
+// Walks the user through the five aspects of a slot tile (length,
+// duration, channel, overdub, undo) the first time they import a file
+// long enough to trigger the modification popup. Shown once per
+// browser; flag lives in localStorage under IMPORT_TUTORIAL_KEY.
+const IMPORT_TUTORIAL_KEY = 'cycles_import_tutorial_seen';
+const TUTORIAL_TEXT = {
+    intro: 'This file is too long for storage. It can be loaded with modifications.',
+    step1: 'Every slot is either "Full Length" (your whole file) or "Shortened" (trimmed to fit — which unlocks more features).',
+    step2: 'Right underneath is the length you\'ll end up with — either your file as-is, or the new trimmed version.',
+    step3: 'Stereo keeps both channels for a wider sound. Mono merges to one channel and doubles the available recording time.',
+    step4: 'Overdub lets you play along with the loop to build layered parts on top of it.',
+    step5: 'Undo lets you take back an overdub session. Longer loops use the undo memory for extra length, so undo isn\'t always available.',
+};
+
+function maybeShowImportTutorial(durationSec) {
+    if (localStorage.getItem(IMPORT_TUTORIAL_KEY)) return Promise.resolve();
+    return new Promise(resolve => {
+        const overlay   = document.getElementById('import-tutorial');
+        const bodyEl    = document.getElementById('import-tutorial-body');
+        const backEl    = document.getElementById('btn-tutorial-back');
+        const nextEl    = document.getElementById('btn-tutorial-next');
+        const skipEl    = document.getElementById('btn-tutorial-skip');
+
+        const durStr = formatDurMSS(durationSec);
+        // Step 0 is the intro text alone. Steps 1–5 each point at one
+        // aspect of the preview card with a floating callout.
+        const stepOrder   = ['intro', 'step1', 'step2', 'step3', 'step4', 'step5'];
+        const stepAspects = { step1:'header', step2:'duration', step3:'channel', step4:'overdub', step5:'undo' };
+        let stepIdx = 0;
+        let animInterval = null;
+
+        const stereoInner = `Stereo<div class="slot-format-dots stereo"><span class="fmt-dot red"></span><span class="fmt-dot blue"></span></div>`;
+        const monoInner   = `Mono<div class="slot-format-dots"><span class="fmt-dot red"></span></div>`;
+        const previewHtml = () => `
+            <div class="slot-num"    data-aspect="header">Full Length</div>
+            <div class="slot-dur"    data-aspect="duration">${durStr}</div>
+            <div class="slot-format">
+                <div class="slot-format-left" data-aspect="channel">${stereoInner}</div>
+                <span class="slot-format-dub"  data-aspect="overdub">Overdub</span>
+                <span class="slot-format-undo" data-aspect="undo">Undo</span>
+            </div>
+        `;
+
+        const clearAnim = () => {
+            if (animInterval) { clearInterval(animInterval); animInterval = null; }
+        };
+
+        // Anchor the callout vertically at the center of the highlighted
+        // aspect. getBoundingClientRect lets us work across the preview
+        // and the callout column without fighting offsetParent nesting.
+        const positionCallout = () => {
+            const stage = bodyEl.querySelector('.tutorial-stage');
+            if (!stage) return;
+            const preview = stage.querySelector('.tutorial-preview');
+            const callout = stage.querySelector('.tutorial-callout');
+            const col     = stage.querySelector('.tutorial-callout-col');
+            if (!preview || !callout || !col) return;
+            const aspectKey = stepAspects[stepOrder[stepIdx]];
+            if (!aspectKey) return;
+            const aspectEl = preview.querySelector(`[data-aspect="${aspectKey}"]`);
+            if (!aspectEl) return;
+            const aRect = aspectEl.getBoundingClientRect();
+            const cRect = col.getBoundingClientRect();
+            const centerY = aRect.top + aRect.height / 2 - cRect.top;
+            callout.style.top = `${centerY}px`;
+            callout.style.transform = 'translateY(-50%)';
+        };
+
+        const applyStep = () => {
+            clearAnim();
+            const key = stepOrder[stepIdx];
+            bodyEl.innerHTML = '';
+
+            if (key === 'intro') {
+                const p = document.createElement('p');
+                p.className = 'tutorial-intro-only';
+                p.textContent = TUTORIAL_TEXT.intro;
+                bodyEl.appendChild(p);
+            } else {
+                const stage = document.createElement('div');
+                stage.className = 'tutorial-stage';
+                const preview = document.createElement('div');
+                preview.className = 'tutorial-preview';
+                preview.innerHTML = previewHtml();
+                stage.appendChild(preview);
+
+                const col = document.createElement('div');
+                col.className = 'tutorial-callout-col';
+                const callout = document.createElement('div');
+                callout.className = 'tutorial-callout';
+                callout.innerHTML = `<span class="callout-arrow">◀</span><p class="callout-text">${TUTORIAL_TEXT[key]}</p>`;
+                col.appendChild(callout);
+                stage.appendChild(col);
+                bodyEl.appendChild(stage);
+
+                // Dim all aspects except the one being explained.
+                const aspectKey = stepAspects[key];
+                preview.querySelectorAll('[data-aspect]').forEach(el => {
+                    const isMe = el.dataset.aspect === aspectKey;
+                    el.classList.toggle('tutor-hl',  isMe);
+                    el.classList.toggle('tutor-dim', !isMe);
+                });
+
+                // Position callout after layout settles so offsetHeight
+                // reflects the actual rendered text wrap height.
+                requestAnimationFrame(positionCallout);
+
+                // In-step fade cycles: text swaps crossfade via opacity
+                // (steps 1/2/3); color-tone toggles transition via CSS
+                // (steps 4/5). All intervals halved from the first pass
+                // to feel more alive without being distracting.
+                if (key === 'step1') {
+                    const headerEl = preview.querySelector('[data-aspect="header"]');
+                    let isFull = true;
+                    animInterval = setInterval(() => {
+                        headerEl.style.opacity = '0';
+                        setTimeout(() => {
+                            isFull = !isFull;
+                            headerEl.textContent = isFull ? 'Full Length' : 'Shortened';
+                            headerEl.style.opacity = '1';
+                        }, 315);
+                    }, 1400);
+                } else if (key === 'step2') {
+                    const durEl = preview.querySelector('[data-aspect="duration"]');
+                    let isFull = true;
+                    animInterval = setInterval(() => {
+                        durEl.style.opacity = '0';
+                        setTimeout(() => {
+                            isFull = !isFull;
+                            durEl.textContent = isFull ? durStr : '1:30';
+                            durEl.classList.toggle('trimmed-highlight', !isFull);
+                            durEl.style.opacity = '1';
+                        }, 315);
+                    }, 1400);
+                } else if (key === 'step3') {
+                    const channelEl = preview.querySelector('[data-aspect="channel"]');
+                    let isStereo = true;
+                    animInterval = setInterval(() => {
+                        channelEl.style.opacity = '0';
+                        setTimeout(() => {
+                            isStereo = !isStereo;
+                            channelEl.innerHTML = isStereo ? stereoInner : monoInner;
+                            channelEl.style.opacity = '1';
+                        }, 315);
+                    }, 1400);
+                } else if (key === 'step4') {
+                    const dubEl = preview.querySelector('[data-aspect="overdub"]');
+                    let active = true;
+                    animInterval = setInterval(() => {
+                        active = !active;
+                        dubEl.classList.toggle('no-dub', !active);
+                    }, 750);
+                } else if (key === 'step5') {
+                    const undoEl = preview.querySelector('[data-aspect="undo"]');
+                    let active = true;
+                    animInterval = setInterval(() => {
+                        active = !active;
+                        undoEl.classList.toggle('no-undo', !active);
+                    }, 750);
+                }
+            }
+
+            backEl.disabled = stepIdx === 0;
+            nextEl.textContent = stepIdx === stepOrder.length - 1 ? 'Got it' : 'Next';
+        };
+
+        const done = () => {
+            clearAnim();
+            localStorage.setItem(IMPORT_TUTORIAL_KEY, '1');
+            overlay.style.display = 'none';
+            overlay.removeEventListener('click', onAdvance);
+            nextEl.removeEventListener('click', onNextClick);
+            backEl.removeEventListener('click', onBackClick);
+            skipEl.removeEventListener('click', onSkipClick);
+            window.removeEventListener('resize', positionCallout);
+            resolve();
+        };
+        const advance = () => {
+            if (stepIdx >= stepOrder.length - 1) { done(); return; }
+            stepIdx++;
+            applyStep();
+        };
+        const goBack = () => {
+            if (stepIdx <= 0) return;
+            stepIdx--;
+            applyStep();
+        };
+
+        // Delegated click handler: any click on the overlay advances —
+        // except Back / Skip buttons, whose handlers stop propagation so
+        // they don't double-trigger advance.
+        const onAdvance   = () => advance();
+        const onNextClick = (e) => { e.stopPropagation(); advance(); };
+        const onBackClick = (e) => { e.stopPropagation(); goBack(); };
+        const onSkipClick = (e) => { e.stopPropagation(); done(); };
+
+        overlay.addEventListener('click', onAdvance);
+        nextEl.addEventListener('click', onNextClick);
+        backEl.addEventListener('click', onBackClick);
+        skipEl.addEventListener('click', onSkipClick);
+        window.addEventListener('resize', positionCallout);
+
+        applyStep();
+        overlay.style.display = 'flex';
+    });
+}
+
+// Show the popup, render the card grid + slot selector, resolve with
+// {slot, option} on confirm or null on cancel. Used by both the normal
+// Import flow (when the file exceeds the 1:30 cap) and the Stock Music
+// flow (always shown on track click).
+//
+// Interaction: clicking a card selects it (others grey out); clicking
+// Import commits the selection. The recommended card is pre-selected on
+// open so a user who just wants "what the app suggests" can one-click.
+async function askImportOption({ title, fileName, durationSec, frames, initialSlot }) {
+    // First-time walkthrough — only when the file actually triggers the
+    // "long loop" version of the popup (i.e., trimming is on the table).
+    if (frames > LIVE_STEREO_SHORT_FRAMES) {
+        await maybeShowImportTutorial(durationSec);
+    }
     return new Promise(resolve => {
         const popup    = document.getElementById('import-popup');
         const titleEl  = document.getElementById('import-popup-title');
         const subEl    = document.getElementById('import-popup-sub');
         const listEl   = document.getElementById('import-popup-options');
         const cancelEl = document.getElementById('btn-import-cancel');
+        const confirmEl= document.getElementById('btn-import-confirm');
         const slotInp  = document.getElementById('popup-slot-val');
 
-        titleEl.textContent = title || 'Choose import format';
+        titleEl.textContent = 'Choose a Format';
         subEl.textContent   = `${fileName} — ${formatDurMSS(durationSec)}`;
         listEl.innerHTML = '';
+        listEl.classList.add('has-selection');
         slotInp.value = String(Math.max(1, Math.min(99, initialSlot || 1))).padStart(2, '0');
-
-        const opts = buildImportOptions(frames);
-        const stereoOpts = opts.filter(o => o.group === 'stereo');
-        const monoOpts   = opts.filter(o => o.group === 'mono');
 
         const readSlot = () => {
             const v = parseInt(slotInp.value, 10);
             return (v >= 1 && v <= 99) ? v : 1;
         };
 
-        const renderGroup = (label, groupOpts) => {
-            if (!groupOpts.length) return;
-            const h = document.createElement('div');
-            h.className = 'popup-group-label';
-            h.textContent = label;
-            listEl.appendChild(h);
-            for (const opt of groupOpts) {
-                const btn = document.createElement('button');
-                btn.className = 'popup-opt';
-                btn.innerHTML = `
-                    <div class="popup-opt-row">
-                        <span class="popup-opt-title">${opt.title}</span>
-                        <span class="popup-opt-pill ${opt.dub ? 'dub' : 'no-dub'}">${opt.dub ? 'With overdub' : 'No overdub'}</span>
-                    </div>`;
-                btn.addEventListener('click', () => { cleanup(); resolve({ slot: readSlot(), option: opt }); });
-                listEl.appendChild(btn);
-            }
-        };
-        renderGroup('Keep as stereo', stereoOpts);
-        renderGroup('Convert to mono', monoOpts);
+        const cards = buildImportCards(frames);
+        // cards[0] is the recommended pick by virtue of the sort — keep
+        // full length with the most features first.
+        let selectedCard = cards[0];
+        const cardEls = [];
 
+        // Render one button per card. Header = "Full Length" / "Shortened"
+        // (slot-num style, big), duration underneath (slot-dur style,
+        // small). Channel row uses .slot-format with dots + colored
+        // Overdub/Undo words. Full-length and shortened cards live in
+        // separate .card-grid rows so users never see them mixed.
+        const buildCardEl = (card) => {
+            const el = document.createElement('button');
+            el.className = 'import-card';
+            const headerText  = card.trimmed ? 'Shortened' : 'Full Length';
+            const durStr      = formatDurMSS(card.outFrames / SAMPLE_RATE);
+            const channelText = card.process.mono ? 'Mono' : 'Stereo';
+            const dotsHtml = card.process.mono
+                ? `<div class="slot-format-dots"><span class="fmt-dot red"></span></div>`
+                : `<div class="slot-format-dots stereo"><span class="fmt-dot red"></span><span class="fmt-dot blue"></span></div>`;
+            const dubClass  = card.overdub ? 'slot-format-dub'  : 'slot-format-dub no-dub';
+            const undoClass = card.undo    ? 'slot-format-undo' : 'slot-format-undo no-undo';
+            el.innerHTML = `
+                <div class="slot-num">${headerText}</div>
+                <div class="slot-dur">${durStr}</div>
+                <div class="slot-format">
+                    <div class="slot-format-left">${channelText}${dotsHtml}</div>
+                    <span class="${dubClass}">Overdub</span>
+                    <span class="${undoClass}">Undo</span>
+                </div>
+            `;
+            el.addEventListener('click', () => {
+                selectedCard = card;
+                applySelection();
+            });
+            return el;
+        };
+        const addRow = (groupCards) => {
+            if (!groupCards.length) return;
+            const row = document.createElement('div');
+            row.className = 'card-grid';
+            for (const card of groupCards) {
+                const el = buildCardEl(card);
+                row.appendChild(el);
+                cardEls.push(el);
+            }
+            listEl.appendChild(row);
+        };
+        addRow(cards.filter(c => !c.trimmed));
+        addRow(cards.filter(c =>  c.trimmed));
+
+        // Visual sync for the current `selectedCard` — toggles .selected
+        // across cards and enables the Import button.
+        const applySelection = () => {
+            cards.forEach((c, i) => cardEls[i].classList.toggle('selected', c === selectedCard));
+            confirmEl.disabled = !selectedCard;
+        };
+        applySelection();
+
+        const onConfirm = () => {
+            if (!selectedCard) return;
+            cleanup();
+            resolve({ slot: readSlot(), option: { process: selectedCard.process } });
+        };
         const onCancel = () => { cleanup(); resolve(null); };
+
         function cleanup() {
             popup.style.display = 'none';
-            cancelEl.removeEventListener('click', onCancel);
+            listEl.classList.remove('has-selection');
+            cancelEl .removeEventListener('click', onCancel);
+            confirmEl.removeEventListener('click', onConfirm);
         }
-        cancelEl.addEventListener('click', onCancel);
+        cancelEl .addEventListener('click', onCancel);
+        confirmEl.addEventListener('click', onConfirm);
         popup.style.display = 'flex';
     });
 }
@@ -3390,7 +4069,67 @@ async function renderStockTracks() {
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
         grid.appendChild(thumb);
     }
+
+    // "Coming Soon" placeholder tiles signal that more stock tracks are
+    // on the way and keep the carousel populated enough to scroll. The
+    // tiles are non-clickable and rendered at reduced opacity.
+    for (let i = 0; i < 10; i++) {
+        const dummy = document.createElement('div');
+        dummy.className = 'stock-thumb dummy';
+        dummy.innerHTML = `
+            <div class="stock-title">Coming Soon</div>
+            <div class="stock-artist">—</div>
+            <div class="stock-meta">—</div>
+        `;
+        grid.appendChild(dummy);
+    }
+    setupStockCarousel();
 }
+
+// Wire up a horizontal-scroll carousel: prev/next arrows, trackpad
+// native scroll, mouse-wheel → horizontal conversion, and edge fades
+// ("behind the wall") that signal more content off-screen. Arrow
+// disabled states + fade classes track the scroll position. Safe to
+// call multiple times — prior listeners are replaced in-place.
+function setupCarousel(gridId, prevId, nextId) {
+    const grid = document.getElementById(gridId);
+    const prev = document.getElementById(prevId);
+    const next = document.getElementById(nextId);
+    if (!grid || !prev || !next) return;
+
+    const updateArrows = () => {
+        const maxScroll = grid.scrollWidth - grid.clientWidth;
+        const canPrev = grid.scrollLeft > 1;
+        const canNext = grid.scrollLeft < maxScroll - 1;
+        prev.classList.toggle('disabled', !canPrev);
+        next.classList.toggle('disabled', !canNext);
+        grid.classList.toggle('has-scroll-right', canNext);
+        grid.classList.toggle('has-scroll-left',  canPrev);
+        // If there's no scroll possible at all, fade the entire arrow
+        // pair out rather than showing two greyed buttons forever.
+        const controls = prev.parentElement;
+        if (controls) controls.classList.toggle('no-scroll', !canPrev && !canNext);
+    };
+
+    prev.onclick   = () => { grid.scrollBy({ left: -grid.clientWidth, behavior: 'smooth' }); };
+    next.onclick   = () => { grid.scrollBy({ left:  grid.clientWidth, behavior: 'smooth' }); };
+    grid.onscroll  = updateArrows;
+    // Mouse wheel → horizontal scroll when the trackpad isn't already
+    // sending deltaX. preventDefault so pure vertical-wheel scrolls
+    // inside the carousel, not the page.
+    grid.onwheel = (e) => {
+        if (e.deltaX !== 0) return;
+        if (grid.scrollWidth <= grid.clientWidth) return;
+        e.preventDefault();
+        grid.scrollLeft += e.deltaY;
+    };
+    // First call after layout settles — image/font loads can shift sizes.
+    requestAnimationFrame(updateArrows);
+    window.addEventListener('resize', updateArrows);
+}
+
+// Back-compat shim — existing callers pointed at the stock-only name.
+function setupStockCarousel() { setupCarousel('stock-grid', 'btn-stock-prev', 'btn-stock-next'); }
 
 renderStockTracks();
 
@@ -3587,6 +4326,7 @@ function addImportRow(initialSlot = 1) {
         </div>
         <div class="import-cell action">
             <button type="button" class="btn-remove-row" title="Remove this row">×</button>
+            <button type="button" class="btn-add-row-inline" title="Add another row">+</button>
             <span class="row-status"></span>
         </div>
     `;
@@ -3630,6 +4370,11 @@ function addImportRow(initialSlot = 1) {
         } else {
             row.remove();
         }
+    });
+    // Inline "+" on the first row adds another import row, targeting
+    // the next empty slot number.
+    row.querySelector('.btn-add-row-inline').addEventListener('click', async () => {
+        addImportRow(await firstEmptyImportSlot());
     });
 
     setSlot(initialSlot);
