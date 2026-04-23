@@ -635,27 +635,40 @@
             padding: 2px 6px 6px 2px;
             scrollbar-width: none;              /* Firefox */
         }
-        /* "Behind the wall" fade: when there's more content to scroll
-           to the right, the rightmost ~48 px of the grid fades out,
-           hinting that tiles are slipping off-view. Toggled by JS. */
-        #stock-grid.has-scroll-right {
-                    mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
-        }
-        #stock-grid.has-scroll-left {
-                    mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to left, black 0%, black calc(100% - 48px), transparent 100%);
-        }
-        #stock-grid.has-scroll-left.has-scroll-right {
-                    mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%);
+        /* Hard vertical rule overlaid on the Stock Tracks panel — tiles
+           scroll behind it instead of fading out. Positioned inside
+           #stock-section (which is .module, already position:relative) so
+           we can place it independent of the grid's edges: inset from the
+           right, extending above and below the grid band. */
+        #stock-section::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            bottom: 10px;
+            right: 60px;
+            width: 2px;
+            background: var(--border-dark);
+            pointer-events: none;
+            z-index: 2;
         }
         #stock-grid::-webkit-scrollbar { display: none; }  /* Chromium */
         /* Each thumb takes exactly one-third of the viewport width
            (minus the two 5 px gaps between the three visible tiles
-           and the 8 px horizontal grid padding). */
+           and the 8 px horizontal grid padding). Tactile shadow is
+           slightly bolder than the default token — one extra step
+           and a darker ground — to read as "lifted" against the
+           flat panel now that the fade mask is gone. */
         #stock-grid .stock-thumb {
             flex: 0 0 calc((100% - 18px) / 3);
+            box-shadow:
+                1px 1px 0 var(--border),
+                2px 2px 0 var(--border),
+                3px 3px 0 var(--border),
+                4px 4px 0 var(--border),
+                5px 5px 0 var(--border),
+                6px 6px 0 var(--border),
+                7px 7px 0 var(--border),
+                9px 11px 10px rgba(0, 0, 0, 0.26);
         }
         /* Dummy placeholder tiles (during iteration) — muted appearance
            so they read as "not real content" while still filling the
