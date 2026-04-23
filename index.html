@@ -354,7 +354,7 @@
             letter-spacing: 0.1em;
             text-transform: uppercase;
             color: var(--fg-muted);
-            flex: 1;
+            margin-left: auto;          /* push to right within pedal-panel */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -420,7 +420,6 @@
            a soft rgba shadow grounds it. On :active the block slides
            down-right into its shadow for a tactile click. */
         #transport button,
-        .pedal-trigger,
         #btn-export, #btn-import,
         .slot-thumb,
         .stock-thumb {
@@ -428,7 +427,6 @@
             transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
         }
         #transport button:active,
-        .pedal-trigger:active,
         #btn-export:active, #btn-import:active,
         .slot-thumb:active,
         .stock-thumb:active {
@@ -887,8 +885,19 @@
         .slot-thumb:hover .slot-delete { opacity: 1; }
         .slot-delete:hover { background: none; border: none; color: var(--led-red); }
 
-        /* ── Pedal panel (compact toolbar above waveform) ── */
-        #pedal-section { margin-bottom: 22px; }
+        /* ── Playback layout (pedal panel + waveform + fx rack as one grid) ──
+           Two columns: 1fr (waveform) and auto (fx rack). The pedal panel and
+           an empty spacer occupy row 1; viewer and fx-rack occupy row 2. The
+           auto column sizes to fx-rack, so the spacer naturally matches — and
+           any right-aligned content in the pedal panel stops at the waveform
+           edge without hardcoded widths. */
+        #playback-layout {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            column-gap: 16px;
+            row-gap: 22px;
+            margin-bottom: 20px;
+        }
         #pedal-panel {
             display: flex;
             align-items: flex-end;
@@ -900,7 +909,6 @@
             gap: 4px;
             align-items: flex-start;
         }
-        .pedal-control-right { margin-left: auto; align-items: flex-end; }
         .pedal-control-label {
             font-size: 8px;
             font-weight: 700;
@@ -909,82 +917,154 @@
             color: var(--fg-muted);
         }
 
-        /* One-shot trigger button */
-        .pedal-trigger {
-            background: var(--bg-raised);
-            border: 1px solid var(--border);
-            color: var(--fg);
-            padding: 0;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            cursor: pointer;
-            height: 26px;
-            width: 48px;
-            display: inline-flex;
+        /* Console-style illuminated push-button group (Speed / Direction).
+           Warm-brown plastic cap to match the site's analog palette (fg-dim
+           territory), with a small LED dot that lights when active. */
+        .console-group {
+            display: flex;
+            gap: 3px;
+        }
+        /* Flat graphic buttons — matches the site's native cream-card language.
+           Apollo-inspired: printed-ink legend, brand-color face when active.
+           Raised drop shadow + "pressed-in" physical feel: click translates
+           the cap into its shadow; the selected button stays pressed in. */
+        .pedal-opt {
+            display: flex;
             align-items: center;
             justify-content: center;
-        }
-        .pedal-trigger:hover { background: var(--bg); border-color: var(--border-dark); }
-        .pedal-trigger:active { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-        /* Slider-style 2-position toggle (flat iOS-like) */
-        .pedal-toggle {
-            position: relative;
-            display: flex;
-            background: var(--bg-inset);
-            border: 1px solid var(--border-dark);
-            border-radius: 999px;
-            padding: 3px;
-            height: 26px;
-            width: 100px;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.12);
-        }
-        .pedal-toggle::before {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: calc(50% - 3px);
-            height: calc(100% - 6px);
-            background: var(--accent);
-            border-radius: 999px;
-            transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-            z-index: 0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.18);
-        }
-        .pedal-toggle:has(.pedal-opt:nth-child(2).active)::before {
-            transform: translateX(100%);
-        }
-        /* Direction toggle uses brand blue for the thumb instead of accent red */
-        .pedal-toggle:has(.pedal-opt[data-dir])::before {
-            background: var(--brand-blue);
-        }
-        /* 3-option variant (auto-detected by presence of a 3rd .pedal-opt) */
-        .pedal-toggle:has(.pedal-opt:nth-child(3)) { width: 138px; }
-        .pedal-toggle:has(.pedal-opt:nth-child(3))::before {
-            width: calc(33.333% - 2px);
-        }
-        .pedal-toggle:has(.pedal-opt:nth-child(3)):has(.pedal-opt:nth-child(3).active)::before {
-            transform: translateX(200%);
-        }
-        .pedal-opt {
-            flex: 1;
-            background: transparent !important;
-            border: none !important;
-            color: var(--fg-muted);
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
+            width: 44px;
+            height: 30px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            font: 700 9px/1 system-ui, -apple-system, sans-serif;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--fg);
             cursor: pointer;
-            padding: 0;
-            position: relative;
-            z-index: 1;
-            transition: color 0.2s ease;
-            box-shadow: none !important;
+            box-shadow: var(--shadow-button);
+            transition: background 0.1s ease,
+                        border-color 0.1s ease,
+                        transform 0.06s ease,
+                        box-shadow 0.06s ease;
         }
-        .pedal-opt.active { color: #fff !important; }
-        .pedal-opt:hover:not(.active) { color: var(--fg); }
+        .pedal-opt:hover:not(.active) {
+            background: var(--bg-hover);
+            border-color: var(--border-dark);
+        }
+        /* Transient mouse-press feedback */
+        .pedal-opt:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 transparent;
+        }
+        /* Selected = persistently pressed-in (translated into the shadow slot) */
+        .pedal-opt.active {
+            background: var(--accent);
+            border-color: var(--brand-red-dark);
+            color: var(--on-accent);
+            transform: translate(4px, 4px);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+        }
+        .console-group:has(.pedal-opt[data-dir]) .pedal-opt.active {
+            background: var(--brand-blue);
+            border-color: color-mix(in srgb, var(--brand-blue), black 25%);
+            color: var(--on-accent);
+        }
+
+        /* ── Effects rack (right of waveform viewer) ── */
+        #playback-layout > #viewer { margin-bottom: 0; }
+        #fx-rack {
+            display: flex;
+            gap: 14px;
+            padding: 12px 14px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-dark);
+        }
+        .fx-slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .fx-label {
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+        }
+        .fx-val {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--fg-muted);
+            font-variant-numeric: tabular-nums;
+            min-width: 22px;
+            text-align: center;
+        }
+        /* Vertical studio fader.
+           NOTE: do NOT set -webkit-appearance: slider-vertical — that forces
+           the browser's native round thumb and ignores ::-webkit-slider-thumb
+           custom styling. writing-mode + appearance:none renders vertically
+           AND honors the custom cap. */
+        .fx-fader {
+            -webkit-appearance: none;
+            appearance: none;
+            writing-mode: vertical-lr;   /* modern Chromium/Safari vertical */
+            direction: rtl;              /* 0 at bottom, max at top */
+            width: 30px;
+            height: 150px;
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            flex: 1 1 auto;
+        }
+        /* Fader track — simple dark warm slot to match the flat graphic vibe. */
+        .fx-fader::-webkit-slider-runnable-track {
+            width: 4px;
+            background: var(--fg);
+            border: 1px solid var(--border-dark);
+            border-radius: 2px;
+        }
+        .fx-fader::-moz-range-track {
+            width: 4px;
+            background: var(--fg);
+            border: 1px solid var(--border-dark);
+            border-radius: 2px;
+        }
+        /* Fader cap — flat cream card with a single dark grip line.
+           Mirrors the Speed/Direction button language, plus the site's
+           stacked tactile shadow so the cap reads as a raised block. */
+        .fx-fader::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 20px;
+            background:
+                linear-gradient(to bottom,
+                    transparent 0, transparent 48%,
+                    var(--border) 48%, var(--border) 52%,
+                    transparent 52%, transparent 100%),
+                var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            box-shadow: var(--shadow-button);
+            margin-left: -16px;         /* 4px left-shift to counter the drop-shadow bias */
+        }
+        .fx-fader::-moz-range-thumb {
+            width: 28px;
+            height: 20px;
+            background:
+                linear-gradient(to bottom,
+                    transparent 0, transparent 48%,
+                    var(--border) 48%, var(--border) 52%,
+                    transparent 52%, transparent 100%),
+                var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            box-shadow: var(--shadow-button);
+        }
 
         /* ── Import panel ── */
 
@@ -1009,10 +1089,11 @@
 
         #import-footer {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 10px;
-            padding: 12px 0 0;
+            padding: 24px 0 0;
         }
+        #import-section { padding-bottom: 14px; }
         #btn-add-row {
             font-size: 10px;
             font-weight: 700;
@@ -1247,7 +1328,6 @@
             #header { flex-direction: column; align-items: flex-start; gap: 10px; }
             #header-right { align-items: flex-start; }
             #pedal-panel { gap: 16px; flex-wrap: wrap; row-gap: 14px; }
-            .pedal-control-right { margin-left: 0; align-items: flex-start; }
             #transport { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
             #transport .spacer { display: none; }
             #transport button:not(#btn-export) { width: 40px; height: 40px; }
@@ -1843,11 +1923,11 @@
 <div id="playback-section" class="module">
     <div class="module-code">Playback</div>
 
-    <div id="pedal-section">
+    <div id="playback-layout">
         <div id="pedal-panel">
             <div class="pedal-control">
                 <div class="pedal-control-label">Speed</div>
-                <div class="pedal-toggle">
+                <div class="console-group">
                     <button class="pedal-opt"        data-speed="0.5">0.5×</button>
                     <button class="pedal-opt active" data-speed="1">1×</button>
                     <button class="pedal-opt"        data-speed="2">2×</button>
@@ -1855,37 +1935,39 @@
             </div>
             <div class="pedal-control">
                 <div class="pedal-control-label">Direction</div>
-                <div class="pedal-toggle">
+                <div class="console-group">
                     <button class="pedal-opt active" data-dir="fwd">FWD</button>
                     <button class="pedal-opt"        data-dir="rev">REV</button>
                 </div>
             </div>
-            <div class="pedal-control pedal-control-right">
-                <div class="pedal-control-label">1-Shot</div>
-                <button id="btn-oneshot" class="pedal-trigger" title="One-shot"><svg viewBox="0 0 12 14" width="11" height="12" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
+            <span id="viewer-file-label"></span>
+        </div>
+        <div></div><!-- grid spacer; auto-width matches #fx-rack column -->
+        <div id="viewer">
+            <canvas id="viewer-canvas" style="display:none"></canvas>
+            <div id="viewer-empty">Select a memory slot</div>
+            <div id="viewer-footer" style="display:none">
+                <span id="viewer-zoom-label">Zoom</span>
+                <input type="range" id="viewer-zoom" min="1" max="300" value="5" step="1">
+                <span id="viewer-zoom-val">5s</span>
             </div>
         </div>
-    </div>
-
-    <div id="viewer">
-        <canvas id="viewer-canvas" style="display:none"></canvas>
-        <div id="viewer-empty">Select a memory slot</div>
-        <div id="viewer-footer" style="display:none">
-            <span id="viewer-file-label"></span>
-            <span id="viewer-zoom-label">Zoom</span>
-            <input type="range" id="viewer-zoom" min="1" max="300" value="5" step="1">
-            <span id="viewer-zoom-val">5s</span>
+        <div id="fx-rack">
+            <div class="fx-slot">
+                <div class="fx-label">Crush</div>
+                <input type="range" id="pedal-crush" class="fx-fader" min="0" max="1" step="0.01" value="0" orient="vertical">
+                <div class="fx-val" id="pedal-crush-val">0</div>
+            </div>
         </div>
     </div>
 
     <div id="transport">
         <div id="viewer-counter"><span class="seg-ghost">8:88</span><span class="seg-val" id="seg-val">0:00</span></div>
         <div id="transport-buttons">
-            <button id="btn-prev"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><rect x="0" y="0" width="2.5" height="14"/><polygon points="18,0 18,14 5,7"/></svg></button>
             <button id="btn-play"><svg viewBox="0 0 12 14" width="12" height="13" fill="currentColor"><polygon points="0,0 12,7 0,14"/></svg></button>
             <button id="btn-stop"><svg viewBox="0 0 13 13" width="12" height="12" fill="currentColor"><rect x="0" y="0" width="13" height="13"/></svg></button>
-            <button id="btn-next"><svg viewBox="0 0 18 14" width="15" height="12" fill="currentColor"><polygon points="0,0 13,7 0,14"/><rect x="15.5" y="0" width="2.5" height="14"/></svg></button>
             <button id="btn-loop"><svg viewBox="0 0 24 16" width="22" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3,11 L3,5 Q3,3 5,3 L18,3"/><polyline points="15,0.5 19,3 15,5.5"/><path d="M21,5 L21,11 Q21,13 19,13 L6,13"/><polyline points="9,10.5 5,13 9,15.5"/></svg></button>
+            <button id="btn-oneshot" title="One-shot"><svg viewBox="0 0 18 14" width="16" height="12" fill="currentColor"><text x="0" y="11" font-size="11" font-weight="700" font-family="system-ui,-apple-system,sans-serif">1</text><polygon points="8,1 18,7 8,13"/></svg></button>
         </div>
         <button id="btn-export">Export</button>
     </div>
@@ -2113,6 +2195,12 @@ let g_loop              = false;
 let g_speed             = 1.0;    // 1.0 or 0.5
 let g_reverse           = false;
 let g_rafId             = null;
+
+// CRUSH (webapp playback-only port of the firmware's "Current" variant chain).
+let g_crushAmt          = 0.0;    // 0 = clean, 1 = max crush (slider position)
+let g_crushNode         = null;   // AudioWorkletNode, persists across play/stop
+let g_audioReady        = null;   // Promise — resolves once ctx + worklet are loaded
+let g_playGen           = 0;      // bumped by _killSource; async playFrom bails on mismatch
 
 // Drag / momentum
 let g_dragAnchorX       = null;
@@ -2538,7 +2626,7 @@ function drawViewerWindow(playheadFrame = -1) {
     // Visual gain: imports normalize to −6 dBFS (~0.5 peak). A modest ×1.5
     // makes peaks fill the channel bands without distorting the waveform
     // shape — does NOT touch the audio data, only the render.
-    const VIEWER_GAIN = 1.5;
+    const VIEWER_GAIN = 1;
     const clamp1 = (v) => v > 1 ? 1 : (v < -1 ? -1 : v);
     ctx2d.lineWidth = 1;
     if (g_viewerIsMono) {
@@ -2788,10 +2876,280 @@ document.getElementById('viewer-zoom').addEventListener('input', e => {
     redrawViewer(getCurrentFrame());
 });
 
+// ── CRUSH AudioWorklet ────────────────────────────────────────────────────────
+// Faithful port of the firmware's "Current" (crushK=1.0) CRUSH chain at 48 kHz.
+// Eight stages: HPF -> SVF LPF -> S&H decimator + dithered quantize -> post-LPF
+// cascade -> soft-knee compressor -> Padé tanh drive -> brick-wall LPF cascade
+// -> vibrato delay. Deadband (amt<0.02) is clean bypass; [0.02, 0.10] smoothsteps
+// wet mix to mask filter-state wake-up transient (matches firmware stage 8).
+const CRUSH_WORKLET_SRC = `
+class CrushProcessor extends AudioWorkletProcessor {
+    static get parameterDescriptors() {
+        return [{ name:'amount', defaultValue:0, minValue:0, maxValue:1, automationRate:'k-rate' }];
+    }
+    constructor() {
+        super();
+        this.SR = sampleRate;
+        this.TWO_PI = Math.PI * 2;
+        this.hpfInL = 0; this.hpfOutL = 0; this.hpfInR = 0; this.hpfOutR = 0;
+        this.svfLpL = 0; this.svfBpL = 0; this.svfLpR = 0; this.svfBpR = 0;
+        this.decCtr = 0; this.decHeldL = 0; this.decHeldR = 0;
+        this.postLpfL = 0; this.postLpfL2 = 0; this.postLpfR = 0; this.postLpfR2 = 0;
+        this.envL = 0; this.envR = 0;
+        this.brickLpfL = 0; this.brickLpfL2 = 0; this.brickLpfR = 0; this.brickLpfR2 = 0;
+        this.ditherLpfL = 0; this.ditherLpfR = 0;
+        this.VIB_LEN = 8192;
+        this.VIB_MASK = this.VIB_LEN - 1;
+        this.vibDelayL = new Float32Array(this.VIB_LEN);
+        this.vibDelayR = new Float32Array(this.VIB_LEN);
+        this.vibWriteIdx = 0; this.vibPhase = 0;
+        this.padLfoPhase = 0;
+        this.rand = 0xDEADBEEF >>> 0;
+    }
+    fastRand() {
+        let s = this.rand;
+        s = (s ^ (s << 13)) >>> 0;
+        s = (s ^ (s >>> 17)) >>> 0;
+        s = (s ^ (s << 5))  >>> 0;
+        this.rand = s;
+        return (s & 0xFFFF) / 65535;
+    }
+    process(inputs, outputs, parameters) {
+        const input = inputs[0];
+        const output = outputs[0];
+        if (!output || output.length === 0) return true;
+        const outL = output[0];
+        const outR = output[1] || output[0];
+        const n = outL.length;
+        if (!input || input.length === 0) {
+            for (let i = 0; i < n; i++) { outL[i] = 0; outR[i] = 0; }
+            return true;
+        }
+        const inL = input[0];
+        const inR = input[1] || input[0];
+
+        let crushAmt = parameters.amount[0];
+        if (crushAmt < 0) crushAmt = 0; else if (crushAmt > 1) crushAmt = 1;
+        if (crushAmt < 0.02) {
+            for (let i = 0; i < n; i++) { outL[i] = inL[i]; outR[i] = inR[i]; }
+            return true;
+        }
+
+        const crushK = 1.0;
+        const SR = this.SR;
+        const TWO_PI = this.TWO_PI;
+
+        const crushAmtSpit = Math.pow(crushAmt, 0.65);
+        let d = 24 - crushAmtSpit * 22 * crushK;
+        if (d < -2) d = -2;
+        const hpfA = SR / (SR + TWO_PI * 150);
+        const e = 6 + (d / 24) * 18;
+        const steps = Math.pow(2, e - 1);
+        const invSteps = 1 / steps;
+        let dither = (d - 6) / 18;
+        if (dither < 0) dither = 0; else if (dither > 1) dither = 1;
+        let padT = (24 - d) / 14;
+        if (padT < 0) padT = 0; else if (padT > 1) padT = 1;
+        let decK = Math.round(padT * 32);
+        if (decK < 1) decK = 1;
+
+        const padLfo = Math.sin(this.padLfoPhase);
+        this.padLfoPhase += TWO_PI * 0.15 * n / SR;
+        while (this.padLfoPhase > TWO_PI) this.padLfoPhase -= TWO_PI;
+
+        let lpfFc = (2000 - crushAmt * 1400 * crushK) * (1 + 0.05 * crushAmt * padLfo);
+        if (lpfFc > 24000) lpfFc = 24000; else if (lpfFc < 500) lpfFc = 500;
+        let svfF = 2 * Math.sin(Math.PI * lpfFc / SR);
+        if (svfF > 1) svfF = 1;
+        const svfDamp = 1.414;
+
+        const postLpfFc = 22000 + (7000 - 22000) * crushAmt;
+        const postLpfA = 1 - Math.exp(-TWO_PI * postLpfFc / SR);
+        const brickLpfA = 1 - Math.exp(-TWO_PI * 2500 / SR);
+        const ditherLpfA = 1 - Math.exp(-TWO_PI * 2000 / SR);
+
+        const vibPhaseInc = TWO_PI * 0.15 / SR;
+        const vibDepthSamps = 0.0075 * SR / (TWO_PI * 0.15) * crushAmt * crushK;
+        const vibNominalSamps = vibDepthSamps + 128;
+
+        const COMP_THRESH = 0.4, COMP_RATIO = 3;
+        const compAttackA  = 1 - Math.exp(-1000 / (SR * 5));
+        const compReleaseA = 1 - Math.exp(-1000 / (SR * 200));
+
+        const satDrive = 1 + crushAmt * 1.8 * crushK;
+        const satDriveInv = 1 / satDrive;
+
+        let engage = (crushAmt - 0.02) * (1 / 0.08);
+        if (engage < 0) engage = 0; else if (engage > 1) engage = 1;
+        engage = engage * engage * (3 - 2 * engage);
+        const oneMinusAmt = 1 - crushAmt;
+
+        const vibDelayL = this.vibDelayL;
+        const vibDelayR = this.vibDelayR;
+        const VIB_LEN = this.VIB_LEN;
+        const VIB_MASK = this.VIB_MASK;
+
+        for (let i = 0; i < n; i++) {
+            let loopSum  = inL[i];
+            let loopSumR = inR[i];
+            const dryL = loopSum;
+            const dryR = loopSumR;
+
+            // 1. HPF @ 150 Hz, wet/dry ramp.
+            const hpfOutL = hpfA * (this.hpfOutL + loopSum  - this.hpfInL);
+            const hpfOutR = hpfA * (this.hpfOutR + loopSumR - this.hpfInR);
+            this.hpfInL = loopSum;  this.hpfOutL = hpfOutL;
+            this.hpfInR = loopSumR; this.hpfOutR = hpfOutR;
+            loopSum  = loopSum  * oneMinusAmt + hpfOutL * crushAmt;
+            loopSumR = loopSumR * oneMinusAmt + hpfOutR * crushAmt;
+
+            // 2. Chamberlin SVF LPF, wet/dry ramp.
+            {
+                const lp = this.svfLpL + svfF * this.svfBpL;
+                const hp = loopSum - lp - svfDamp * this.svfBpL;
+                const bp = svfF * hp + this.svfBpL;
+                this.svfLpL = lp; this.svfBpL = bp;
+                loopSum = loopSum * oneMinusAmt + lp * crushAmt;
+            }
+            {
+                const lp = this.svfLpR + svfF * this.svfBpR;
+                const hp = loopSumR - lp - svfDamp * this.svfBpR;
+                const bp = svfF * hp + this.svfBpR;
+                this.svfLpR = lp; this.svfBpR = bp;
+                loopSumR = loopSumR * oneMinusAmt + lp * crushAmt;
+            }
+
+            // 3. S&H decimation + dithered quantize. Dither LPF clocked every sample.
+            {
+                const rawL = (this.fastRand() - this.fastRand()) * invSteps;
+                const rawR = (this.fastRand() - this.fastRand()) * invSteps;
+                this.ditherLpfL += ditherLpfA * (rawL - this.ditherLpfL);
+                this.ditherLpfR += ditherLpfA * (rawR - this.ditherLpfR);
+            }
+            this.decCtr++;
+            if (this.decCtr >= decK) {
+                this.decCtr = 0;
+                const dnL = this.ditherLpfL * dither;
+                const dnR = this.ditherLpfR * dither;
+                this.decHeldL = Math.floor((loopSum  + dnL) * steps + 0.5) * invSteps;
+                this.decHeldR = Math.floor((loopSumR + dnR) * steps + 0.5) * invSteps;
+            }
+            loopSum  = this.decHeldL;
+            loopSumR = this.decHeldR;
+
+            // 3b. Post-S&H cascaded one-pole LPF.
+            this.postLpfL  += postLpfA * (loopSum        - this.postLpfL);
+            this.postLpfR  += postLpfA * (loopSumR       - this.postLpfR);
+            this.postLpfL2 += postLpfA * (this.postLpfL  - this.postLpfL2);
+            this.postLpfR2 += postLpfA * (this.postLpfR  - this.postLpfR2);
+            loopSum  = this.postLpfL2;
+            loopSumR = this.postLpfR2;
+
+            // 4. Transient softener (soft-knee 3:1 above 0.4), wet/dry ramp.
+            {
+                const absL = loopSum < 0 ? -loopSum : loopSum;
+                const coefL = (absL > this.envL) ? compAttackA : compReleaseA;
+                this.envL += coefL * (absL - this.envL);
+                let gainL = 1;
+                if (this.envL > COMP_THRESH) {
+                    const over = this.envL - COMP_THRESH;
+                    gainL = (COMP_THRESH + over / COMP_RATIO) / this.envL;
+                }
+                loopSum = loopSum * oneMinusAmt + (loopSum * gainL) * crushAmt;
+
+                const absR = loopSumR < 0 ? -loopSumR : loopSumR;
+                const coefR = (absR > this.envR) ? compAttackA : compReleaseA;
+                this.envR += coefR * (absR - this.envR);
+                let gainR = 1;
+                if (this.envR > COMP_THRESH) {
+                    const over = this.envR - COMP_THRESH;
+                    gainR = (COMP_THRESH + over / COMP_RATIO) / this.envR;
+                }
+                loopSumR = loopSumR * oneMinusAmt + (loopSumR * gainR) * crushAmt;
+            }
+
+            // 5. Soft saturation (Padé tanh approx), wet/dry ramp.
+            {
+                const xL = loopSum  * satDrive;
+                const xR = loopSumR * satDrive;
+                const xL2 = xL * xL, xR2 = xR * xR;
+                const satL = xL * (27 + xL2) / (27 + 9 * xL2) * satDriveInv;
+                const satR = xR * (27 + xR2) / (27 + 9 * xR2) * satDriveInv;
+                loopSum  = loopSum  * oneMinusAmt + satL * crushAmt;
+                loopSumR = loopSumR * oneMinusAmt + satR * crushAmt;
+            }
+
+            // 6. Brick-wall LPF @ 2.5 kHz (cascaded).
+            this.brickLpfL  += brickLpfA * (loopSum         - this.brickLpfL);
+            this.brickLpfR  += brickLpfA * (loopSumR        - this.brickLpfR);
+            this.brickLpfL2 += brickLpfA * (this.brickLpfL  - this.brickLpfL2);
+            this.brickLpfR2 += brickLpfA * (this.brickLpfR  - this.brickLpfR2);
+            loopSum  = this.brickLpfL2;
+            loopSumR = this.brickLpfR2;
+
+            // 7. Slow tape-warble vibrato (L=sin, R=cos for stereo width).
+            {
+                const w = this.vibWriteIdx & VIB_MASK;
+                vibDelayL[w] = loopSum;
+                vibDelayR[w] = loopSumR;
+                const modL = Math.sin(this.vibPhase) * vibDepthSamps;
+                const modR = Math.cos(this.vibPhase) * vibDepthSamps;
+                this.vibPhase += vibPhaseInc;
+                if (this.vibPhase > TWO_PI) this.vibPhase -= TWO_PI;
+                let readL = this.vibWriteIdx - vibNominalSamps - modL;
+                let readR = this.vibWriteIdx - vibNominalSamps - modR;
+                while (readL < 0) readL += VIB_LEN;
+                while (readR < 0) readR += VIB_LEN;
+                const iL = readL | 0, iR = readR | 0;
+                const fL = readL - iL, fR = readR - iR;
+                const aL = vibDelayL[iL & VIB_MASK];
+                const bL = vibDelayL[(iL + 1) & VIB_MASK];
+                const aR = vibDelayR[iR & VIB_MASK];
+                const bR = vibDelayR[(iR + 1) & VIB_MASK];
+                loopSum  = aL + (bL - aL) * fL;
+                loopSumR = aR + (bR - aR) * fR;
+                this.vibWriteIdx++;
+            }
+
+            // 8. Engagement crossfade (smoothstep of crushAmt across 0.02 -> 0.10).
+            outL[i] = dryL * (1 - engage) + loopSum  * engage;
+            outR[i] = dryR * (1 - engage) + loopSumR * engage;
+        }
+        return true;
+    }
+}
+registerProcessor('crush-processor', CrushProcessor);
+`;
+
 // ── Playback ──────────────────────────────────────────────────────────────────
 function getAudioContext() {
     if (!g_audioCtx) g_audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
     return g_audioCtx;
+}
+
+// Lazy-loads the CRUSH worklet. Returns a promise that resolves to the ctx once
+// g_crushNode is ready. Sources must connect to g_crushNode, not to destination.
+function ensureAudio() {
+    if (g_audioReady) return g_audioReady;
+    g_audioReady = (async () => {
+        const ctx = getAudioContext();
+        const blob = new Blob([CRUSH_WORKLET_SRC], { type: 'application/javascript' });
+        const url  = URL.createObjectURL(blob);
+        try { await ctx.audioWorklet.addModule(url); }
+        finally { URL.revokeObjectURL(url); }
+        g_crushNode = new AudioWorkletNode(ctx, 'crush-processor', {
+            numberOfInputs: 1,
+            numberOfOutputs: 1,
+            outputChannelCount: [2],
+            channelCount: 2,
+            channelCountMode: 'explicit',
+            channelInterpretation: 'speakers',
+        });
+        g_crushNode.connect(ctx.destination);
+        g_crushNode.parameters.get('amount').setValueAtTime(g_crushAmt, ctx.currentTime);
+        return ctx;
+    })();
+    return g_audioReady;
 }
 
 function getCurrentFrame() {
@@ -2847,6 +3205,7 @@ function getViewerAudioBufRev() {
 }
 
 function _killSource() {
+    g_playGen++;  // invalidate any in-flight async playFrom awaiting the worklet
     if (g_currentSrc) {
         try { g_currentSrc.stop(); } catch (_) {}
         g_currentSrc = null;
@@ -2854,19 +3213,22 @@ function _killSource() {
     cancelAnimationFrame(g_rafId); g_rafId = null;
 }
 
-function playFrom(startFrame, { oneShot = false } = {}) {
-    _killSource();
+async function playFrom(startFrame, { oneShot = false } = {}) {
+    _killSource();           // bumps g_playGen; any previous in-flight playFrom will bail
+    const gen = g_playGen;
     const fwd = getViewerAudioBuf();
     if (!fwd) { log('No audio loaded'); return; }
     const total = fwd.length;
     startFrame = Math.max(0, Math.min(startFrame, total - 1));
     const buf = g_reverse ? getViewerAudioBufRev() : fwd;
-    const ctx  = getAudioContext();
+    const ctx  = await ensureAudio();
+    // If another playFrom (or a stop) started while we awaited, bail.
+    if (gen !== g_playGen) return;
     const src  = ctx.createBufferSource();
     src.buffer = buf;
     src.loop   = oneShot ? false : g_loop;
     src.playbackRate.value = g_speed;
-    src.connect(ctx.destination);
+    src.connect(g_crushNode);
     // In reverse, the reversed buffer's time-axis is flipped: original frame F
     // corresponds to reversed-buffer frame (total-1-F).
     const bufStartFrame = g_reverse ? (total - 1 - startFrame) : startFrame;
@@ -2974,6 +3336,20 @@ document.querySelectorAll('.pedal-opt[data-dir]').forEach(btn => {
     });
 });
 
+// CRUSH slider — 30 ms linear ramp smooths rapid drags without audible zipper noise.
+const crushValEl = document.getElementById('pedal-crush-val');
+document.getElementById('pedal-crush').addEventListener('input', (e) => {
+    g_crushAmt = parseFloat(e.target.value);
+    crushValEl.textContent = Math.round(g_crushAmt * 100);
+    if (g_crushNode && g_audioCtx) {
+        const amt = g_crushNode.parameters.get('amount');
+        const now = g_audioCtx.currentTime;
+        amt.cancelScheduledValues(now);
+        amt.setValueAtTime(amt.value, now);
+        amt.linearRampToValueAtTime(g_crushAmt, now + 0.03);
+    }
+});
+
 // ── Global keybindings ────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
     if (e.code !== 'Space') return;
@@ -2982,20 +3358,6 @@ document.addEventListener('keydown', (e) => {
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
     e.preventDefault();
     document.getElementById('btn-play').click();
-});
-
-document.getElementById('btn-prev').addEventListener('click', () => {
-    if (!g_selection || !g_allItems.length) return;
-    const idx  = g_allItems.findIndex(i => i.filename === g_selection.filename);
-    const prev = g_allItems[(idx - 1 + g_allItems.length) % g_allItems.length];
-    prev.thumbEl.click();
-});
-
-document.getElementById('btn-next').addEventListener('click', () => {
-    if (!g_selection || !g_allItems.length) return;
-    const idx  = g_allItems.findIndex(i => i.filename === g_selection.filename);
-    const next = g_allItems[(idx + 1) % g_allItems.length];
-    next.thumbEl.click();
 });
 
 document.getElementById('btn-export').addEventListener('click', async () => {
@@ -3182,6 +3544,7 @@ async function refreshUI(autoLoad = false) {
                     g_viewerAudioBufRev = null;
                     document.getElementById('viewer-canvas').style.display = 'none';
                     document.getElementById('viewer-footer').style.display = 'none';
+                    document.getElementById('viewer-file-label').textContent = '';
                     document.getElementById('viewer-empty').style.display  = '';
                     document.getElementById('viewer-empty').textContent    = 'Select a memory slot below';
                     document.getElementById('btn-play').innerHTML = ICON_PLAY;
@@ -4268,6 +4631,7 @@ function clearViewerAfterWipe(emptyMsg) {
     g_viewerAudioBufRev = null;
     document.getElementById('viewer-canvas').style.display = 'none';
     document.getElementById('viewer-footer').style.display = 'none';
+    document.getElementById('viewer-file-label').textContent = '';
     const emptyEl = document.getElementById('viewer-empty');
     emptyEl.style.display = '';
     emptyEl.textContent   = emptyMsg;
