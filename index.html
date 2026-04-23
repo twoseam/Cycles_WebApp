@@ -55,7 +55,7 @@
                Warm cream palette for the vintage-hardware look. Page body
                sits on --bg; modules and tiles layer these other tones
                on top. Lightest first, darkest last. */
-            --bg:         #f1e7d2;   /* page body (default background)              */
+            --bg:         #fbf7df;   /* page body (default background)              */
             --bg-label:   #fffdf9;   /* little tag labels ("PLAYBACK", "IMPORT"…)   */
             --bg-inset:   #f5f2e6;   /* input fields, recessed input zones           */
             --bg-raised:  #eae3cc;   /* buttons, tiles, popup cards                  */
@@ -209,20 +209,22 @@
                so it doesn't blow out on the deeper bg). */
             --accent-dim: color-mix(in srgb, var(--brand-red) 22%, transparent);
 
+            /* Dark mode drops the soft ambient ground-shadow from the
+               tactile + card stacks (it reads as grime over the dark
+               bg). Stepped panel shadow is kept so buttons/tiles still
+               have their printed-panel feel. */
             --shadow-tactile:
                 1px 1px 0 #0a0805,
                 2px 2px 0 #0a0805,
                 3px 3px 0 #0a0805,
                 4px 4px 0 #0a0805,
                 5px 5px 0 #0a0805,
-                6px 6px 0 #0a0805,
-                7px 8px 6px rgba(0, 0, 0, 0.55);
+                6px 6px 0 #0a0805;
             --shadow-card:
                 1px 1px 0 #0a0805,
                 2px 2px 0 #0a0805,
                 3px 3px 0 #0a0805,
-                4px 4px 0 #0a0805,
-                5px 6px 4px rgba(0, 0, 0, 0.45);
+                4px 4px 0 #0a0805;
             --shadow-button:
                 1px 1px 0 #0a0805,
                 2px 2px 0 #0a0805,
@@ -240,7 +242,7 @@
         }
 
         #app {
-            max-width: 860px;
+            max-width: 960px;
             margin: 0 auto;
             padding: 28px 24px;
         }
@@ -374,9 +376,9 @@
             box-shadow: 1px 1px 0 var(--border);
             transform: translate(1px, 1px);
         }
-        /* Customizer entry point hidden in production — the popup and
-           all its JS stay in place for bringing back later; just the
-           visible ⚙ button is taken out. */
+        /* Theme customizer hidden from production — JS stays in place
+           for when we want to bring it back, just the visible ⚙ entry
+           point is taken out. */
         #btn-theme-customize {
             display: none;
             font-size: 14px;
@@ -1034,26 +1036,50 @@
            scrolls. Absolute children of a scroll container still scroll
            with the content in practice — positioning it on the
            non-scrolling section is the reliable fix. */
+        /* .stock-clip wraps the grid + wall so the wall's slide-in
+           animation gets clipped by the clip's edge — otherwise the
+           wall is visible translating in from outside the module.
+           Negative margins + matching padding pull the clip out to the
+           section's padding-box edges so the left wall lines up with
+           the right wall (which lives on the section itself). */
+        .stock-clip {
+            position: relative;
+            overflow: hidden;
+            margin-left: -22px;
+            margin-right: -22px;
+            padding-left: 22px;
+            padding-right: 22px;
+            box-sizing: border-box;
+        }
         #stock-section .stock-wall-left {
             position: absolute;
-            top: 66px;
-            bottom: 18px;
+            top: 0;
+            bottom: 0;
             left: 0;
             width: 35px;
             background: var(--bg-panel);
             border-right: 2px solid var(--border-dark);
             pointer-events: none;
             z-index: 2;
-            /* Parked off-screen + invisible; slides into place when the
-               grid picks up `.has-scroll-left`. transform+opacity is
-               transition-friendly (display:none isn't). */
+            /* Parked just off the clip's left edge; slides out from
+               behind the module border when the grid picks up
+               `.has-scroll-left`. Brief opacity fade (~5 % of the
+               slide = 11 ms) softens the entry/exit: on slide-in the
+               fade runs at the start (no delay), on slide-out it runs
+               at the end (209 ms delay) — achieved by swapping the
+               opacity transition delay between the two states. */
             transform: translateX(-100%);
             opacity: 0;
-            transition: transform 0.22s ease-out, opacity 0.22s ease-out;
+            transition:
+                transform 0.22s ease-out,
+                opacity 0.011s linear 0.209s;
         }
         #stock-section:has(#stock-grid.has-scroll-left) .stock-wall-left {
             transform: translateX(0);
             opacity: 1;
+            transition:
+                transform 0.22s ease-out,
+                opacity 0.011s linear 0s;
         }
         /* Hide wall + cover when there's nothing to scroll — `.has-scroll-*`
            classes are toggled by the carousel JS on the grid whenever
@@ -2474,8 +2500,10 @@
             <button id="btn-stock-next" class="stock-arrow" type="button" aria-label="Next">▶</button>
         </div>
     </div>
-    <div id="stock-grid"></div>
-    <div class="stock-wall-left"><!-- pinned left-edge wall; shown when grid has `.has-scroll-left` --></div>
+    <div class="stock-clip">
+        <div id="stock-grid"></div>
+        <div class="stock-wall-left"><!-- pinned left-edge wall; shown when grid has `.has-scroll-left` --></div>
+    </div>
 </div>
 
 <!-- ── Log ────────────────────────────────────────────────────────────────── -->
@@ -4687,9 +4715,11 @@ async function askImportOption({ title, fileName, durationSec, frames, initialSl
         const slotInp  = document.getElementById('popup-slot-val');
 
         titleEl.textContent = slotOnly ? 'Import to Slot' : 'Choose a Format';
-        // Show either a stock-track tile preview OR the filename subtitle,
-        // depending on which one the caller supplied.
-        if (trackPreview && trackPreview.track) {
+        // Show the stock-track tile preview ONLY for the slot-only
+        // variant (short stock tracks). The long-loop format picker
+        // already displays plenty of info via the cards, so falling
+        // back to the plain filename subtitle there keeps it clean.
+        if (slotOnly && trackPreview && trackPreview.track) {
             subEl.style.display   = 'none';
             trackEl.style.display = 'block';
             trackEl.innerHTML = '';
@@ -5921,7 +5951,7 @@ const THEME_TOKENS = [
         { n: '--brand-blue',    l: 'Brand blue',   light: '#1e48d4', dark: '#1e48d4' },
     ]},
     { group: 'Surfaces', rows: [
-        { n: '--bg',            l: 'Page',         light: '#f1e7d2', dark: '#22201b' },
+        { n: '--bg',            l: 'Page',         light: '#fbf7df', dark: '#22201b' },
         { n: '--bg-label',      l: 'Label tag',    light: '#fffdf9', dark: '#000000' },
         { n: '--bg-inset',      l: 'Inset',        light: '#f5f2e6', dark: '#131211' },
         { n: '--bg-raised',     l: 'Raised',       light: '#eae3cc', dark: '#45423a' },
