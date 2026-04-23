@@ -2241,10 +2241,17 @@
         }
 
         /* ── Log — teletype output ── */
-        /* Status log hidden — `log()` still writes to the <pre> for
-           debug, just not visible on the page. */
         #log {
-            display: none;
+            background: var(--bg-inset);
+            border: 1px solid var(--border-dark);
+            padding: 8px 10px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-size: 10px;
+            color: var(--fg-muted);
+            min-height: 44px;
+            max-height: 150px;
+            overflow-y: auto;
+            letter-spacing: 0.02em;
         }
     </style>
 </head>
