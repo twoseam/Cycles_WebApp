@@ -933,6 +933,14 @@
             pointer-events: none;
             z-index: 2;
         }
+        /* Hide wall + cover when there's nothing to scroll — `.has-scroll-*`
+           classes are toggled by the carousel JS on the grid whenever
+           overflow exists in that direction. No overflow either way →
+           no wall needed. */
+        #stock-section:not(:has(#stock-grid.has-scroll-right, #stock-grid.has-scroll-left))::after,
+        #slot-section:not(:has(#slot-grid.has-scroll-right,   #slot-grid.has-scroll-left))::after {
+            display: none;
+        }
         /* Grids span the full section content-box — tile widths compute
            off the full width (not narrowed by any margin), so the
            tiles stay a constant size regardless of wall position. The
