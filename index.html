@@ -881,6 +881,11 @@
             color: var(--fg-faint);
             opacity: 0.35;
         }
+        /* Key line carries pre-formatted text so the flat marker 'b'
+           stays lowercase next to the uppercased note letter. */
+        .stock-thumb .stock-meta.key-literal {
+            text-transform: none;
+        }
 
         /* Memory slots carousel: tiles fill top-to-bottom in two fixed
            rows, overflowing columns to the right. Same scroll behavior
@@ -5024,12 +5029,7 @@ async function renderStockTracks() {
         const parts  = base.split(/\s+-\s+/);
         const artist = track.artist || parts[0] || null;
         const title  = track.title  || parts[1] || base;
-        // Replace musical flats in the key field — any lowercase `b`
-        // following a note letter (A–G) becomes the proper flat glyph.
-        // "Eb" → "E♭", "Bbm" → "B♭m", etc. Naturals and sharps are left
-        // alone.
-        let key      = track.key    || parts[2] || null;
-        if (key) key = key.replace(/([A-Ga-g])b/g, (_, note) => note + '♭');
+        const key    = track.key    || parts[2] || null;
         // Normalize "85bpm" → "85 bpm" so the CSS-uppercased render shows
         // a proper space between the number and its unit. Filename can
         // have either form; display is consistent.
@@ -5055,18 +5055,24 @@ async function renderStockTracks() {
         // label name itself in a greyed-out style so every tile has the
         // same vertical rhythm regardless of how much info the file
         // carries.
-        const addMeta = (value, placeholder) => {
+        const addMeta = (value, placeholder, extraClass = '') => {
             const el = document.createElement('div');
-            el.className = 'stock-meta' + (value ? '' : ' missing');
+            el.className = 'stock-meta' + (value ? '' : ' missing') + (extraClass ? ' ' + extraClass : '');
             el.textContent = value || placeholder;
             thumb.appendChild(el);
         };
         const ext = (track.file.match(/\.([^.]+)$/)?.[1] || '').toUpperCase();
         const dur = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
-        addMeta(tempo, 'Tempo');
-        addMeta(key,   'Key');
-        addMeta(dur,   'Time');
-        addMeta(ext,   'Filetype');
+        // Key is pre-formatted so a lowercase 'b' (flat marker) survives
+        // the row's uppercase CSS — everything else in the string is
+        // upper-cased manually before setting textContent.
+        const keyDisplay = key
+            ? key.split('').map(c => (c === 'b' ? 'b' : c.toUpperCase())).join('')
+            : null;
+        addMeta(tempo,      'Tempo');
+        addMeta(keyDisplay, 'Key',      'key-literal');
+        addMeta(dur,        'Time');
+        addMeta(ext,        'Filetype');
 
         thumb.addEventListener('click', () => handleStockTrackClick(track, title));
 
