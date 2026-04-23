@@ -4282,7 +4282,7 @@ function maybeShowImportTutorial(durationSec) {
 // Interaction: clicking a card selects it (others grey out); clicking
 // Import commits the selection. The recommended card is pre-selected on
 // open so a user who just wants "what the app suggests" can one-click.
-async function askImportOption({ title, fileName, durationSec, frames, initialSlot }) {
+async function askImportOption({ title, fileName, durationSec, frames, initialSlot, slotOnly = false }) {
     // First-time walkthrough — only when the file actually triggers the
     // "long loop" version of the popup (i.e., trimming is on the table).
     if (frames > LIVE_STEREO_SHORT_FRAMES) {
@@ -4297,7 +4297,7 @@ async function askImportOption({ title, fileName, durationSec, frames, initialSl
         const confirmEl= document.getElementById('btn-import-confirm');
         const slotInp  = document.getElementById('popup-slot-val');
 
-        titleEl.textContent = 'Choose a Format';
+        titleEl.textContent = slotOnly ? 'Import to Slot' : 'Choose a Format';
         subEl.textContent   = `${fileName} — ${formatDurMSS(durationSec)}`;
         listEl.innerHTML = '';
         listEl.classList.add('has-selection');
@@ -4356,13 +4356,15 @@ async function askImportOption({ title, fileName, durationSec, frames, initialSl
             }
             listEl.appendChild(row);
         };
-        addRow(cards.filter(c => !c.trimmed));
-        addRow(cards.filter(c =>  c.trimmed));
+        if (!slotOnly) {
+            addRow(cards.filter(c => !c.trimmed));
+            addRow(cards.filter(c =>  c.trimmed));
+        }
 
         // Visual sync for the current `selectedCard` — toggles .selected
         // across cards and enables the Import button.
         const applySelection = () => {
-            cards.forEach((c, i) => cardEls[i].classList.toggle('selected', c === selectedCard));
+            cards.forEach((c, i) => { if (cardEls[i]) cardEls[i].classList.toggle('selected', c === selectedCard); });
             confirmEl.disabled = !selectedCard;
         };
         applySelection();
@@ -4618,6 +4620,7 @@ async function handleStockTrackClick(track, displayTitle) {
                 const hidden   = firstRow && firstRow.querySelector('.input-slot-num');
                 return hidden ? (parseInt(hidden.value, 10) || 1) : 1;
             })(),
+            slotOnly: frames <= LIVE_STEREO_SHORT_FRAMES,
         });
         if (!picked) { log('Stock import cancelled'); return; }
 
