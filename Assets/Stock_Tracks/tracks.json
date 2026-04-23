@@ -1,17 +1,7 @@
 {
   "tracks": [
     {
-      "file": "Weezer - Say it Ain't So.wav",
-      "addedAt": "2026-04-22T08:05:54-05:00",
-      "durationSec": 269.57
-    },
-    {
       "file": "Weezer - Say it Ain't So - Eb Major - 76 bpm.wav",
-      "addedAt": "2026-04-23T15:10:47-05:00",
-      "durationSec": 269.57
-    },
-    {
-      "file": "Weezer - Say it Ain't So - Eb Major.wav",
       "addedAt": "2026-04-23T15:10:47-05:00",
       "durationSec": 269.57
     },
