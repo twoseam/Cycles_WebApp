@@ -881,36 +881,39 @@
             opacity: 0.35;
         }
 
-        /* Memory slots carousel: tiles fill top-to-bottom in two fixed
-           rows, overflowing columns to the right. Same scroll behavior
-           as the stock-tracks carousel — trackpad horizontal swipe +
-           mouse wheel + explicit prev/next arrows, plus the "behind
-           the wall" edge fades when more content exists off-screen.
-           Arrow toolbar lives in the section-header above the grid. */
+        /* Memory slots — 4-col vertical-wrap grid. No horizontal scroll;
+           when the slot count exceeds one row, the grid adds new rows
+           below. Tile widths are matched to the stock carousel (same
+           4-col formula) so the two sections read as one visual family. */
         #slot-grid {
             display: grid;
-            grid-template-rows: auto;
-            grid-auto-flow: column;
-            grid-auto-columns: calc((100% - 28px) / 5);
+            grid-template-columns: repeat(5, calc((100% - 28px) / 5));
+            /* Keep implicit rows sized to content and stacked at the
+               top. Without this, pinning the grid to an explicit height
+               (which we do during the drag-cancel shrink animation)
+               causes the row to stretch and vertically inflate the
+               individual tiles — that was the "gets longer vertically"
+               glitch. */
+            grid-auto-rows: max-content;
+            align-content: start;
             gap: 5px;
+            padding: 2px 6px 6px 2px;
+        }
+        /* During a stock-track drag we can't let the slot-grid grow
+           downward (pushing the stock tile — the drag source — off its
+           start position cancels the drag immediately). Swap to a
+           fixed-height 2-row horizontal carousel just for the duration
+           of the drag; clearGhostEmptySlots removes the class on
+           dragend and the grid snaps back to vertical wrap. */
+        #slot-grid.drag-active {
+            grid-template-columns: none;
+            grid-template-rows: repeat(2, auto);
+            grid-auto-flow: column;
+            grid-auto-columns: calc((100% - 23px) / 4);
             overflow-x: auto;
             overflow-y: hidden;
             scroll-behavior: smooth;
-            padding: 2px 6px 6px 2px;
             scrollbar-width: none;
-        }
-        /* Tile count ≥ 6 → promote to a two-row carousel. Below that
-           threshold the default single-row layout reads naturally and
-           doesn't leave a half-empty second row. */
-        #slot-grid.two-row {
-            grid-template-rows: repeat(2, auto);
-        }
-        /* When there are enough slots to scroll (>6), reserve 60 px of
-           padding on the right edge so the last tile can scroll past
-           the wall cover — keeps its delete button reachable. Tiles
-           shrink by 60/5 ≈ 12 px each while this is active. */
-        #slot-grid.has-scroll-tail {
-            padding-right: 66px;
         }
         #slot-grid::-webkit-scrollbar { display: none; }
 
@@ -928,8 +931,16 @@
            from the section's right edge to the wall, background =
            panel color (matches module fill), border-left = the wall
            itself. Move the wall: change `width`. */
-        #stock-section::after,
-        #slot-section::after {
+        /* Memory Slots no longer scrolls (it wraps to new rows), so its
+           wall is hidden entirely. Stock Tracks keeps the wall+cover
+           on both sides — right wall on #stock-section::after, left
+           wall on #stock-grid::before. Each is gated by the carousel JS
+           via `.has-scroll-right` / `.has-scroll-left` classes so the
+           left wall only appears once the grid has been scrolled off
+           its start, and the right wall only appears when there's more
+           content to reveal on the right. */
+        #slot-section::after { display: none; }
+        #stock-section::after {
             content: '';
             position: absolute;
             top: 66px;
@@ -941,12 +952,28 @@
             pointer-events: none;
             z-index: 2;
         }
+        #stock-grid { position: relative; }
+        #stock-grid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 65px;
+            background: var(--bg-panel);
+            border-right: 2px solid var(--border-dark);
+            pointer-events: none;
+            z-index: 2;
+            display: none;     /* shown only when scrolled off the start */
+        }
+        #stock-grid.has-scroll-left::before {
+            display: block;
+        }
         /* Hide wall + cover when there's nothing to scroll — `.has-scroll-*`
            classes are toggled by the carousel JS on the grid whenever
            overflow exists in that direction. No overflow either way →
            no wall needed. */
-        #stock-section:not(:has(#stock-grid.has-scroll-right, #stock-grid.has-scroll-left))::after,
-        #slot-section:not(:has(#slot-grid.has-scroll-right,   #slot-grid.has-scroll-left))::after {
+        #stock-section:not(:has(#stock-grid.has-scroll-right, #stock-grid.has-scroll-left))::after {
             display: none;
         }
         /* Grids span the full section content-box — tile widths compute
@@ -957,8 +984,14 @@
            naturally because the grid's overflow clips at the section
            edge, not at the wall. */
         @media (max-width: 600px) {
-            #slot-grid { grid-auto-columns: calc((100% - 23px) / 4); }
+            #slot-grid { grid-template-columns: repeat(4, calc((100% - 23px) / 4)); }
         }
+        /* Hide the slot-grid transport arrows — Memory Slots wraps to
+           new rows instead of scrolling horizontally, so there's nothing
+           to prev/next. Kept in the DOM in case we revive scrolling.
+           Delete button right-aligns since the arrows are gone. */
+        #slot-controls { display: none; }
+        #slot-section .section-wipe { margin-left: auto; }
 
         .slot-thumb {
             background: var(--bg-raised);
@@ -2208,17 +2241,10 @@
         }
 
         /* ── Log — teletype output ── */
+        /* Status log hidden — `log()` still writes to the <pre> for
+           debug, just not visible on the page. */
         #log {
-            background: var(--bg-inset);
-            border: 1px solid var(--border-dark);
-            padding: 8px 10px;
-            font-family: 'Roboto Mono', 'Courier New', monospace;
-            font-size: 10px;
-            color: var(--fg-muted);
-            min-height: 44px;
-            max-height: 90px;
-            overflow-y: auto;
-            letter-spacing: 0.02em;
+            display: none;
         }
     </style>
 </head>
@@ -4799,31 +4825,72 @@ document.getElementById('btn-import').addEventListener('click', async () => {
 const STOCK_BASE = 'https://cycleslooper.com/Assets/Stock_Tracks/';
 const STOCK_DRAG_MIME = 'application/x-cycles-stock-track';
 
-// Animate a height change on #slot-grid across a DOM mutation. Measures
-// the grid's height before and after `mutator()` runs, then forces a
-// transition between the two values so subsequent modules below the
-// grid slide into their new positions instead of jumping. The grid is
-// reverted to auto-height after the transition so content changes keep
-// sizing naturally.
+// Animate a height change on #slot-grid across a DOM mutation. The
+// starting height + overflow clipping are applied BEFORE `mutator()`
+// runs, so the grid never briefly renders at its full new size — that
+// was showing up as a one-frame "stretch" before the transition kicked
+// in. After the mutation, `scrollHeight` reports the natural content
+// height (unaffected by the pinned `height`), which is what we
+// transition to. Works both directions — grow on drag start, shrink
+// on drag cancel / drop. A pending cleanup from a prior run is
+// cancelled at the start of each call so a fast grow-then-cancel
+// doesn't have the grow's safety-net timeout kill the shrink mid-way.
+// Manually animate #slot-grid's height across a DOM mutation via a
+// requestAnimationFrame loop. Pins the starting height before mutator
+// runs so the new content doesn't flash at its natural size, measures
+// the target with a synchronous unpin-remeasure-repin trick (no paint
+// in between), then interpolates height each frame.
+//
+// Three gotchas that bit us on the way to a clean implementation:
+//  - The rAF callback's `now` timestamp can be earlier than a
+//    `performance.now()` captured outside it (the frame's time is
+//    fixed at frame start, but you can capture a later clock reading
+//    before scheduling the rAF). Clamp progress to [0, 1] so the first
+//    frame can't produce negative eased values that push height past
+//    `from` for a single overshoot frame.
+//  - CSS grid with an explicit pinned height will stretch its rows to
+//    fill (default `align-content: stretch`), so a single row of real
+//    tiles in a tall pinned grid visibly inflates the tile heights.
+//    The slot grid sets `align-content: start` + `grid-auto-rows:
+//    max-content` so the tiles stay natural-sized while the container
+//    animates.
+//  - `scrollHeight` on an element with pinned `height` + `overflow:
+//    hidden` never goes below the pinned value, which ruins the
+//    shrink-direction measurement. We unpin briefly, read
+//    `offsetHeight`, then re-pin — all synchronous, no paint.
+let g_slotHeightRAF = null;
 function animateSlotGridHeight(mutator) {
     const slotGrid = document.getElementById('slot-grid');
     if (!slotGrid) { mutator(); return; }
+    if (g_slotHeightRAF !== null) {
+        cancelAnimationFrame(g_slotHeightRAF);
+        g_slotHeightRAF = null;
+    }
     const from = slotGrid.offsetHeight;
+    slotGrid.style.overflow = 'hidden';
+    slotGrid.style.height   = from + 'px';
     mutator();
+    slotGrid.style.height = '';
     const to = slotGrid.offsetHeight;
-    if (from === to) return;
     slotGrid.style.height = from + 'px';
-    // Force reflow so the starting height commits before the transition
-    // target is applied.
-    void slotGrid.offsetHeight;
-    slotGrid.style.transition = 'height 0.22s ease-out';
-    slotGrid.style.height = to + 'px';
+
     const cleanup = () => {
-        slotGrid.style.height = '';
-        slotGrid.style.transition = '';
+        slotGrid.style.height   = '';
+        slotGrid.style.overflow = '';
+        g_slotHeightRAF = null;
     };
-    slotGrid.addEventListener('transitionend', cleanup, { once: true });
-    setTimeout(cleanup, 400);  // safety net if transitionend is missed
+    if (from === to) { cleanup(); return; }
+    const duration = 220;
+    const start    = performance.now();
+    const delta    = to - from;
+    const tick = (now) => {
+        const progress = Math.max(0, Math.min(1, (now - start) / duration));
+        const eased    = 1 - Math.pow(1 - progress, 3);
+        slotGrid.style.height = (from + delta * eased) + 'px';
+        if (progress < 1) g_slotHeightRAF = requestAnimationFrame(tick);
+        else              cleanup();
+    };
+    g_slotHeightRAF = requestAnimationFrame(tick);
 }
 
 // Promote the slot grid to a 2-row carousel when there are 6+ tiles
@@ -4831,28 +4898,16 @@ function animateSlotGridHeight(mutator) {
 // newly-mounted ghost slots visible without scrolling on a sparse card).
 // In two-row mode tiles are placed explicitly so each 10-tile "page"
 // stacks 2 rows × 5 cols, reading left-to-right then next page.
-function applySlotGridLayout(forceTwoRow = false) {
+// Slot grid uses vertical-wrap layout at rest and during drag — this
+// helper just clears any stale inline grid-row / grid-column styles
+// that might have been set by a prior carousel-mode iteration so
+// tiles auto-place naturally.
+function applySlotGridLayout() {
     const slotGrid = document.getElementById('slot-grid');
     if (!slotGrid) return;
-    const tiles  = slotGrid.children;
-    const twoRow = forceTwoRow || tiles.length >= 6;
-    slotGrid.classList.toggle('two-row', twoRow);
-    // Add 60 px of scroll-tail padding when there are enough tiles to
-    // scroll — lets the last tile travel fully out from under the wall
-    // cover so its delete button stays reachable.
-    slotGrid.classList.toggle('has-scroll-tail', tiles.length > 6);
-    for (let i = 0; i < tiles.length; i++) {
-        if (twoRow) {
-            const inPage = i % 10;
-            const page   = Math.floor(i / 10);
-            const row    = Math.floor(inPage / 5) + 1;       // 1 or 2
-            const col    = page * 5 + (inPage % 5) + 1;      // 1, 2, 3…
-            tiles[i].style.gridRow    = row;
-            tiles[i].style.gridColumn = col;
-        } else {
-            tiles[i].style.gridRow    = '';
-            tiles[i].style.gridColumn = '';
-        }
+    for (const tile of slotGrid.children) {
+        tile.style.gridRow    = '';
+        tile.style.gridColumn = '';
     }
 }
 
@@ -4868,9 +4923,18 @@ function mountGhostEmptySlots() {
             .map(t => parseInt(t.dataset.slotNum, 10))
             .filter(Number.isFinite)
     );
+    // Show ghosts only up to the row containing the next-available
+    // slot, plus one more row below it. Memory Slots is a 5-col grid:
+    //   ceiling = 5 * (floor(highestExisting / 5) + 2)
+    // Examples:
+    //   highest = 0 → slots 1–10  (2 rows of fresh empties)
+    //   highest = 3 → slots 4–10  (fill rest of row 1 + one row below)
+    //   highest = 5 → slots 6–15  (row 2 is all ghosts + row 3 below)
+    const highestExisting = existing.size ? Math.max(...existing) : 0;
+    const ghostCeiling = Math.min(99, 5 * (Math.floor(highestExisting / 5) + 2));
     const frag = document.createDocumentFragment();
     let idx = 0;
-    for (let n = 1; n <= 99; n++) {
+    for (let n = 1; n <= ghostCeiling; n++) {
         if (existing.has(n)) continue;
         const el = document.createElement('div');
         el.className = 'slot-thumb empty drag-ghost';
@@ -4897,17 +4961,20 @@ function mountGhostEmptySlots() {
         `;
         frag.appendChild(el);
     }
-    slotGrid.appendChild(frag);
-    // Push the two-row promotion out of the dragstart event — some browsers
-    // will cancel the drag if the DOM is mutated with inline-style writes
-    // on many elements synchronously inside dragstart. Height animates so
-    // the module grows smoothly and modules below slide down with it.
-    // Track the RAF so a quick dragend (user lets go immediately) can
-    // cancel the expansion before it applies.
+    // All slot-grid DOM mutation is deferred to the next animation
+    // frame so dragstart finishes FIRST — any layout reflow inside the
+    // dragstart handler that moves the source tile will cancel the
+    // drag entirely. Once the drag is in progress the vertical-wrap
+    // layout can grow naturally (ghosts flow into new rows below the
+    // real tiles) without aborting the drag, and the height transition
+    // via animateSlotGridHeight makes the growth smooth.
     if (g_ghostPromoteRAF !== null) cancelAnimationFrame(g_ghostPromoteRAF);
     g_ghostPromoteRAF = requestAnimationFrame(() => {
         g_ghostPromoteRAF = null;
-        animateSlotGridHeight(() => applySlotGridLayout(true));
+        animateSlotGridHeight(() => {
+            slotGrid.appendChild(frag);
+            applySlotGridLayout();
+        });
     });
 }
 let g_ghostPromoteRAF = null;
