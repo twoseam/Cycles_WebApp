@@ -1737,16 +1737,23 @@
             #slot-section     { grid-area: slots;    margin: 0; }
             #log              { grid-area: log; }
 
-            /* Stock carousel: 2-row horizontal carousel when the module
-               spans two rows. Tiles flow column-first so the user reads
-               left→right, top→bottom across each page of 3 columns. */
-            #stock-section .stock-clip { flex: 1; min-height: 0; }
+            /* Stock carousel: 4-row grid flowing column-first (read
+               top-to-bottom then right). Rows use natural tile height;
+               if total grid height exceeds the zone-3 fixed area, the
+               stock-clip scrolls vertically so the last row isn't
+               clipped. */
+            #stock-section .stock-clip {
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+                scrollbar-width: none;
+            }
+            #stock-section .stock-clip::-webkit-scrollbar { display: none; }
             #stock-section #stock-grid {
                 display: grid;
-                grid-template-rows: repeat(4, 1fr);
+                grid-template-rows: repeat(4, auto);
                 grid-auto-flow: column;
                 grid-auto-columns: calc((100% - 18px) / 3);
-                height: 100%;
             }
             #stock-section #stock-grid .stock-thumb { flex: none; }
 
