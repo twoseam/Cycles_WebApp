@@ -2089,24 +2089,19 @@
                 grid-template-columns: none;
                 grid-template-rows: repeat(3, auto);
                 grid-auto-flow: column;
-                grid-auto-columns: calc((100% - 6px) / 2);
-                gap: 6px;
+                /* 14 px gap lets the stacked tactile shadow from one tile
+                   clear the next tile's edge before overlapping. Extra
+                   right + bottom padding clears the stacked shadow from
+                   the clip's overflow:hidden edge. */
+                grid-auto-columns: calc((100% - 14px) / 2);
+                gap: 14px;
                 overflow: visible;
                 height: auto;
-                padding: 2px;
+                padding: 2px 10px 10px 2px;
             }
             #stock-section #stock-grid .stock-thumb {
                 flex: none;
                 scroll-snap-align: start;
-                /* Kill the 6-step tactile shadow on touch — the 2-col
-                   grid packs tiles close enough that stacked shadows
-                   from adjacent tiles overlap into visible corner
-                   fragments. Flat tiles read cleaner. */
-                box-shadow: none;
-            }
-            /* Also flatten the pressed state (no shadow → no translate). */
-            #stock-section #stock-grid .stock-thumb:active {
-                transform: none;
             }
             /* Hide the prev/next arrow UI — swipe is the primary gesture
                on touch. Also hide the decorative left/right walls; at
@@ -6107,14 +6102,18 @@ async function renderStockTracks() {
             e.stopPropagation();
             e.stopImmediatePropagation();
             _killSource();
-            document.getElementById('btn-play').innerHTML = ICON_PLAY;
             document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
             g_selection = null;
             try {
                 const { interleaved } = await fetchAndDecodeStockTrack(track);
                 loadViewerFromInterleaved(interleaved, buildStockTrackLabel(track, title));
+                // Auto-start playback — matches the mobile tap-to-play
+                // behavior so "click the play button" actually plays.
+                playFrom(0);
+                document.getElementById('btn-play').innerHTML = ICON_PAUSE;
             } catch (err) {
                 log(`Stock preview error: ${err.message}`);
+                document.getElementById('btn-play').innerHTML = ICON_PLAY;
             }
         });
         thumb.appendChild(playBtn);
