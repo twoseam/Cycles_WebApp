@@ -2098,6 +2098,15 @@
             #stock-section #stock-grid .stock-thumb {
                 flex: none;
                 scroll-snap-align: start;
+                /* Kill the 6-step tactile shadow on touch — the 2-col
+                   grid packs tiles close enough that stacked shadows
+                   from adjacent tiles overlap into visible corner
+                   fragments. Flat tiles read cleaner. */
+                box-shadow: none;
+            }
+            /* Also flatten the pressed state (no shadow → no translate). */
+            #stock-section #stock-grid .stock-thumb:active {
+                transform: none;
             }
             /* Hide the prev/next arrow UI — swipe is the primary gesture
                on touch. Also hide the decorative left/right walls; at
@@ -6118,14 +6127,18 @@ async function renderStockTracks() {
             // track-title row under the transport carries context.
             if (matchMedia('(pointer: coarse)').matches) {
                 _killSource();
-                document.getElementById('btn-play').innerHTML = ICON_PLAY;
                 document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
                 g_selection = null;
                 try {
                     const { interleaved } = await fetchAndDecodeStockTrack(track);
                     loadViewerFromInterleaved(interleaved, buildStockTrackLabel(track, title));
+                    // Auto-start playback on touch so tapping a tile is a
+                    // one-gesture "play this" instead of "load then hit play".
+                    playFrom(0);
+                    document.getElementById('btn-play').innerHTML = ICON_PAUSE;
                 } catch (err) {
                     log(`Stock preview error: ${err.message}`);
+                    document.getElementById('btn-play').innerHTML = ICON_PLAY;
                 }
                 return;
             }
