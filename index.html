@@ -434,6 +434,11 @@
             color: var(--bg-raised);
         }
 
+        /* Mobile-only LCD title row — hidden globally; the mobile
+           aesthetic media query turns it on. Prevents it from eating a
+           grid cell in #playback-layout on desktop layouts. */
+        #mobile-title-row { display: none; }
+
         /* ── Waveform viewer — instrument display ── */
         #viewer {
             background: var(--bg-screen);
