@@ -1979,9 +1979,7 @@
                 box-shadow:
                     inset 0 1px 3px rgba(0, 0, 0, 0.7),
                     inset 0 0 0 1px rgba(255, 255, 255, 0.025);
-                overflow-x: auto;
-                overflow-y: hidden;
-                scrollbar-width: none;
+                overflow: hidden;
                 white-space: nowrap;
                 text-align: center;
                 font-family: 'VT323', 'Roboto Mono', 'Courier New', monospace;
@@ -6759,10 +6757,12 @@ async function init() {
 }
 
 // ── LCD marquee on the mobile title row ──────────────────────────────────
-// Every title gets the same cycle at 4 fps: 2 s static at the start, then
-// 8 s of stepped left-scroll until the text exits and a fresh copy starts
-// from position 1. Total cycle = 10 s, repeated forever. Runs regardless
-// of whether the text fits — consistent rhythm across all tracks.
+// Pacman-style seamless wrap: a mirrored clone sits just right of the
+// original label with a fixed gap. Both shift left together at 4 fps;
+// when the original has travelled one full label-width off-screen, the
+// offset resets to 0 — at that instant the clone occupies the original's
+// starting position, so the jump is visually invisible.
+const MARQUEE_GAP_EM = 3;
 let g_marqueeInterval = null;
 function setupTitleMarquee() {
     const row   = document.getElementById('mobile-title-row');
@@ -6773,37 +6773,49 @@ function setupTitleMarquee() {
     label.style.transform = '';
     label.style.display   = '';
 
-    // Only animate when the label sits inside the title-row (mobile
-    // aesthetic active).
+    // Remove any existing clone; we'll recreate on demand so edits to the
+    // label's textContent are always mirrored cleanly.
+    const oldClone = row.querySelector('.marquee-clone');
+    if (oldClone) oldClone.remove();
+
     if (label.parentNode !== row) return;
-    if (!label.textContent.trim()) return;  // nothing to scroll
+    if (!label.textContent.trim()) return;
+
+    // Clone the label text with a fixed gap so the two copies flow inline
+    // side by side. aria-hidden so screen readers don't read the duplicate.
+    const clone = document.createElement('span');
+    clone.className = 'marquee-clone';
+    clone.setAttribute('aria-hidden', 'true');
+    clone.textContent = label.textContent;
+    clone.style.marginLeft   = `${MARQUEE_GAP_EM}em`;
+    clone.style.whiteSpace   = 'nowrap';
+    clone.style.display      = 'inline-block';
+    clone.style.fontFamily   = 'inherit';
+    clone.style.fontSize     = 'inherit';
+    clone.style.letterSpacing= 'inherit';
+    clone.style.color        = 'inherit';
+    clone.style.textShadow   = 'inherit';
+    row.appendChild(clone);
 
     requestAnimationFrame(() => {
         label.style.display = 'inline-block';
-        const containerW = row.clientWidth;
-        const contentW   = label.scrollWidth;
-        const travel     = contentW + containerW;
+        const labelW = label.offsetWidth;
+        const gapPx  = parseFloat(getComputedStyle(clone).marginLeft) || 0;
+        const wrapAt = labelW + gapPx;
+        if (wrapAt <= 0) return;
 
-        const fps           = 4;
-        const cycleSecs     = 10;
-        const pauseSecs     = 2;
-        const scrollSecs    = cycleSecs - pauseSecs;
-        const ticksPerCycle = cycleSecs  * fps;   // 40
-        const pauseTicks    = pauseSecs  * fps;   // 8
-        const scrollTicks   = scrollSecs * fps;   // 32
-        const stepPx        = travel / scrollTicks;
+        const fps     = 4;
+        // Speed: ~40 px per second regardless of title length → one full
+        // wrap takes (wrapAt / 40) seconds. At 4 fps, stepPx = 10 px/tick.
+        const stepPx  = 10;
 
-        let tick = 0;
+        let offset = 0;
         g_marqueeInterval = setInterval(() => {
-            const phase = tick % ticksPerCycle;
-            if (phase < pauseTicks) {
-                // Static at start of cycle.
-                label.style.transform = '';
-            } else {
-                const scrollTick = phase - pauseTicks;
-                label.style.transform = `translateX(${-scrollTick * stepPx}px)`;
-            }
-            tick++;
+            offset -= stepPx;
+            if (offset <= -wrapAt) offset += wrapAt;
+            const t = `translateX(${offset}px)`;
+            label.style.transform = t;
+            clone.style.transform = t;
         }, 1000 / fps);
     });
 }
