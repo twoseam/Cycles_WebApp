@@ -1349,8 +1349,8 @@
             display: flex;
             gap: 14px;
             padding: 12px 14px;
-            background: var(--bg-panel);
-            border: 1px solid var(--border-dark);
+            background: var(--bg-screen);
+            border: 2px solid var(--border-dark);
         }
         .fx-slot {
             display: flex;
@@ -1861,20 +1861,65 @@
                 align-items: center;
             }
             #pedal-panel .pedal-control-label {
-                font-size: 8px;
+                font-size: 7px;
             }
             #pedal-panel .pedal-opt {
-                min-width: 34px;
-                height: 30px;
-                padding: 0 6px;
-                font-size: 11px;
+                min-width: 28px;
+                height: 26px;
+                padding: 0 4px;
+                font-size: 10px;
             }
             #pedal-panel #viewer-counter {
                 margin-left: auto;
-                height: 40px;
-                padding: 10px 16px;
+                height: 32px;
+                padding: 6px 10px;
             }
-            #pedal-panel #viewer-counter .seg-val { top: 10px; left: 16px; }
+            #pedal-panel #viewer-counter .seg-ghost,
+            #pedal-panel #viewer-counter .seg-val { font-size: 14px; }
+            #pedal-panel #viewer-counter .seg-val { top: 6px; left: 10px; }
+
+            /* Crush fader horizontal under the waveform. Stack playback-
+               layout as a flex column instead of grid so pedal-panel,
+               viewer, and fx-rack flow top-to-bottom. */
+            #playback-layout {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            #fx-rack { width: 100%; padding: 10px 14px; }
+            #fx-rack .fx-slot {
+                flex-direction: row;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+            }
+            #fx-rack .fx-fader {
+                writing-mode: horizontal-tb;
+                direction: ltr;
+                width: 100%;
+                height: 30px;
+                flex: 1;
+            }
+            #fx-rack .fx-fader::-webkit-slider-runnable-track {
+                width: 100%;
+                height: 4px;
+            }
+            #fx-rack .fx-fader::-moz-range-track {
+                width: 100%;
+                height: 4px;
+            }
+            #fx-rack .fx-val { min-width: 26px; }
+
+            /* Stock-clip on mobile: zero out the negative margins that
+               normally tuck the clip under the decorative walls. Walls
+               are hidden on mobile so the margins were pushing content
+               left of the module's padding edge. */
+            #stock-section .stock-clip {
+                margin-left: 0;
+                margin-right: 0;
+                padding-left: 0;
+                padding-right: 0;
+            }
             #mobile-title-row {
                 display: block;
                 text-align: center;
@@ -6619,9 +6664,11 @@ async function init() {
 
     if (!previewMode && !matchMedia('(pointer: coarse)').matches) return;
     const STORAGE_KEY = 'cyclesMobileLandingDismissed';
-    if (!previewMode) {
-        try { if (localStorage.getItem(STORAGE_KEY)) return; } catch {}
-    }
+    // TEMPORARILY DISABLED for mobile-layout testing — normally gates the
+    // modal to once per browser. Restore the block below when done.
+    // if (!previewMode) {
+    //     try { if (localStorage.getItem(STORAGE_KEY)) return; } catch {}
+    // }
 
     const modal = document.getElementById('mobile-landing-modal');
     const btn   = document.getElementById('btn-mobile-landing-ok');
