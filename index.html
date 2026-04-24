@@ -1854,18 +1854,27 @@
             #import-section,
             #slot-section { display: none !important; }
 
-            /* Mobile only: clock lives above the CRUSH fader (inside the
-               fx-rack column via JS reparent). Track title sits under the
-               transport buttons. */
-            #fx-rack #viewer-counter {
-                height: 44px;
-                padding: 10px 16px;
-                width: 100%;
-                justify-self: stretch;
-                box-sizing: border-box;
-                margin-bottom: 10px;
+            /* Mobile only: clock sits alongside Speed/Direction in the
+               pedal-panel row. Pedal buttons shrink to leave room. Track
+               title/meta row sits below the transport buttons. */
+            #pedal-panel {
+                align-items: center;
             }
-            #fx-rack #viewer-counter .seg-val { top: 10px; left: 16px; }
+            #pedal-panel .pedal-control-label {
+                font-size: 8px;
+            }
+            #pedal-panel .pedal-opt {
+                min-width: 34px;
+                height: 30px;
+                padding: 0 6px;
+                font-size: 11px;
+            }
+            #pedal-panel #viewer-counter {
+                margin-left: auto;
+                height: 40px;
+                padding: 10px 16px;
+            }
+            #pedal-panel #viewer-counter .seg-val { top: 10px; left: 16px; }
             #mobile-title-row {
                 display: block;
                 text-align: center;
@@ -1875,6 +1884,7 @@
                 color: var(--fg-muted);
                 text-transform: uppercase;
                 padding-top: 10px;
+                line-height: 1.5;
             }
             #mobile-title-row:empty { display: none; }
 
@@ -5859,7 +5869,9 @@ async function renderStockTracks() {
         thumb.addEventListener('click', async () => {
             // Touch devices can't write to the SD card (Import popup is
             // useless there), so tile tap loads the track into the player
-            // instead — same action as the desktop play-button.
+            // instead — same action as the desktop play-button. Label
+            // includes metadata (artist, bpm, key, duration) so the
+            // track-title row under the transport carries context.
             if (matchMedia('(pointer: coarse)').matches) {
                 _killSource();
                 document.getElementById('btn-play').innerHTML = ICON_PLAY;
@@ -5867,7 +5879,18 @@ async function renderStockTracks() {
                 g_selection = null;
                 try {
                     const { interleaved } = await fetchAndDecodeStockTrack(track);
-                    loadViewerFromInterleaved(interleaved, title);
+                    const base   = track.file.replace(/\.[^.]+$/, '');
+                    const parts  = base.split(/\s+-\s+/);
+                    const artist = track.artist || parts[0] || null;
+                    const tempo  = (track.tempo  || parts[3] || '').toString().replace(/(\d)([A-Za-z])/, '$1 $2') || null;
+                    const key    = track.key    || parts[2] || null;
+                    const dur    = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
+                    const metaParts = [title];
+                    if (artist) metaParts.push(artist);
+                    if (tempo)  metaParts.push(`${tempo} bpm`);
+                    if (key)    metaParts.push(key);
+                    if (dur)    metaParts.push(dur);
+                    loadViewerFromInterleaved(interleaved, metaParts.join(' — '));
                 } catch (err) {
                     log(`Stock preview error: ${err.message}`);
                 }
@@ -6559,18 +6582,19 @@ async function init() {
 }
 
 // ── Mobile layout reparent ────────────────────────────────────────────────
-// On touch devices, move the 0:00 counter above the CRUSH fader (inside
-// #fx-rack) and move the track-info label out of #pedal-panel to below
-// the transport buttons. On non-touch we leave the DOM alone.
+// On touch devices, move the 0:00 counter into the top pedal-panel row
+// (right of Speed/Direction) so it doesn't crowd the CRUSH fader. Move
+// the track-info label out of #pedal-panel to its own row below the
+// transport buttons. On non-touch we leave the DOM alone.
 (function applyMobileLayoutRearrange() {
     if (!matchMedia('(pointer: coarse)').matches) return;
 
     const counter    = document.getElementById('viewer-counter');
-    const fxRack     = document.getElementById('fx-rack');
+    const pedalPanel = document.getElementById('pedal-panel');
     const fileLabel  = document.getElementById('viewer-file-label');
     const titleRow   = document.getElementById('mobile-title-row');
-    if (counter && fxRack && fxRack.firstChild !== counter) {
-        fxRack.insertBefore(counter, fxRack.firstChild);
+    if (counter && pedalPanel && counter.parentNode !== pedalPanel) {
+        pedalPanel.appendChild(counter);
     }
     if (fileLabel && titleRow && titleRow.firstChild !== fileLabel) {
         titleRow.appendChild(fileLabel);
@@ -6582,10 +6606,20 @@ async function init() {
 // that the full CYCLES experience requires desktop while highlighting
 // what IS available on mobile (stock track preview, forthcoming manual).
 // Dismissal persists via localStorage.
+//
+// Preview / edit mode: append `?mobile-landing=preview` to the URL on
+// any device (including desktop) to force the modal visible, make every
+// text node inside it editable in-place, and surface a "Copy HTML" tool
+// at the bottom so the tweaked markup can be pasted back into this file.
 (function initMobileLandingModal() {
-    if (!matchMedia('(pointer: coarse)').matches) return;
+    const params = new URLSearchParams(location.search);
+    const previewMode = params.get('mobile-landing') === 'preview';
+
+    if (!previewMode && !matchMedia('(pointer: coarse)').matches) return;
     const STORAGE_KEY = 'cyclesMobileLandingDismissed';
-    try { if (localStorage.getItem(STORAGE_KEY)) return; } catch {}
+    if (!previewMode) {
+        try { if (localStorage.getItem(STORAGE_KEY)) return; } catch {}
+    }
 
     const modal = document.getElementById('mobile-landing-modal');
     const btn   = document.getElementById('btn-mobile-landing-ok');
@@ -6601,8 +6635,85 @@ async function init() {
     modal.style.display = 'flex';
     btn.addEventListener('click', () => {
         modal.style.display = 'none';
-        try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
+        if (!previewMode) {
+            try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
+        }
     });
+
+    // Preview-mode-only: wire the editor controls.
+    if (previewMode) {
+        const card = modal.querySelector('.mobile-landing-card');
+        // Make every text-bearing element inside the card editable.
+        card.querySelectorAll('h1, p, li, .mobile-landing-list-title, .mobile-landing-soon')
+            .forEach(el => { el.contentEditable = 'true'; el.spellcheck = true; });
+        // Style hint: outline editable regions on focus.
+        const style = document.createElement('style');
+        style.textContent = `
+            .mobile-landing-card [contenteditable="true"]:focus {
+                outline: 2px solid var(--brand-blue);
+                outline-offset: 2px;
+            }
+            #mobile-landing-preview-tools {
+                margin-top: 18px;
+                padding-top: 14px;
+                border-top: 1px dashed var(--border);
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                flex-wrap: wrap;
+                font-size: 10px;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--fg-muted);
+            }
+            #mobile-landing-preview-tools button {
+                font: inherit;
+                padding: 6px 14px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                color: var(--fg);
+                cursor: pointer;
+            }
+            #mobile-landing-preview-tools button:hover { border-color: var(--fg-muted); }
+            #mobile-landing-preview-status { align-self: center; }
+        `;
+        document.head.appendChild(style);
+        // Inject the toolbar into the card (below the Got-it button).
+        const tools = document.createElement('div');
+        tools.id = 'mobile-landing-preview-tools';
+        tools.innerHTML = `
+            <span>Preview mode</span>
+            <button type="button" id="mlp-copy">Copy HTML</button>
+            <button type="button" id="mlp-reset">Reset dismissal</button>
+            <span id="mobile-landing-preview-status"></span>
+        `;
+        card.appendChild(tools);
+
+        const statusEl = tools.querySelector('#mobile-landing-preview-status');
+        tools.querySelector('#mlp-copy').addEventListener('click', async () => {
+            // Snapshot only the content elements (skip the preview toolbar
+            // and the cloned logo, which is runtime-injected).
+            const content = Array.from(card.children)
+                .filter(el => el.id !== 'mobile-landing-preview-tools' && !el.classList.contains('mobile-landing-logo'))
+                .map(el => el.outerHTML)
+                .join('\n    ');
+            const html = `<div class="mobile-landing-logo"></div>\n    ${content}`;
+            try {
+                await navigator.clipboard.writeText(html);
+                statusEl.textContent = 'copied';
+            } catch {
+                statusEl.textContent = 'copy failed — see console';
+                // eslint-disable-next-line no-console
+                console.log(html);
+            }
+            setTimeout(() => { statusEl.textContent = ''; }, 1500);
+        });
+        tools.querySelector('#mlp-reset').addEventListener('click', () => {
+            try { localStorage.removeItem(STORAGE_KEY); } catch {}
+            statusEl.textContent = 'dismissal reset';
+            setTimeout(() => { statusEl.textContent = ''; }, 1500);
+        });
+    }
 })();
 
 // ── Theme toggle ──────────────────────────────────────────────────────────────
