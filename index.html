@@ -960,16 +960,17 @@
         }
         #stock-grid {
             display: flex;
-            gap: 5px;
+            gap: 7px;
             /* Native horizontal scroll for trackpad + JS for mouse wheel.
                overflow-x: auto lets the trackpad two-finger-swipe scroll
                horizontally; overflow-y: hidden keeps the vertical scroll
-               bar hidden. Padding below/right preserves the tiles'
-               chunky drop-shadows at the clip edges. */
+               bar hidden. Right + bottom padding preserves the tiles'
+               chunky drop-shadows at the clip edges (sized to clear the
+               10-step stepped stack + the soft ground shadow's blur). */
             overflow-x: auto;
             overflow-y: hidden;
             scroll-behavior: smooth;
-            padding: 2px 6px 6px 2px;
+            padding: 2px 18px 18px 2px;
             scrollbar-width: none;              /* Firefox */
         }
         /* Scroll-behind-a-wall — a chunky vertical rule overlaid near
@@ -990,13 +991,6 @@
            so they read as "not real content" while still filling the
            carousel row for scrolling tests. */
         #stock-grid .stock-thumb.dummy {
-            /* Greyed-out "ghost" tile: keep the body fully opaque so
-               shadows of populated tiles above don't bleed through, but
-               desaturate the bg + border with a grey blend so the tile
-               reads as empty / coming-soon instead of mimicking real
-               content. Inner text/play-btn still get the opacity dim. */
-            background: color-mix(in srgb, var(--bg-raised), #888 25%);
-            border-color: color-mix(in srgb, var(--border), #888 30%);
             cursor: default;
         }
         #stock-grid .stock-thumb.dummy > * { opacity: 0.35; }
@@ -1170,7 +1164,7 @@
            4-col formula) so the two sections read as one visual family. */
         #slot-grid {
             display: grid;
-            grid-template-columns: repeat(5, calc((100% - 28px) / 5));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             /* Keep implicit rows sized to content and stacked at the
                top. Without this, pinning the grid to an explicit height
                (which we do during the drag-cancel shrink animation)
@@ -1179,8 +1173,11 @@
                glitch. */
             grid-auto-rows: max-content;
             align-content: start;
-            gap: 5px;
-            padding: 2px 6px 6px 2px;
+            gap: 8px;
+            /* Symmetric LR padding so the row reads as centered in the
+               panel; right + bottom padding sized to clear the 10-step
+               shadow stack on the rightmost / bottom-most tiles. */
+            padding: 2px 18px 18px 18px;
         }
         /* During a stock-track drag we can't let the slot-grid grow
            downward (pushing the stock tile — the drag source — off its
@@ -1300,7 +1297,7 @@
            naturally because the grid's overflow clips at the section
            edge, not at the wall. */
         @media (max-width: 600px) {
-            #slot-grid { grid-template-columns: repeat(3, calc((100% - 18px) / 3)); }
+            #slot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
         }
         /* Hide the slot-grid transport arrows — Memory Slots wraps to
            new rows instead of scrolling horizontally, so there's nothing
@@ -1329,16 +1326,42 @@
            (e.g. if 01, 02, 05 exist, 03 and 04 render as empty slots). Muted
            visuals so the eye latches onto real slots; clicking an empty slot
            targets that slot number in the Import panel. */
-        .slot-thumb.empty {
-            background: transparent;
-            border-color: var(--border);
-            opacity: 0.45;
+        /* Empty slot tile — matches the panel bg so it blends in (looks
+           "transparent" / empty), but stays opaque so the shadow stacks
+           of populated slots above/beside don't bleed through. Inner
+           content (slot number, EMPTY label, format dots) fades via
+           children-only opacity. */
+        /* Shared ghost-tile look — applies to empty memory slots AND
+           coming-soon stock tiles. Body, border, and shadow stack are
+           opaque (so the tile fully clips/occludes whatever's behind
+           it), but each color is mixed with the panel bg so the result
+           reads as a "subdued" version of the real-tile palette. The
+           --ghost-shadow var is derived from --shadow-stack live, so if
+           the shadow color is ever themed (light/dark, picker, etc.) the
+           ghost shadow tracks it automatically. */
+        .slot-thumb.empty,
+        #stock-grid .stock-thumb.dummy {
+            --ghost-shadow: color-mix(in srgb, var(--shadow-stack), var(--bg-panel) 78%);
+            background: color-mix(in srgb, var(--bg-raised), var(--bg-panel) 55%);
+            border-color: color-mix(in srgb, var(--border), var(--bg-panel) 50%);
+            box-shadow:
+                1px 1px 0 var(--ghost-shadow),
+                2px 2px 0 var(--ghost-shadow),
+                3px 3px 0 var(--ghost-shadow),
+                4px 4px 0 var(--ghost-shadow),
+                5px 5px 0 var(--ghost-shadow),
+                6px 6px 0 var(--ghost-shadow),
+                7px 7px 0 var(--ghost-shadow),
+                8px 8px 0 var(--ghost-shadow),
+                9px 9px 0 var(--ghost-shadow),
+                10px 10px 0 var(--ghost-shadow);
         }
+        .slot-thumb.empty > * { opacity: 0.45; }
         .slot-thumb.empty:hover {
             background: var(--bg);
             border-color: var(--border-dark);
-            opacity: 0.8;
         }
+        .slot-thumb.empty:hover > * { opacity: 0.8; }
         .slot-thumb.empty .slot-num { color: var(--fg-muted); }
         .slot-thumb.empty .slot-dur { color: var(--fg-muted); }
         .slot-thumb.empty .fmt-dot  { background: var(--border-light); }
@@ -1355,8 +1378,11 @@
             animation-delay: calc(var(--ghost-idx, 0) * 8ms);
         }
         @keyframes ghost-enter {
+            /* Animate to full opacity — the .empty rule now uses
+               children-only opacity (so the tile occludes shadows
+               behind it), so the tile itself should land opaque. */
             from { opacity: 0; transform: translateY(-6px); }
-            to   { opacity: 0.45; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         /* Drop-target highlight (stock track dragged over a slot). Works
@@ -1966,7 +1992,7 @@
                 display: grid;
                 grid-template-columns: repeat(3, minmax(0, 1fr));
                 grid-auto-rows: auto;
-                gap: 5px;
+                gap: 7px;
                 overflow: visible;
                 height: auto;
             }
@@ -2005,7 +2031,7 @@
             /* Memory Slots spans full width in wide mode, so it has room
                for 8 columns instead of the default 5. */
             #slot-grid {
-                grid-template-columns: repeat(8, calc((100% - 43px) / 8));
+                grid-template-columns: repeat(8, minmax(0, 1fr));
             }
         }
 
@@ -2211,8 +2237,8 @@
                    clear the next tile's edge before overlapping. Extra
                    right + bottom padding clears the stacked shadow from
                    the clip's overflow:hidden edge. */
-                grid-auto-columns: calc((100% - 14px) / 2);
-                gap: 14px;
+                grid-auto-columns: calc((100% - 9px) / 2);
+                gap: 9px;
                 overflow: visible;
                 height: auto;
                 padding: 2px 10px 10px 2px;
@@ -2221,10 +2247,11 @@
                 flex: none;
                 scroll-snap-align: start;
             }
-            /* Hide the prev/next arrow UI — swipe is the primary gesture
-               on touch. Also hide the decorative left/right walls; at
-               narrow widths the swipe gesture is obvious enough. */
-            #stock-controls,
+            /* Keep the prev/next arrows visible on Narrow / Mobile so
+               the user has a tap-target for paging in addition to swipe
+               (some folks don't realize the carousel is swipable). The
+               decorative walls stay hidden — they were a wide-only
+               visual anchor that read as clutter at narrow widths. */
             #stock-section::after,
             #stock-section .stock-wall-left { display: none; }
         }
@@ -6394,10 +6421,31 @@ function setupCarousel(gridId, prevId, nextId, wallWidth = 0) {
     const next = document.getElementById(nextId);
     if (!grid || !prev || !next) return;
 
+    // Find the element that actually scrolls. On Wide / Vertical the
+    // grid itself has overflow-x:auto. On Narrow / Mobile the grid is
+    // overflow:visible and its wrapper (.stock-clip) is the real
+    // scroller. Check computed overflow-x — scrollWidth > clientWidth
+    // alone is misleading because overflow:visible elements report a
+    // bigger scrollWidth even though they don't accept scrollLeft.
+    const canScrollX = (el) => {
+        const ox = getComputedStyle(el).overflowX;
+        return (ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth;
+    };
+    const getScroller = () => {
+        if (canScrollX(grid)) return grid;
+        let p = grid.parentElement;
+        while (p && p !== document.body) {
+            if (canScrollX(p)) return p;
+            p = p.parentElement;
+        }
+        return grid;
+    };
+
     const updateArrows = () => {
-        const maxScroll = grid.scrollWidth - grid.clientWidth;
-        const canPrev = grid.scrollLeft > 1;
-        const canNext = grid.scrollLeft < maxScroll - 1;
+        const sc = getScroller();
+        const maxScroll = sc.scrollWidth - sc.clientWidth;
+        const canPrev = sc.scrollLeft > 1;
+        const canNext = sc.scrollLeft < maxScroll - 1;
         prev.classList.toggle('disabled', !canPrev);
         next.classList.toggle('disabled', !canNext);
         grid.classList.toggle('has-scroll-right', canNext);
@@ -6408,25 +6456,46 @@ function setupCarousel(gridId, prevId, nextId, wallWidth = 0) {
         if (controls) controls.classList.toggle('no-scroll', !canPrev && !canNext);
     };
 
-    // Per-click scroll step = visible content width minus whichever
-    // walls are currently active (has-scroll-left / has-scroll-right).
+    // Per-click scroll step.
+    //   Wide / Vertical (grid is the scroller): visible width minus
+    //     active wall covers, so the click reveals exactly one fresh
+    //     page-worth of tiles and the wall stays anchored.
+    //   Narrow / Mobile (wrapper .stock-clip is the scroller): visible
+    //     width MINUS the wrapper's L+R padding AND the grid's L+R
+    //     padding — both eat into the actual tile-content width that
+    //     fits one paged screen. Without subtracting both, the step
+    //     overshoots and the next page lands mid-tile.
+    const padXOf = (el) => {
+        const cs = getComputedStyle(el);
+        return (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    };
     const stepSize = () => {
-        const leftCover  = grid.classList.contains('has-scroll-left')  ? wallWidth : 0;
-        const rightCover = grid.classList.contains('has-scroll-right') ? wallWidth : 0;
-        return Math.max(100, grid.clientWidth - leftCover - rightCover);
+        const sc = getScroller();
+        if (sc !== grid) {
+            return Math.max(100, sc.clientWidth - padXOf(sc) - padXOf(grid));
+        }
+        const wallApplies = (wallWidth > 0);
+        const leftCover  = (wallApplies && grid.classList.contains('has-scroll-left'))  ? wallWidth : 0;
+        const rightCover = (wallApplies && grid.classList.contains('has-scroll-right')) ? wallWidth : 0;
+        return Math.max(100, sc.clientWidth - leftCover - rightCover);
     };
 
-    prev.onclick   = () => { grid.scrollBy({ left: -stepSize(), behavior: 'smooth' }); };
-    next.onclick   = () => { grid.scrollBy({ left:  stepSize(), behavior: 'smooth' }); };
-    grid.onscroll  = updateArrows;
+    prev.onclick = () => { getScroller().scrollBy({ left: -stepSize(), behavior: 'smooth' }); };
+    next.onclick = () => { getScroller().scrollBy({ left:  stepSize(), behavior: 'smooth' }); };
+    // Bind scroll listener to BOTH grid and its immediate parent so
+    // arrows refresh whichever element is actually scrolling in the
+    // current layout.
+    grid.onscroll = updateArrows;
+    if (grid.parentElement) grid.parentElement.onscroll = updateArrows;
     // Mouse wheel → horizontal scroll when the trackpad isn't already
     // sending deltaX. preventDefault so pure vertical-wheel scrolls
     // inside the carousel, not the page.
     grid.onwheel = (e) => {
         if (e.deltaX !== 0) return;
-        if (grid.scrollWidth <= grid.clientWidth) return;
+        const sc = getScroller();
+        if (sc.scrollWidth <= sc.clientWidth) return;
         e.preventDefault();
-        grid.scrollLeft += e.deltaY;
+        sc.scrollLeft += e.deltaY;
     };
     // First call after layout settles — image/font loads can shift sizes.
     requestAnimationFrame(updateArrows);
