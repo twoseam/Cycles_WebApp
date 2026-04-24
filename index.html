@@ -1709,7 +1709,7 @@
            back to the single-column stack. */
         @media (min-width: 1200px) {
             #app {
-                max-width: 1200px;
+                max-width: 1300px;
                 display: grid;
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
                 grid-template-areas:
@@ -1800,8 +1800,12 @@
 
         @media (max-width: 600px) {
             #app { padding: 18px 12px; }
-            #header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            #header-right { align-items: flex-start; }
+            /* Keep the Wide-style horizontal header in Mobile — logo +
+               subtitle on the left, theme toggle + card status on the
+               right — but scale the SVG logo down so it fits alongside
+               the header-right column at narrow widths. */
+            #header { gap: 10px; }
+            #logo svg { width: 180px; height: auto; }
             #pedal-panel { gap: 16px; flex-wrap: wrap; row-gap: 14px; }
             #transport { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
             #transport .spacer { display: none; }
@@ -6245,21 +6249,24 @@ document.getElementById('btn-connect-prompt').addEventListener('click', async ()
 });
 
 async function init() {
-    // File System Access API is Chromium-only. Hide the entire UI and show
-    // a prominent "unsupported" message on Firefox / Safari / mobile.
-    const forceUnsupported = new URLSearchParams(location.search).has('test-unsupported');
-    if (forceUnsupported || !('showDirectoryPicker' in window)) {
-        document.getElementById('app').innerHTML = `
-            <div id="unsupported">
-                <div class="unsupported-logo">${document.querySelector('#logo svg')?.outerHTML || ''}</div>
-                <h1>Browser not supported</h1>
-                <p>CYCLES needs to read and write directly to your SD card from the browser. That requires the <strong>File System Access API</strong>, which isn't available here.</p>
-                <p class="unsupported-cta">Please reopen this page in <strong>Chrome</strong>, <strong>Microsoft Edge</strong>, or another Chromium-based browser (Opera, Brave, Vivaldi).</p>
-                <p class="unsupported-note">Mobile browsers are not supported at this time.</p>
-            </div>
-        `;
-        return;
-    }
+    // ── Mobile / unsupported-browser blocker — TEMPORARILY DISABLED ──
+    // Normally we hide the UI and show an "unsupported" message on any
+    // browser without showDirectoryPicker (Firefox, Safari, mobile).
+    // Disabled for layout testing on mobile; restore the block below
+    // when wrapping up.
+    // const forceUnsupported = new URLSearchParams(location.search).has('test-unsupported');
+    // if (forceUnsupported || !('showDirectoryPicker' in window)) {
+    //     document.getElementById('app').innerHTML = `
+    //         <div id="unsupported">
+    //             <div class="unsupported-logo">${document.querySelector('#logo svg')?.outerHTML || ''}</div>
+    //             <h1>Browser not supported</h1>
+    //             <p>CYCLES needs to read and write directly to your SD card from the browser. That requires the <strong>File System Access API</strong>, which isn't available here.</p>
+    //             <p class="unsupported-cta">Please reopen this page in <strong>Chrome</strong>, <strong>Microsoft Edge</strong>, or another Chromium-based browser (Opera, Brave, Vivaldi).</p>
+    //             <p class="unsupported-note">Mobile browsers are not supported at this time.</p>
+    //         </div>
+    //     `;
+    //     return;
+    // }
     try {
         const result = await tryAutoConnect();
         if (result === true) {
