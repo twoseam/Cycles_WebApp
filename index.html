@@ -2008,12 +2008,14 @@
                 background-color: #0a1a0c;
             }
             #mobile-title-row::-webkit-scrollbar { display: none; }
-            /* Hide the pill when there's no actual track text to show:
-               either the label was never reparented in (still in
-               pedal-panel) or its textContent is empty. :empty alone
-               doesn't work because the empty span is still a child. */
-            #mobile-title-row:not(:has(#viewer-file-label)),
-            #mobile-title-row:has(#viewer-file-label:empty) { display: none; }
+            /* Hide the pill only when it has no label at all (desktop —
+               label stayed in pedal-panel). When the label is inside
+               but empty, show a "Please Load Song" placeholder via
+               ::before so the LCD never looks broken/dark. */
+            #mobile-title-row:not(:has(#viewer-file-label)) { display: none; }
+            #mobile-title-row #viewer-file-label:empty::before {
+                content: 'Please Load Song';
+            }
             /* The reparented #viewer-file-label has its own 9px rule
                that would override the container's VT323 sizing —
                force it to inherit so the LCD look applies. */
@@ -6822,6 +6824,12 @@ function setupTitleMarquee() {
         clone.style.textShadow    = 'inherit';
         row.appendChild(clone);
 
+        // Inline-block children start left-aligned (total width >
+        // container when gap ≈ container width). Add a center offset so
+        // the original's resting position is horizontally centered —
+        // then the clone also lands centered at the end of scroll, at
+        // the exact same pixel x.
+        const centerOffset        = (containerW - labelW) / 2;
         const wrapAt              = labelW + gapPx;          // one full offset cycle
         const fps                 = 4;
         const stepPx              = 10;
@@ -6835,16 +6843,16 @@ function setupTitleMarquee() {
         let tick = 0;
         g_marqueeInterval = setInterval(() => {
             const phase = tick % cycleTicks;
-            let offset;
+            let scrollOffset;
             if (phase < preTicks) {
-                offset = 0;                                          // static at start (original visible)
+                scrollOffset = 0;                                    // static at start
             } else if (phase < preTicks + scrollTicks) {
                 const k = phase - preTicks;
-                offset = -Math.min(k * stepPx, wrapAt);              // scroll, clamped at wrap
+                scrollOffset = -Math.min(k * stepPx, wrapAt);         // scroll
             } else {
-                offset = -wrapAt;                                    // post-scroll hold — clone at origin
+                scrollOffset = -wrapAt;                              // post-scroll hold (clone at center)
             }
-            const t = `translateX(${offset}px)`;
+            const t = `translateX(${centerOffset + scrollOffset}px)`;
             label.style.transform = t;
             clone.style.transform = t;
             tick++;
