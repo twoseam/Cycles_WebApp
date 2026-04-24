@@ -1958,6 +1958,96 @@
             margin-bottom: 0 !important;
         }
 
+        /* ── Mobile landing modal (shown once on touch devices) ── */
+        #mobile-landing-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 120;
+        }
+        .mobile-landing-card {
+            max-width: 440px;
+            width: 100%;
+            padding: 32px 24px 28px;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            text-align: center;
+            box-shadow: var(--shadow-card);
+        }
+        .mobile-landing-logo { margin-bottom: 20px; }
+        .mobile-landing-logo svg { width: 100%; max-width: 200px; height: auto; }
+        .mobile-landing-logo svg .st1 { fill: var(--brand-blue); }
+        .mobile-landing-logo svg .st0 { fill: var(--brand-red); }
+        .mobile-landing-card h1 {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--fg);
+            margin: 0 0 16px;
+        }
+        .mobile-landing-card p {
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--fg-dim);
+            margin: 0 0 16px;
+        }
+        .mobile-landing-list-title {
+            font-size: 10px !important;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--fg-muted) !important;
+            margin-bottom: 8px !important;
+        }
+        .mobile-landing-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--fg-dim);
+            text-align: left;
+            display: inline-block;
+        }
+        .mobile-landing-card ul li::before {
+            content: '◆\00a0\00a0';
+            color: var(--brand-red);
+            font-size: 8px;
+            vertical-align: middle;
+        }
+        .mobile-landing-soon {
+            color: var(--fg-muted);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        #btn-mobile-landing-ok {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            height: 40px;
+            padding: 0 32px;
+            background: var(--brand-blue);
+            border: 1px solid var(--brand-blue);
+            color: #fff;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: var(--shadow-card);
+            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+        }
+        #btn-mobile-landing-ok:hover {
+            background:   color-mix(in srgb, var(--brand-blue), black 15%);
+            border-color: color-mix(in srgb, var(--brand-blue), black 15%);
+        }
+        #btn-mobile-landing-ok:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 transparent;
+        }
+
         /* ── Export popup ─────────────────────────────────────────────── */
         #export-popup {
             position: fixed;
@@ -2732,6 +2822,22 @@
         <p>Insert your MicroSD card, then click the button.<br>This will give the app access to your loopers' memory bank.</p>
         <button id="btn-connect-prompt">Connect CYCLES Card</button>
         <p class="connect-note">Cycles Looper Workstation Memory Manager</p>
+    </div>
+</div>
+
+<!-- ── Mobile landing modal (shown once on touch devices) ─────────────────── -->
+<div id="mobile-landing-modal" style="display:none">
+    <div class="mobile-landing-card">
+        <div class="mobile-landing-logo"></div>
+        <h1>Mobile Preview</h1>
+        <p>CYCLES is a desktop-first app. Writing to your CYCLES card — importing loops, exporting remixes, editing memory slots — all need a desktop browser (Chrome, Edge, Brave).</p>
+        <p class="mobile-landing-list-title">On your phone you can</p>
+        <ul>
+            <li>Browse the full stock loop library</li>
+            <li>Preview any loop in the player</li>
+            <li>Read the manual <span class="mobile-landing-soon">(coming soon)</span></li>
+        </ul>
+        <button id="btn-mobile-landing-ok" type="button">Got it</button>
     </div>
 </div>
 
@@ -6422,6 +6528,34 @@ async function init() {
         showConnectPrompt();
     }
 }
+
+// ── Mobile landing modal ──────────────────────────────────────────────────
+// Shown once per browser on touch devices (phones/tablets), explaining
+// that the full CYCLES experience requires desktop while highlighting
+// what IS available on mobile (stock track preview, forthcoming manual).
+// Dismissal persists via localStorage.
+(function initMobileLandingModal() {
+    if (!matchMedia('(pointer: coarse)').matches) return;
+    const STORAGE_KEY = 'cyclesMobileLandingDismissed';
+    try { if (localStorage.getItem(STORAGE_KEY)) return; } catch {}
+
+    const modal = document.getElementById('mobile-landing-modal');
+    const btn   = document.getElementById('btn-mobile-landing-ok');
+    if (!modal || !btn) return;
+
+    // Clone the header logo into the landing card.
+    const logoSrc  = document.querySelector('#logo svg');
+    const logoSlot = modal.querySelector('.mobile-landing-logo');
+    if (logoSrc && logoSlot && !logoSlot.firstChild) {
+        logoSlot.innerHTML = logoSrc.outerHTML;
+    }
+
+    modal.style.display = 'flex';
+    btn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
+    });
+})();
 
 // ── Theme toggle ──────────────────────────────────────────────────────────────
 (function() {
