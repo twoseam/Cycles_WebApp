@@ -1974,7 +1974,7 @@
                 white-space: nowrap;
                 text-align: center;
                 font-family: 'VT323', 'Roboto Mono', 'Courier New', monospace;
-                font-size: 44px;
+                font-size: 22px;
                 letter-spacing: 0.06em;
                 color: var(--fg-muted);
                 text-transform: uppercase;
@@ -1983,6 +1983,18 @@
             }
             #mobile-title-row::-webkit-scrollbar { display: none; }
             #mobile-title-row:empty { display: none; }
+            /* The reparented #viewer-file-label has its own 9px rule
+               that would override the container's VT323 sizing —
+               force it to inherit so the dot-matrix look applies. */
+            #mobile-title-row #viewer-file-label {
+                font: inherit;
+                letter-spacing: inherit;
+                color: inherit;
+                text-transform: inherit;
+                overflow: visible;
+                white-space: inherit;
+                margin: 0;
+            }
 
             /* Stock tracks on touch: 3-row × 2-col pages, horizontal
                swipe scroll. Tiles flow column-first so each page reads
@@ -3685,6 +3697,41 @@ function redrawViewer(playheadFrame = -1) {
     }
 }
 
+// ── Viewer: label ─────────────────────────────────────────────────────────────
+// Single source of truth for the track-info label shown in the pedal-
+// panel (desktop) / mobile-title-row (mobile). Every load path — stock
+// preview, memory-slot click, import fallback — builds its label via
+// this helper so the field order and separators are consistent.
+// Order: Title — Artist — BPM — Key — Duration — Format — Size.
+// Any missing fields are omitted silently.
+function buildViewerLabel(parts = {}) {
+    const out = [];
+    if (parts.title)    out.push(parts.title);
+    if (parts.artist)   out.push(parts.artist);
+    if (parts.tempo)    out.push(`${parts.tempo} bpm`);
+    if (parts.key)      out.push(parts.key);
+    if (parts.duration) out.push(parts.duration);
+    if (parts.format)   out.push(parts.format);
+    if (parts.size)     out.push(parts.size);
+    return out.join(' — ');
+}
+
+// Extract the canonical fields from a stock-track manifest entry, falling
+// back to filename convention ("Artist - Title - Key - Tempo") for any
+// fields the JSON doesn't explicitly provide.
+function buildStockTrackLabel(track, displayTitle) {
+    const base   = track.file.replace(/\.[^.]+$/, '');
+    const parts  = base.split(/\s+-\s+/);
+    const title  = track.title  || parts[1] || displayTitle || base;
+    const artist = track.artist || parts[0] || null;
+    const key    = track.key    || parts[2] || null;
+    const tempoRaw = (track.tempo || parts[3] || '').toString();
+    const tempo  = tempoRaw ? tempoRaw.replace(/(\d)([A-Za-z])/, '$1 $2') : null;
+    const dur    = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
+    const ext    = (track.file.match(/\.([^.]+)$/)?.[1] || '').toLowerCase();
+    return buildViewerLabel({ title, artist, tempo, key, duration: dur, format: ext });
+}
+
 // ── Viewer: load ──────────────────────────────────────────────────────────────
 // Shared viewer setup from a pre-decoded interleaved Float32 stereo
 // buffer. Used by the Memory Slot loader (after reading from disk) and
@@ -4767,7 +4814,12 @@ async function refreshUI(autoLoad = false) {
         thumb.appendChild(fmtRow);
 
         slotGrid.appendChild(thumb);
-        const label = `Slot ${String(s.slotNum).padStart(2,'0')} — ${formatDuration(s.durationSec)} — ${formatBytes(s.byteSize)}`;
+        const label = buildViewerLabel({
+            title:    `Slot ${String(s.slotNum).padStart(2, '0')}`,
+            duration: formatDuration(s.durationSec),
+            format:   s.isMono ? 'Mono' : 'Stereo',
+            size:     formatBytes(s.byteSize),
+        });
         thumb.addEventListener('click', (e) => { if (e.target !== delBtn) selectItem(g_memorySlotsHandle, s.filename, label, thumb); });
         g_allItems.push({ filename: s.filename, thumbEl: thumb });
     }
@@ -5960,7 +6012,7 @@ async function renderStockTracks() {
             g_selection = null;
             try {
                 const { interleaved } = await fetchAndDecodeStockTrack(track);
-                loadViewerFromInterleaved(interleaved, title);
+                loadViewerFromInterleaved(interleaved, buildStockTrackLabel(track, title));
             } catch (err) {
                 log(`Stock preview error: ${err.message}`);
             }
@@ -5980,18 +6032,7 @@ async function renderStockTracks() {
                 g_selection = null;
                 try {
                     const { interleaved } = await fetchAndDecodeStockTrack(track);
-                    const base   = track.file.replace(/\.[^.]+$/, '');
-                    const parts  = base.split(/\s+-\s+/);
-                    const artist = track.artist || parts[0] || null;
-                    const tempo  = (track.tempo  || parts[3] || '').toString().replace(/(\d)([A-Za-z])/, '$1 $2') || null;
-                    const key    = track.key    || parts[2] || null;
-                    const dur    = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
-                    const metaParts = [title];
-                    if (artist) metaParts.push(artist);
-                    if (tempo)  metaParts.push(`${tempo} bpm`);
-                    if (key)    metaParts.push(key);
-                    if (dur)    metaParts.push(dur);
-                    loadViewerFromInterleaved(interleaved, metaParts.join(' — '));
+                    loadViewerFromInterleaved(interleaved, buildStockTrackLabel(track, title));
                 } catch (err) {
                     log(`Stock preview error: ${err.message}`);
                 }
