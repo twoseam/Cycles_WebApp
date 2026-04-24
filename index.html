@@ -242,7 +242,7 @@
         }
 
         #app {
-            max-width: 960px;
+            max-width: 850px;
             margin: 0 auto;
             padding: 28px 24px;
         }
@@ -1709,7 +1709,7 @@
            back to the single-column stack. */
         @media (min-width: 1200px) {
             #app {
-                max-width: 1440px;
+                max-width: 1200px;
                 display: grid;
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
                 grid-template-areas:
@@ -1737,25 +1737,59 @@
             #slot-section     { grid-area: slots;    margin: 0; }
             #log              { grid-area: log; }
 
-            /* Stock carousel: 4-row grid flowing column-first (read
-               top-to-bottom then right). Rows use natural tile height;
-               if total grid height exceeds the zone-3 fixed area, the
-               stock-clip scrolls vertically so the last row isn't
-               clipped. */
+            /* Stock carousel: 3-col vertical-scroll grid flowing row-first
+               (read left→right, top→bottom). Tiles use compact styling
+               and the stock-clip scrolls vertically when there are more
+               rows than fit in zone 3's height. Horizontal walls/arrows
+               auto-disable via has-scroll-* classes since there's no
+               horizontal overflow in this mode. */
             #stock-section .stock-clip {
                 flex: 1;
                 min-height: 0;
                 overflow-y: auto;
+                overflow-x: hidden;
                 scrollbar-width: none;
             }
             #stock-section .stock-clip::-webkit-scrollbar { display: none; }
             #stock-section #stock-grid {
                 display: grid;
-                grid-template-rows: repeat(4, auto);
-                grid-auto-flow: column;
-                grid-auto-columns: calc((100% - 18px) / 3);
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-auto-rows: auto;
+                gap: 5px;
+                overflow: visible;
+                height: auto;
             }
-            #stock-section #stock-grid .stock-thumb { flex: none; }
+            #stock-section #stock-grid .stock-thumb {
+                flex: none;
+                min-height: 0;
+                padding: 10px 10px 8px;
+                gap: 3px;
+                overflow: hidden;
+            }
+            #stock-section #stock-grid .stock-thumb .stock-title {
+                font-size: 11px;
+                -webkit-line-clamp: 1;
+                line-clamp: 1;
+                min-height: 1.3em;
+            }
+            #stock-section #stock-grid .stock-thumb .stock-artist {
+                font-size: 9px;
+                margin-top: 0;
+                margin-bottom: 4px;
+            }
+            #stock-section #stock-grid .stock-thumb .stock-meta {
+                font-size: 9px;
+                line-height: 1.15;
+            }
+            #stock-section #stock-grid .stock-thumb .stock-meta + .stock-meta {
+                margin-top: -2px;
+            }
+            #stock-section #stock-grid .stock-thumb .stock-play-btn {
+                width: 22px;
+                height: 22px;
+                bottom: 5px;
+                right: 5px;
+            }
 
             /* Memory Slots spans full width in wide mode, so it has room
                for 8 columns instead of the default 5. */
@@ -5593,12 +5627,17 @@ async function renderStockTracks() {
     // "Coming Soon" placeholder tiles signal that more stock tracks are
     // on the way and keep the carousel populated enough to scroll. The
     // tiles are non-clickable and rendered at reduced opacity.
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
         const dummy = document.createElement('div');
         dummy.className = 'stock-thumb dummy';
+        // Match the real tile's line count (title + artist + 4 meta) so
+        // dummy rows render at the same height as populated rows.
         dummy.innerHTML = `
             <div class="stock-title">Coming Soon</div>
             <div class="stock-artist">—</div>
+            <div class="stock-meta">—</div>
+            <div class="stock-meta">—</div>
+            <div class="stock-meta">—</div>
             <div class="stock-meta">—</div>
         `;
         grid.appendChild(dummy);
@@ -5697,7 +5736,11 @@ function setupCarousel(gridId, prevId, nextId, wallWidth = 0) {
 }
 
 // Back-compat shim — existing callers pointed at the stock-only name.
-function setupStockCarousel() { setupCarousel('stock-grid', 'btn-stock-prev', 'btn-stock-next'); }
+// Stock tracks section has a 35 px decorative wall on each edge (see the
+// stock-wall-left element + #stock-section::after); pass that through so
+// each click subtracts the active walls from the scroll step and tiles
+// don't end up hidden behind them.
+function setupStockCarousel() { setupCarousel('stock-grid', 'btn-stock-prev', 'btn-stock-next', 35); }
 
 renderStockTracks();
 
