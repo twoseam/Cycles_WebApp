@@ -1886,6 +1886,7 @@
             }
             #pedal-panel #viewer-counter {
                 margin-left: auto;
+                align-self: flex-end;
                 height: 32px;
                 padding: 6px 10px;
             }
@@ -6747,10 +6748,10 @@ async function init() {
 }
 
 // ── LCD marquee on the mobile title row ──────────────────────────────────
-// When the reparented #viewer-file-label is wider than the title row,
-// step the label left one tick every 250 ms (4 fps) so the text scrolls
-// like a classic LCD display. When it fully clears the left edge, it
-// wraps back around from the right. Static if the text fits.
+// Every title gets the same cycle at 4 fps: 2 s static at the start, then
+// 8 s of stepped left-scroll until the text exits and a fresh copy starts
+// from position 1. Total cycle = 10 s, repeated forever. Runs regardless
+// of whether the text fits — consistent rhythm across all tracks.
 let g_marqueeInterval = null;
 function setupTitleMarquee() {
     const row   = document.getElementById('mobile-title-row');
@@ -6762,31 +6763,37 @@ function setupTitleMarquee() {
     label.style.display   = '';
 
     // Only animate when the label sits inside the title-row (mobile
-    // aesthetic active) and the content overflows the container.
+    // aesthetic active).
     if (label.parentNode !== row) return;
+    if (!label.textContent.trim()) return;  // nothing to scroll
 
     requestAnimationFrame(() => {
+        label.style.display = 'inline-block';
         const containerW = row.clientWidth;
         const contentW   = label.scrollWidth;
-        if (contentW <= containerW) return;   // fits, no scroll
+        const travel     = contentW + containerW;
 
-        // Display as inline-block so translateX affects layout-free.
-        label.style.display = 'inline-block';
-        const stepPx = 10;
-        const pauseTicks = 4;           // pause ≈ 1s at the right-side start
-        const totalTravel = contentW + containerW;
-        let tick = -pauseTicks;         // negative = initial pause before first step
+        const fps           = 4;
+        const cycleSecs     = 10;
+        const pauseSecs     = 2;
+        const scrollSecs    = cycleSecs - pauseSecs;
+        const ticksPerCycle = cycleSecs  * fps;   // 40
+        const pauseTicks    = pauseSecs  * fps;   // 8
+        const scrollTicks   = scrollSecs * fps;   // 32
+        const stepPx        = travel / scrollTicks;
+
+        let tick = 0;
         g_marqueeInterval = setInterval(() => {
-            if (tick < 0) { tick++; return; }
-            const offset = containerW - tick * stepPx;
-            if (offset < -contentW) {
-                tick = -pauseTicks;     // pause, then restart from right edge
-                label.style.transform = `translateX(${containerW}px)`;
-                return;
+            const phase = tick % ticksPerCycle;
+            if (phase < pauseTicks) {
+                // Static at start of cycle.
+                label.style.transform = '';
+            } else {
+                const scrollTick = phase - pauseTicks;
+                label.style.transform = `translateX(${-scrollTick * stepPx}px)`;
             }
-            label.style.transform = `translateX(${offset}px)`;
             tick++;
-        }, 250);
+        }, 1000 / fps);
     });
 }
 
