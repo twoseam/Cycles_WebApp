@@ -6800,14 +6800,19 @@ function setupTitleMarquee() {
 
     requestAnimationFrame(() => {
         label.style.display = 'inline-block';
-        const containerW = row.clientWidth;
+        // Work in the content-area (inside padding) because inline
+        // children flow from padding-left, not from x=0. Using
+        // clientWidth for centering drifts the text by one padding
+        // amount.
+        const rowStyle   = getComputedStyle(row);
+        const padX       = (parseFloat(rowStyle.paddingLeft)  || 0)
+                         + (parseFloat(rowStyle.paddingRight) || 0);
+        const containerW = row.clientWidth - padX;
         const labelW     = label.offsetWidth;
         if (containerW <= 0 || labelW <= 0) return;
 
-        // Gap is a full container width: guarantees the clone is parked
-        // off-screen right while the original is centered, so the scroll
-        // shows empty space between the two copies rather than the clone
-        // visibly "popping in" behind the outgoing original.
+        // Gap = one full content-width: clone is parked just off-screen
+        // right while the original is centered.
         const gapPx = containerW;
 
         const clone = document.createElement('span');
