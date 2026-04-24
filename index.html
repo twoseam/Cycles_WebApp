@@ -1853,6 +1853,29 @@
             #btn-export,
             #import-section,
             #slot-section { display: none; }
+
+            /* Stock tracks on touch: 2-column grid, no in-module scrolling.
+               All tiles render inline and the page scrolls naturally. */
+            #stock-section .stock-clip {
+                overflow: visible;
+            }
+            #stock-section #stock-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-auto-flow: row;
+                gap: 6px;
+                overflow: visible;
+                height: auto;
+                padding: 2px;
+            }
+            #stock-section #stock-grid .stock-thumb { flex: none; }
+            /* Hide the preview play button — tap-to-load replaces it. */
+            #stock-section .stock-thumb .stock-play-btn { display: none; }
+            /* Hide the left/right walls + carousel arrows since there's
+               nothing to scroll horizontally. */
+            #stock-section::after,
+            #stock-section .stock-wall-left,
+            #stock-controls { display: none; }
         }
 
         /* ── Connect prompt (shown when no card connected) ── */
@@ -5680,7 +5703,25 @@ async function renderStockTracks() {
         });
         thumb.appendChild(playBtn);
 
-        thumb.addEventListener('click', () => handleStockTrackClick(track, title));
+        thumb.addEventListener('click', async () => {
+            // Touch devices can't write to the SD card (Import popup is
+            // useless there), so tile tap loads the track into the player
+            // instead — same action as the desktop play-button.
+            if (matchMedia('(pointer: coarse)').matches) {
+                _killSource();
+                document.getElementById('btn-play').innerHTML = ICON_PLAY;
+                document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
+                g_selection = null;
+                try {
+                    const { interleaved } = await fetchAndDecodeStockTrack(track);
+                    loadViewerFromInterleaved(interleaved, title);
+                } catch (err) {
+                    log(`Stock preview error: ${err.message}`);
+                }
+                return;
+            }
+            handleStockTrackClick(track, title);
+        });
 
         // Drag-drop: carry the track JSON + display title. Slot tiles
         // listen for 'drop' and call handleStockTrackDrop. During drag
