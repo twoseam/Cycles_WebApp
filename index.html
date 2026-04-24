@@ -1852,7 +1852,31 @@
         @media (pointer: coarse) {
             #btn-export,
             #import-section,
-            #slot-section { display: none; }
+            #slot-section { display: none !important; }
+
+            /* Mobile only: clock lives above the CRUSH fader (inside the
+               fx-rack column via JS reparent). Track title sits under the
+               transport buttons. */
+            #fx-rack #viewer-counter {
+                height: 44px;
+                padding: 10px 16px;
+                width: 100%;
+                justify-self: stretch;
+                box-sizing: border-box;
+                margin-bottom: 10px;
+            }
+            #fx-rack #viewer-counter .seg-val { top: 10px; left: 16px; }
+            #mobile-title-row {
+                display: block;
+                text-align: center;
+                font-family: 'Roboto Mono', 'Courier New', monospace;
+                font-size: 11px;
+                letter-spacing: 0.16em;
+                color: var(--fg-muted);
+                text-transform: uppercase;
+                padding-top: 10px;
+            }
+            #mobile-title-row:empty { display: none; }
 
             /* Stock tracks on touch: 3-row × 2-col pages, horizontal
                swipe scroll. Tiles flow column-first so each page reads
@@ -1883,9 +1907,11 @@
             /* Hide the preview play button — tap-to-load replaces it. */
             #stock-section .stock-thumb .stock-play-btn { display: none; }
             /* Hide the prev/next arrow UI — swipe is the primary gesture
-               on touch; walls stay enabled via their .has-scroll-* class
-               toggles so the "content off-screen" cue still works. */
-            #stock-controls { display: none; }
+               on touch. Also hide the decorative left/right walls; on a
+               phone the swipe gesture is obvious enough on its own. */
+            #stock-controls,
+            #stock-section::after,
+            #stock-section .stock-wall-left { display: none; }
         }
 
         /* ── Connect prompt (shown when no card connected) ── */
@@ -2749,6 +2775,9 @@
         </div>
         <button id="btn-export">Export</button>
     </div>
+    <!-- Mobile-only title line; populated by JS when viewer-file-label
+         is reparented out of the pedal-panel on touch devices. -->
+    <div id="mobile-title-row"></div>
 </div>
 
 <!-- ── Stock Music ────────────────────────────────────────────────────────── -->
@@ -6528,6 +6557,25 @@ async function init() {
         showConnectPrompt();
     }
 }
+
+// ── Mobile layout reparent ────────────────────────────────────────────────
+// On touch devices, move the 0:00 counter above the CRUSH fader (inside
+// #fx-rack) and move the track-info label out of #pedal-panel to below
+// the transport buttons. On non-touch we leave the DOM alone.
+(function applyMobileLayoutRearrange() {
+    if (!matchMedia('(pointer: coarse)').matches) return;
+
+    const counter    = document.getElementById('viewer-counter');
+    const fxRack     = document.getElementById('fx-rack');
+    const fileLabel  = document.getElementById('viewer-file-label');
+    const titleRow   = document.getElementById('mobile-title-row');
+    if (counter && fxRack && fxRack.firstChild !== counter) {
+        fxRack.insertBefore(counter, fxRack.firstChild);
+    }
+    if (fileLabel && titleRow && titleRow.firstChild !== fileLabel) {
+        titleRow.appendChild(fileLabel);
+    }
+})();
 
 // ── Mobile landing modal ──────────────────────────────────────────────────
 // Shown once per browser on touch devices (phones/tablets), explaining
