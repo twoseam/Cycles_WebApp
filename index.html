@@ -1854,27 +1854,37 @@
             #import-section,
             #slot-section { display: none; }
 
-            /* Stock tracks on touch: 2-column grid, no in-module scrolling.
-               All tiles render inline and the page scrolls naturally. */
+            /* Stock tracks on touch: 3-row × 2-col pages, horizontal
+               swipe scroll. Tiles flow column-first so each page reads
+               top-to-bottom then jumps to next page. */
             #stock-section .stock-clip {
-                overflow: visible;
+                overflow-x: auto;
+                overflow-y: hidden;
+                scrollbar-width: none;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
             }
+            #stock-section .stock-clip::-webkit-scrollbar { display: none; }
             #stock-section #stock-grid {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                grid-auto-flow: row;
+                grid-template-columns: none;
+                grid-template-rows: repeat(3, auto);
+                grid-auto-flow: column;
+                grid-auto-columns: calc((100% - 6px) / 2);
                 gap: 6px;
                 overflow: visible;
                 height: auto;
                 padding: 2px;
             }
-            #stock-section #stock-grid .stock-thumb { flex: none; }
+            #stock-section #stock-grid .stock-thumb {
+                flex: none;
+                scroll-snap-align: start;
+            }
             /* Hide the preview play button — tap-to-load replaces it. */
             #stock-section .stock-thumb .stock-play-btn { display: none; }
-            /* Hide the left/right walls + carousel arrows since there's
-               nothing to scroll horizontally. */
-            #stock-section::after,
-            #stock-section .stock-wall-left,
+            /* Hide the prev/next arrow UI — swipe is the primary gesture
+               on touch; walls stay enabled via their .has-scroll-* class
+               toggles so the "content off-screen" cue still works. */
             #stock-controls { display: none; }
         }
 
@@ -3881,7 +3891,15 @@ registerProcessor('crush-processor', CrushProcessor);
 
 // ── Playback ──────────────────────────────────────────────────────────────────
 function getAudioContext() {
-    if (!g_audioCtx) g_audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+    if (!g_audioCtx) {
+        g_audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+        // iOS 17+ AudioSession API: tag this page as playback-category so
+        // the iPhone silent switch doesn't mute preview audio. No-op on
+        // other browsers (property just doesn't exist). Matches how music
+        // apps like Spotify behave on the web.
+        try { if ('audioSession' in navigator) navigator.audioSession.type = 'playback'; }
+        catch { /* ignore */ }
+    }
     return g_audioCtx;
 }
 
