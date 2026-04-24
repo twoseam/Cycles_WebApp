@@ -135,34 +135,40 @@
                use the token rather than writing a shadow by hand.
                ═══════════════════════════════════════════════════════════════ */
 
+            /* Tunable color for the stacked-step "3-D" shadow under every
+               tactile button/tile. Defaults to --border but a color-picker
+               in the header lets the user override per theme via
+               localStorage. All shadow composites below use this. */
+            --shadow-stack: var(--border);
+
             /* Big tactile buttons + tiles that press into the page when
                clicked (transport row, slot thumbs, stock thumbs, etc.).
                6-step stack + a soft ground shadow to "lift" the block. */
             --shadow-tactile:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
-                5px 5px 0 var(--border),
-                6px 6px 0 var(--border),
+                1px 1px 0 var(--shadow-stack),
+                2px 2px 0 var(--shadow-stack),
+                3px 3px 0 var(--shadow-stack),
+                4px 4px 0 var(--shadow-stack),
+                5px 5px 0 var(--shadow-stack),
+                6px 6px 0 var(--shadow-stack),
                 7px 8px 6px rgba(0, 0, 0, 0.20);
 
             /* Floating dialog / popup / modal cards sitting above the page.
                4-step stack + a softer ground shadow. */
             --shadow-card:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border),
+                1px 1px 0 var(--shadow-stack),
+                2px 2px 0 var(--shadow-stack),
+                3px 3px 0 var(--shadow-stack),
+                4px 4px 0 var(--shadow-stack),
                 5px 6px 4px rgba(0, 0, 0, 0.14);
 
             /* Small action buttons (Cancel, Import, modal buttons, etc.)
                and mini-cards inside popups. 4-step stack, no ground shadow. */
             --shadow-button:
-                1px 1px 0 var(--border),
-                2px 2px 0 var(--border),
-                3px 3px 0 var(--border),
-                4px 4px 0 var(--border);
+                1px 1px 0 var(--shadow-stack),
+                2px 2px 0 var(--shadow-stack),
+                3px 3px 0 var(--shadow-stack),
+                4px 4px 0 var(--shadow-stack);
 
             /* Brand-blue variant of --shadow-button for primary confirm
                buttons. Uses a darker shade of brand-blue for the stack. */
@@ -434,10 +440,62 @@
             color: var(--bg-raised);
         }
 
-        /* Mobile-only LCD title row — hidden globally; the mobile
-           aesthetic media query turns it on. Prevents it from eating a
-           grid cell in #playback-layout on desktop layouts. */
-        #mobile-title-row { display: none; }
+        /* ── LCD track-title row ────────────────────────────────────────
+           Global dot-matrix LCD readout shown above the waveform on every
+           layout (Wide / Vertical / Mobile). JS reparents #viewer-file-
+           label into this row; marquee scroll animates long titles. */
+        #mobile-title-row {
+            display: block;
+            position: relative;
+            margin: 14px 0 4px;
+            padding: 2px 10px;
+            background: #0a1a0c;
+            border: 1px solid var(--seg-border);
+            border-radius: 2px;
+            box-shadow:
+                inset 0 1px 3px rgba(0, 0, 0, 0.7),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+            overflow: hidden;
+            white-space: nowrap;
+            text-align: center;
+            font-family: 'VT323', 'Roboto Mono', 'Courier New', monospace;
+            font-size: 16px;
+            letter-spacing: 0.08em;
+            color: #5fff6a;
+            text-shadow: 0 0 5px rgba(95, 255, 106, 0.3);
+            text-transform: uppercase;
+            line-height: 1.15;
+            background-image:
+                repeating-linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0.18) 0,
+                    rgba(0, 0, 0, 0.18) 1px,
+                    transparent 1px,
+                    transparent 3px
+                );
+            background-color: #0a1a0c;
+        }
+        /* Hide the pill only when it has no label at all (label still
+           sits in pedal-panel because the JS reparent hasn't run). Empty
+           label shows the "Please Load Song" placeholder. */
+        #mobile-title-row:not(:has(#viewer-file-label)) { display: none; }
+        #mobile-title-row #viewer-file-label:empty::before {
+            content: 'Please Load Song';
+        }
+        #mobile-title-row #viewer-file-label {
+            font: inherit;
+            letter-spacing: inherit;
+            color: inherit;
+            text-transform: inherit;
+            overflow: visible;
+            white-space: inherit;
+            margin: 0;
+            text-shadow: inherit;
+        }
+        /* Whenever #playback-layout is a grid (Wide + Vertical), make the
+           LCD row span both columns so it sits full-width above the
+           waveform instead of eating col 1 and pushing the viewer right. */
+        #playback-layout > #mobile-title-row { grid-column: 1 / -1; }
 
         /* ── Waveform viewer — instrument display ── */
         #viewer {
@@ -1968,67 +2026,9 @@
                 padding-left: 0;
                 padding-right: 0;
             }
-            /* Track-title row under the transport. Styled as a vintage
-               LCD readout — deep inset panel, soft green phosphor text
-               with glow, VT323 dot-matrix typeface. Contained within the
-               module; the user can swipe the text horizontally if the
-               string is longer than the window. */
-            #mobile-title-row {
-                display: block;
-                position: relative;
-                margin: 14px 0 0;
-                padding: 2px 10px;
-                background: #0a1a0c;
-                border: 1px solid var(--seg-border);
-                border-radius: 2px;
-                box-shadow:
-                    inset 0 1px 3px rgba(0, 0, 0, 0.7),
-                    inset 0 0 0 1px rgba(255, 255, 255, 0.025);
-                overflow: hidden;
-                white-space: nowrap;
-                text-align: center;
-                font-family: 'VT323', 'Roboto Mono', 'Courier New', monospace;
-                font-size: 14px;
-                letter-spacing: 0.08em;
-                color: #5fff6a;
-                text-shadow: 0 0 5px rgba(95, 255, 106, 0.3);
-                text-transform: uppercase;
-                line-height: 1.15;
-                /* Subtle scanlines on top of the phosphor to complete
-                   the LCD look — every other pixel row is faintly
-                   darkened via a repeating linear-gradient. */
-                background-image:
-                    repeating-linear-gradient(
-                        to bottom,
-                        rgba(0, 0, 0, 0.18) 0,
-                        rgba(0, 0, 0, 0.18) 1px,
-                        transparent 1px,
-                        transparent 3px
-                    );
-                background-color: #0a1a0c;
-            }
-            #mobile-title-row::-webkit-scrollbar { display: none; }
-            /* Hide the pill only when it has no label at all (desktop —
-               label stayed in pedal-panel). When the label is inside
-               but empty, show a "Please Load Song" placeholder via
-               ::before so the LCD never looks broken/dark. */
-            #mobile-title-row:not(:has(#viewer-file-label)) { display: none; }
-            #mobile-title-row #viewer-file-label:empty::before {
-                content: 'Please Load Song';
-            }
-            /* The reparented #viewer-file-label has its own 9px rule
-               that would override the container's VT323 sizing —
-               force it to inherit so the LCD look applies. */
-            #mobile-title-row #viewer-file-label {
-                font: inherit;
-                letter-spacing: inherit;
-                color: inherit;
-                text-transform: inherit;
-                overflow: visible;
-                white-space: inherit;
-                margin: 0;
-                text-shadow: inherit;
-            }
+            /* Mobile-tight LCD row — global rule sets the full LCD
+               styling; here we just shrink the font for phone widths. */
+            #mobile-title-row { font-size: 14px; }
 
             /* Stock tracks on touch: 3-row × 2-col pages, horizontal
                swipe scroll. Tiles flow column-first so each page reads
@@ -6876,12 +6876,12 @@ function setupTitleMarquee() {
     window.addEventListener('resize', setupTitleMarquee);
 })();
 
-// ── Mobile layout reparent ────────────────────────────────────────────────
-// On touch devices or narrow desktop windows, move the 0:00 counter into
-// the top pedal-panel row (right of Speed/Direction) so it doesn't crowd
-// the CRUSH fader. Move the track-info label out of #pedal-panel to its
-// own row below the transport buttons. Reruns on viewport crossings so
-// resizing across 600 px live-updates the DOM.
+// ── Layout reparent ────────────────────────────────────────────────────
+// The LCD track-title row is global — file-label is always reparented
+// into #mobile-title-row so every layout (Wide / Vertical / Mobile)
+// gets the LCD pill above the waveform. The clock is only reparented
+// onto the top pedal-panel row in mobile/narrow layouts; in wide/
+// vertical it stays down on the transport row.
 function applyMobileLayoutRearrange() {
     const mobileLayout = matchMedia('(pointer: coarse), (max-width: 600px)').matches;
     const counter    = document.getElementById('viewer-counter');
@@ -6890,21 +6890,20 @@ function applyMobileLayoutRearrange() {
     const titleRow   = document.getElementById('mobile-title-row');
     const transport  = document.getElementById('transport');
 
+    // File label: always into the LCD pill, regardless of layout.
+    if (fileLabel && titleRow && fileLabel.parentNode !== titleRow) {
+        titleRow.appendChild(fileLabel);
+    }
+
+    // Clock: mobile/narrow layouts want it inline with Speed/Direction;
+    // wider layouts keep it in the transport row.
     if (mobileLayout) {
         if (counter && pedalPanel && counter.parentNode !== pedalPanel) {
             pedalPanel.appendChild(counter);
         }
-        if (fileLabel && titleRow && titleRow.firstChild !== fileLabel) {
-            titleRow.appendChild(fileLabel);
-        }
     } else {
-        // Restore desktop DOM: counter back to transport, file-label back
-        // to pedal-panel.
         if (counter && transport && counter.parentNode !== transport) {
             transport.insertBefore(counter, transport.firstChild);
-        }
-        if (fileLabel && pedalPanel && fileLabel.parentNode !== pedalPanel) {
-            pedalPanel.appendChild(fileLabel);
         }
     }
 }
