@@ -4019,6 +4019,47 @@ function releaseDrag() {
 viewerCanvas.addEventListener('mouseup',    releaseDrag);
 viewerCanvas.addEventListener('mouseleave', releaseDrag);
 
+// Touch counterparts — mobile swipe drags the waveform identically to
+// mouse drag (reuses g_dragAnchorX / velocity / momentum state). Active
+// listeners so we can preventDefault on touchmove and block the page's
+// vertical pull-to-refresh / scroll gesture while the user pans.
+viewerCanvas.addEventListener('touchstart', e => {
+    if (!e.touches.length) return;
+    cancelAnimationFrame(g_momentumRafId); g_momentumRafId = null;
+    g_scrollVelocity   = 0;
+    g_dragAnchorX      = e.touches[0].clientX;
+    g_dragAnchorOffset = g_viewerOffset;
+    g_dragLastX        = e.touches[0].clientX;
+    g_dragLastT        = performance.now();
+    g_didDrag          = false;
+}, { passive: true });
+
+viewerCanvas.addEventListener('touchmove', e => {
+    if (!e.touches.length || g_dragAnchorX === null || !g_viewerRaw) return;
+    const cx = e.touches[0].clientX;
+    const dx = cx - g_dragAnchorX;
+    if (Math.abs(dx) > 4) g_didDrag = true;
+    if (!g_didDrag) return;
+
+    e.preventDefault();   // swallow the page-scroll while we pan
+    const now         = performance.now();
+    const dt          = now - g_dragLastT;
+    const rect        = viewerCanvas.getBoundingClientRect();
+    const framesPerPx = getWindowFrames() / rect.width;
+    const totalFrames = g_viewerRaw.length / NUM_CHANNELS;
+
+    if (dt > 0) g_scrollVelocity = -(cx - g_dragLastX) * framesPerPx / dt;
+    g_dragLastX = cx;
+    g_dragLastT = now;
+
+    g_viewerOffset = g_dragAnchorOffset - Math.round(dx * framesPerPx);
+    g_viewerOffset = Math.max(0, Math.min(g_viewerOffset, Math.max(0, totalFrames - getWindowFrames())));
+    redrawViewer(getCurrentFrame());
+}, { passive: false });
+
+viewerCanvas.addEventListener('touchend',    releaseDrag);
+viewerCanvas.addEventListener('touchcancel', releaseDrag);
+
 viewerCanvas.addEventListener('click', e => {
     if (g_didDrag) { g_didDrag = false; return; }
     if (!g_viewerRaw) return;
