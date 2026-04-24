@@ -2011,7 +2011,13 @@
                 justify-content: space-between;
                 width: 100%;
             }
-            #transport-buttons button { flex: 1; height: 44px; }
+            /* Square transport buttons on Narrow / Mobile — flex:1 fills
+               the row width across 4 buttons, aspect-ratio:1 makes height
+               equal width so each button is a square tap target. Selector
+               mirrors the base rule at L658 (#transport button:not(...))
+               so specificity matches and this override wins by source
+               order inside the media query. */
+            #transport button:not(#btn-export) { width: auto; height: auto; aspect-ratio: 1; flex: 0 1 64px; max-width: 64px; }
             #viewer-counter { grid-area: counter; justify-self: start; }
             #btn-export { grid-area: export; height: 44px; margin: 0; }
             .slot-stepper button { width: 36px; }
