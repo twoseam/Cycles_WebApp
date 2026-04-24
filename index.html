@@ -3741,14 +3741,19 @@ function buildViewerLabel(parts = {}) {
 
 // Extract the canonical fields from a stock-track manifest entry, falling
 // back to filename convention ("Artist - Title - Key - Tempo") for any
-// fields the JSON doesn't explicitly provide.
+// fields the JSON doesn't explicitly provide. Normalizes the tempo
+// string (strips any trailing bpm/bmp/BPM the manifest already has so
+// buildViewerLabel doesn't end up with "70 bpm bpm") and replaces the
+// musical-flat Unicode char (♭) with an ASCII "b" for readability.
 function buildStockTrackLabel(track, displayTitle) {
     const base   = track.file.replace(/\.[^.]+$/, '');
     const parts  = base.split(/\s+-\s+/);
     const title  = track.title  || parts[1] || displayTitle || base;
     const artist = track.artist || parts[0] || null;
-    const key    = track.key    || parts[2] || null;
-    const tempoRaw = (track.tempo || parts[3] || '').toString();
+    const key    = (track.key || parts[2] || '').replace(/♭/g, 'b') || null;
+    const tempoRaw = (track.tempo || parts[3] || '').toString()
+        .replace(/\s*(bpm|bmp)\s*$/i, '')
+        .trim();
     const tempo  = tempoRaw ? tempoRaw.replace(/(\d)([A-Za-z])/, '$1 $2') : null;
     const dur    = (typeof track.durationSec === 'number') ? formatDuration(track.durationSec) : null;
     const ext    = (track.file.match(/\.([^.]+)$/)?.[1] || '').toLowerCase();
@@ -5853,8 +5858,11 @@ function buildStockTilePreview(track, displayTitle, durationSec) {
     const parts  = base.split(/\s+-\s+/);
     const artist = track.artist || parts[0] || null;
     const title  = track.title  || parts[1] || displayTitle || base;
-    const key    = track.key    || parts[2] || null;
+    const key    = (track.key   || parts[2] || '').replace(/♭/g, 'b') || null;
     let tempo    = track.tempo  || parts[3] || null;
+    // Strip any trailing bpm/bmp the manifest already includes so the
+    // addMeta placeholder doesn't duplicate it.
+    if (tempo) tempo = tempo.replace(/\s*(bpm|bmp)\s*$/i, '').trim();
     if (tempo) tempo = tempo.replace(/(\d)([A-Za-z])/, '$1 $2');
     const ext = (track.file.match(/\.([^.]+)$/)?.[1] || '');
     const dur = (durationSec != null) ? formatDuration(durationSec)
@@ -5975,11 +5983,14 @@ async function renderStockTracks() {
         const parts  = base.split(/\s+-\s+/);
         const artist = track.artist || parts[0] || null;
         const title  = track.title  || parts[1] || base;
-        const key    = track.key    || parts[2] || null;
+        const key    = (track.key   || parts[2] || '').replace(/♭/g, 'b') || null;
         // Normalize "85bpm" → "85 bpm" so the CSS-uppercased render shows
-        // a proper space between the number and its unit. Filename can
-        // have either form; display is consistent.
+        // a proper space between the number and its unit. Strip any
+        // existing bpm/bmp first so the tile template's " bpm" placeholder
+        // doesn't duplicate the unit. Filename can have either form;
+        // display is consistent.
         let tempo    = track.tempo  || parts[3] || null;
+        if (tempo) tempo = tempo.replace(/\s*(bpm|bmp)\s*$/i, '').trim();
         if (tempo) tempo = tempo.replace(/(\d)([A-Za-z])/, '$1 $2');
 
         const thumb = document.createElement('div');
