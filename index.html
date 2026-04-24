@@ -271,7 +271,7 @@
             display: flex;
             align-items: stretch;
             justify-content: space-between;
-            padding-bottom: 16px;
+            padding-bottom: 14px;
             margin-bottom: 18px;
             border-bottom: 1px solid var(--border);
         }
@@ -428,6 +428,94 @@
         /* Theme customizer lives in a detached browser window now — all
            its styling is injected into the popup on open. No in-page
            modal CSS here. */
+
+
+        /* ── Main nav — hamburger menu ─────────────────────────────────
+           Top-right hamburger button opens a small dropdown panel with
+           the three site pages (Data Manager / Owners Manual / Contact).
+           Same chrome on every layout mode — consistent nav regardless
+           of viewport width. */
+        #menu-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+        #menu-hamburger {
+            height: 36px;
+            padding: 0 14px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-raised);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.14s ease;
+        }
+        #menu-hamburger:hover { background: var(--bg-hover); }
+        /* Desktop default: MENU text label. Hamburger bars hidden. */
+        #menu-hamburger .menu-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+        #menu-hamburger .menu-bars { display: none; }
+        /* Mobile (pointer:coarse): swap to 3-line hamburger icon. */
+        @media (pointer: coarse) {
+            #menu-hamburger { width: 36px; padding: 0; }
+            #menu-hamburger .menu-label { display: none; }
+            #menu-hamburger .menu-bars {
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+            #menu-hamburger .menu-bars span {
+                display: block;
+                width: 18px;
+                height: 2px;
+                background: var(--fg);
+            }
+        }
+        #menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            min-width: 200px;
+            background: var(--bg-panel);
+            border: 3px solid var(--border-dark);
+            padding: 6px 0;
+            box-shadow: var(--shadow-card);
+            z-index: 100;
+            display: none;
+        }
+        #menu-dropdown.open { display: block; }
+        .main-nav-tab {
+            display: block;
+            padding: 10px 20px;
+            background: transparent;
+            color: var(--fg-muted);
+            border: none;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background 0.14s ease, color 0.14s ease;
+        }
+        .main-nav-tab:hover {
+            background: var(--bg-hover);
+            color: var(--fg);
+        }
+        .main-nav-tab.active {
+            background: var(--bg-inset);
+            color: var(--fg);
+            font-weight: 700;
+            cursor: default;
+            pointer-events: none;
+        }
 
 
         .card-ok {
@@ -3067,6 +3155,17 @@
                 <input type="color" id="btn-shadow-color">
             </label>
             <button id="btn-theme-customize" title="Customize colors">⚙</button>
+            <div id="menu-wrapper">
+                <button id="menu-hamburger" aria-label="Menu" aria-expanded="false" aria-controls="menu-dropdown">
+                    <span class="menu-label">Menu</span>
+                    <span class="menu-bars"><span></span><span></span><span></span></span>
+                </button>
+                <div id="menu-dropdown" role="menu">
+                    <a class="main-nav-tab active" href="index.html" aria-current="page" role="menuitem">Data Manager</a>
+                    <a class="main-nav-tab" href="#manual" role="menuitem">Owners Manual</a>
+                    <a class="main-nav-tab" href="#contact" role="menuitem">Contact</a>
+                </div>
+            </div>
         </div>
         <div id="card-status">Checking for CYCLES card…</div>
     </div>
@@ -7316,6 +7415,43 @@ window.matchMedia('(max-width: 600px)').addEventListener('change', applyNarrowOr
         localStorage.setItem('cycles-theme', dark ? 'dark' : 'light');
         if (g_viewerRaw) redrawViewer(getCurrentFrame());
         applyShadowColorFromStorage();   // per-theme shadow override
+    });
+})();
+
+// ── Main nav menu ─────────────────────────────────────────────────────────
+// Hover to open, mouseleave to close (with a short delay so brief overshoots
+// don't snap it shut). Touch devices still get tap-to-toggle via the click
+// handler — pointer:coarse never fires mouseenter/mouseleave reliably.
+(function() {
+    const btn = document.getElementById('menu-hamburger');
+    const dropdown = document.getElementById('menu-dropdown');
+    const wrapper = document.getElementById('menu-wrapper');
+    if (!btn || !dropdown || !wrapper) return;
+
+    let closeTimer = null;
+    const close = () => {
+        dropdown.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+    };
+    const open = () => {
+        clearTimeout(closeTimer);
+        dropdown.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+    };
+    wrapper.addEventListener('mouseenter', open);
+    wrapper.addEventListener('mouseleave', () => {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(close, 180);
+    });
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.contains('open') ? close() : open();
+    });
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) close();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') close();
     });
 })();
 
