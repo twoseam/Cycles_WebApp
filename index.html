@@ -1810,13 +1810,8 @@
             #logo svg { width: 180px; height: auto; }
             /* Mobile can't write to the SD card (no File System Access),
                so the "Checking for CYCLES card…" / "connected" status is
-               irrelevant and just clutters the header. Same reasoning
-               applies to the Export button and the whole Import module —
-               neither is usable without card write access, so hide both
-               in Mobile only (Vertical still keeps them). */
-            #card-status,
-            #btn-export,
-            #import-section { display: none; }
+               irrelevant and just clutters the header. */
+            #card-status { display: none; }
             #pedal-panel { gap: 16px; flex-wrap: wrap; row-gap: 14px; }
             /* Mobile transport: row 1 = playback buttons spanning the full
                column (evenly distributed). Row 2 = counter on the left,
@@ -1844,6 +1839,17 @@
             .seg-val { top: 12px; left: 18px; }
             #btn-export { grid-area: export; height: 46px; margin: 0; }
             .slot-stepper button { width: 36px; }
+        }
+
+        /* Touch-device-only rules. Export, Import, and Memory Slots are
+           all write-to-SD features that don't work on phones/tablets (no
+           File System Access API) regardless of window width — hidden by
+           device rather than viewport so a narrow desktop window still
+           shows them. */
+        @media (hover: none) and (pointer: coarse) {
+            #btn-export,
+            #import-section,
+            #slot-section { display: none; }
         }
 
         /* ── Connect prompt (shown when no card connected) ── */
