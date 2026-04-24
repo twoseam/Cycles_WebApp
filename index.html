@@ -568,13 +568,17 @@
         /* ── Raised-block aesthetic (physical-button look) ── */
         /* Stacked hard shadows form the solid "side" of the block;
            a soft rgba shadow grounds it. On :active the block slides
-           down-right into its shadow for a tactile click. */
+           down-right into its shadow for a tactile click. Press-down is
+           instant; release uses the base transition so the button springs
+           back slowly — reads as a physical click instead of a flash. */
         #transport button,
         #btn-export, #btn-import,
         .slot-thumb,
         .stock-thumb {
             box-shadow: var(--shadow-tactile);
-            transition: transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+            transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, background 0.08s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         #transport button:active,
         #btn-export:active, #btn-import:active,
@@ -582,6 +586,7 @@
         .stock-thumb:active {
             transform: translate(6px, 6px);
             box-shadow: 0 0 0 transparent;
+            transition: none;
         }
 
         /* ── 7-segment counter ── */
@@ -1855,10 +1860,11 @@
             #slot-section { display: none !important; }
 
             /* Mobile only: clock sits alongside Speed/Direction in the
-               pedal-panel row. Pedal buttons shrink to leave room. Track
-               title/meta row sits below the transport buttons. */
+               pedal-panel row, aligned to the bottom of the button group.
+               Pedal buttons shrink to leave room. Track title/meta row
+               sits below the transport buttons. */
             #pedal-panel {
-                align-items: center;
+                align-items: flex-end;
             }
             #pedal-panel .pedal-control-label {
                 font-size: 7px;
@@ -1880,12 +1886,14 @@
 
             /* Crush fader horizontal under the waveform. Stack playback-
                layout as a flex column instead of grid so pedal-panel,
-               viewer, and fx-rack flow top-to-bottom. */
+               viewer, and fx-rack flow top-to-bottom. Extra padding above
+               the waveform visually separates it from the top controls. */
             #playback-layout {
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
             }
+            #playback-layout > #viewer { margin-top: 14px; }
             #fx-rack { width: 100%; padding: 10px 14px; }
             #fx-rack .fx-slot {
                 flex-direction: row;
@@ -1897,7 +1905,7 @@
                 writing-mode: horizontal-tb;
                 direction: ltr;
                 width: 100%;
-                height: 30px;
+                height: 28px;
                 flex: 1;
             }
             #fx-rack .fx-fader::-webkit-slider-runnable-track {
@@ -1907,6 +1915,31 @@
             #fx-rack .fx-fader::-moz-range-track {
                 width: 100%;
                 height: 4px;
+            }
+            /* Horizontal thumb: flipped aspect, centered on the 4-px track
+               via negative margin-top, and a vertical grip groove so the
+               cap reads as a rotated version of the vertical design. */
+            #fx-rack .fx-fader::-webkit-slider-thumb {
+                width: 20px;
+                height: 28px;
+                margin-left: 0;
+                margin-top: -12px;
+                background:
+                    linear-gradient(to right,
+                        transparent 0, transparent 48%,
+                        var(--border) 48%, var(--border) 52%,
+                        transparent 52%, transparent 100%),
+                    var(--bg-raised);
+            }
+            #fx-rack .fx-fader::-moz-range-thumb {
+                width: 20px;
+                height: 28px;
+                background:
+                    linear-gradient(to right,
+                        transparent 0, transparent 48%,
+                        var(--border) 48%, var(--border) 52%,
+                        transparent 52%, transparent 100%),
+                    var(--bg-raised);
             }
             #fx-rack .fx-val { min-width: 26px; }
 
@@ -5975,15 +6008,16 @@ async function renderStockTracks() {
     for (let i = 0; i < 20; i++) {
         const dummy = document.createElement('div');
         dummy.className = 'stock-thumb dummy';
-        // Match the real tile's line count (title + artist + 4 meta) so
-        // dummy rows render at the same height as populated rows.
+        // Match the real tile's line count and placeholder labels so
+        // dummy rows read as "slots waiting to be populated" rather
+        // than a row of em-dashes.
         dummy.innerHTML = `
             <div class="stock-title">Coming Soon</div>
-            <div class="stock-artist">—</div>
-            <div class="stock-meta">—</div>
-            <div class="stock-meta">—</div>
-            <div class="stock-meta">—</div>
-            <div class="stock-meta">—</div>
+            <div class="stock-artist">Artist</div>
+            <div class="stock-meta missing">Tempo</div>
+            <div class="stock-meta missing">Key</div>
+            <div class="stock-meta missing">Time</div>
+            <div class="stock-meta missing">Filetype</div>
         `;
         grid.appendChild(dummy);
     }
