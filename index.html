@@ -819,6 +819,46 @@
             box-shadow: 0 14px 36px rgba(0,0,0,0.30);
             transition: none !important;
         }
+        /* Popup cards pick up the same panel aesthetic as .module —
+           2 px border, panel background, corner screw dots — and shed
+           their drop shadow. 20 px inner padding clears the screws and
+           gives copy room to breathe. Applied globally so every overlay
+           reads as "a panel sitting on top" instead of a floating card. */
+        #connect-card,
+        .mobile-landing-card,
+        #export-popup-card,
+        #import-popup-card,
+        #import-tutorial-card,
+        #modal-card {
+            position: relative;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-dark);
+            /* Outer ring in panel color, sitting just outside the dark
+               border. Invisible on the card itself; on the darkened
+               backdrop it reads as a second stroke around the panel. */
+            outline: 6px solid var(--bg-panel);
+            outline-offset: 0;
+            box-shadow: none !important;
+            padding: 20px;
+            margin: 20px;
+        }
+        #connect-card::before,
+        .mobile-landing-card::before,
+        #export-popup-card::before,
+        #import-popup-card::before,
+        #import-tutorial-card::before,
+        #modal-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 10px 10px, var(--border-dark) 2.5px, transparent 3px),
+                radial-gradient(circle at calc(100% - 10px) 10px, var(--border-dark) 2.5px, transparent 3px),
+                radial-gradient(circle at 10px calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px),
+                radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px);
+        }
+
         .module::before {
             content: '';
             position: absolute;
