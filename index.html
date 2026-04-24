@@ -961,7 +961,18 @@
             border: 1px solid var(--border-dark);
             color: var(--bg-raised);
             cursor: pointer;
-            transition: background 0.12s, border-color 0.12s, color 0.12s;
+            /* Match the transport buttons' press feel: slow spring-back
+               on release (180 ms) and instant push-down on :active (set
+               below). Tap-highlight transparent + touch-action:manipulation
+               so the press reads clean on phones. */
+            transition:
+                background 0.12s,
+                border-color 0.12s,
+                color 0.12s,
+                transform 0.18s ease-out,
+                box-shadow 0.18s ease-out;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
             z-index: 2;
             letter-spacing: 0;
         }
@@ -986,6 +997,10 @@
                 inset 1px 1px 0 color-mix(in srgb, var(--brand-blue), black 78%),
                 inset 2px 2px 0 color-mix(in srgb, var(--brand-blue), black 65%),
                 inset 3px 3px 0 color-mix(in srgb, var(--brand-blue), black 55%);
+            /* Instant press; release uses the base 180 ms transition to
+               spring back slowly. Reads as a physical click instead of
+               a flash on fast taps. */
+            transition: none;
         }
         /* Stock-thumb preview — shown inside the Import popup. Matches
            a real Stock Tracks carousel tile (same tactile shadow, same
