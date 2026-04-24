@@ -6767,15 +6767,19 @@ async function init() {
 }
 
 // ── LCD marquee on the mobile title row ──────────────────────────────────
-// Cycle, 4 fps stepped, pacman-style wrap via mirrored clone:
-//   0–3 s   static at starting position (short titles centered by CSS)
-//   3 s →   scroll left 10 px/tick until the original has travelled one
-//           full label+gap off the left — at that moment the clone is
-//           exactly where the original started, so offset wraps back to
-//           0 with zero visible jump.
-//   + 5 s   static at starting position again (clone currently shown).
-//   Loop.
-const MARQUEE_GAP_EM = 3;
+// Cycle, 4 fps stepped, pacman wrap via mirrored clone. The gap between
+// the two copies is sized to one container width so the clone sits fully
+// off-screen right while the original is at rest — that way the scroll
+// looks like a true "replace": original exits left, short empty beat,
+// clone enters from the right and lands at the exact same (centered)
+// position the original started from.
+//   0 – 3 s     static at start position (short titles centered by CSS)
+//   3 s →       step-scroll left 10 px/tick until offset = -(labelW + gap).
+//               At that moment the clone occupies the original's start
+//               position, identical pixel-for-pixel.
+//   + 5 s       static hold — clone shown in center.
+//   wrap → 0    next cycle, offset snaps back to 0. Original back at
+//               start, clone back off-screen right. Same visual.
 let g_marqueeInterval = null;
 function setupTitleMarquee() {
     const row   = document.getElementById('mobile-title-row');
@@ -6792,34 +6796,40 @@ function setupTitleMarquee() {
     if (label.parentNode !== row) return;
     if (!label.textContent.trim()) return;
 
-    const clone = document.createElement('span');
-    clone.className = 'marquee-clone';
-    clone.setAttribute('aria-hidden', 'true');
-    clone.textContent = label.textContent;
-    clone.style.marginLeft    = `${MARQUEE_GAP_EM}em`;
-    clone.style.whiteSpace    = 'nowrap';
-    clone.style.display       = 'inline-block';
-    clone.style.fontFamily    = 'inherit';
-    clone.style.fontSize      = 'inherit';
-    clone.style.letterSpacing = 'inherit';
-    clone.style.color         = 'inherit';
-    clone.style.textShadow    = 'inherit';
-    row.appendChild(clone);
-
     requestAnimationFrame(() => {
         label.style.display = 'inline-block';
-        const labelW = label.offsetWidth;
-        const gapPx  = parseFloat(getComputedStyle(clone).marginLeft) || 0;
-        const wrapAt = labelW + gapPx;
-        if (wrapAt <= 0) return;
+        const containerW = row.clientWidth;
+        const labelW     = label.offsetWidth;
+        if (containerW <= 0 || labelW <= 0) return;
 
+        // Gap is a full container width: guarantees the clone is parked
+        // off-screen right while the original is centered, so the scroll
+        // shows empty space between the two copies rather than the clone
+        // visibly "popping in" behind the outgoing original.
+        const gapPx = containerW;
+
+        const clone = document.createElement('span');
+        clone.className = 'marquee-clone';
+        clone.setAttribute('aria-hidden', 'true');
+        clone.textContent = label.textContent;
+        clone.style.marginLeft    = `${gapPx}px`;
+        clone.style.whiteSpace    = 'nowrap';
+        clone.style.display       = 'inline-block';
+        clone.style.fontFamily    = 'inherit';
+        clone.style.fontSize      = 'inherit';
+        clone.style.letterSpacing = 'inherit';
+        clone.style.color         = 'inherit';
+        clone.style.textShadow    = 'inherit';
+        row.appendChild(clone);
+
+        const wrapAt              = labelW + gapPx;          // one full offset cycle
         const fps                 = 4;
         const stepPx              = 10;
         const preScrollPauseSecs  = 3;
         const postScrollPauseSecs = 5;
         const scrollTicks         = Math.ceil(wrapAt / stepPx);
-        const preTicks            = preScrollPauseSecs  * fps;    // 12
-        const postTicks           = postScrollPauseSecs * fps;    // 20
+        const preTicks            = preScrollPauseSecs  * fps;
+        const postTicks           = postScrollPauseSecs * fps;
         const cycleTicks          = preTicks + scrollTicks + postTicks;
 
         let tick = 0;
@@ -6832,12 +6842,8 @@ function setupTitleMarquee() {
                 const k = phase - preTicks;
                 offset = -Math.min(k * stepPx, wrapAt);              // scroll, clamped at wrap
             } else {
-                offset = -wrapAt;                                    // post-scroll hold — clone occupies origin
+                offset = -wrapAt;                                    // post-scroll hold — clone at origin
             }
-            // Cycle boundary: when `tick` rolls over, offset snaps from
-            // -wrapAt back to 0. Original jumps forward one wrap width,
-            // clone jumps backward — net visual unchanged because both
-            // copies carry identical text.
             const t = `translateX(${offset}px)`;
             label.style.transform = t;
             clone.style.transform = t;
