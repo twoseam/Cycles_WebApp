@@ -6889,24 +6889,8 @@ document.getElementById('btn-connect-prompt').addEventListener('click', async ()
 });
 
 async function init() {
-    // ── Mobile / unsupported-browser blocker — TEMPORARILY DISABLED ──
-    // Normally we hide the UI and show an "unsupported" message on any
-    // browser without showDirectoryPicker (Firefox, Safari, mobile).
-    // Disabled for layout testing on mobile; restore the block below
-    // when wrapping up.
-    // const forceUnsupported = new URLSearchParams(location.search).has('test-unsupported');
-    // if (forceUnsupported || !('showDirectoryPicker' in window)) {
-    //     document.getElementById('app').innerHTML = `
-    //         <div id="unsupported">
-    //             <div class="unsupported-logo">${document.querySelector('#logo svg')?.outerHTML || ''}</div>
-    //             <h1>Browser not supported</h1>
-    //             <p>CYCLES needs to read and write directly to your SD card from the browser. That requires the <strong>File System Access API</strong>, which isn't available here.</p>
-    //             <p class="unsupported-cta">Please reopen this page in <strong>Chrome</strong>, <strong>Microsoft Edge</strong>, or another Chromium-based browser (Opera, Brave, Vivaldi).</p>
-    //             <p class="unsupported-note">Mobile browsers are not supported at this time.</p>
-    //         </div>
-    //     `;
-    //     return;
-    // }
+    // TODO restore: browser-not-supported blocker disabled for mobile
+    // testing — see _Memory/project_pending_checklist.md.
     try {
         const result = await tryAutoConnect();
         if (result === true) {
@@ -7615,33 +7599,6 @@ function themeRenderPopupRows(win) {
 document.getElementById('btn-theme-customize').addEventListener('click', themeOpenPopup);
 
 themeApplyCustom();
-
-// ── Dymo letter jitter (disabled — kept for reference) ──────────────────────
-// Wraps each glyph in .module-code in a span, then applies tiny random
-// translateY, rotation, and tracking offsets so text reads as individually
-// stamped by a label maker. Only useful with the commented-out Dymo CSS
-// block in the <style> section. To re-enable, also uncomment that CSS block.
-/*
-(function() {
-    document.querySelectorAll('.module-code').forEach(el => {
-        const text = el.textContent;
-        el.textContent = '';
-        for (const ch of text) {
-            if (ch === ' ') { el.appendChild(document.createTextNode(' ')); continue; }
-            const span = document.createElement('span');
-            span.textContent = ch;
-            const ty  = (Math.random() - 0.5) * 0.5;
-            const rot = (Math.random() - 0.5) * 1.0;
-            const mx  = (Math.random() - 0.3) * 0.06;
-            span.style.cssText =
-                'display:inline-block;pointer-events:none;' +
-                `transform:translateY(${ty.toFixed(2)}px) rotate(${rot.toFixed(2)}deg);` +
-                `margin-right:${mx.toFixed(3)}em;`;
-            el.appendChild(span);
-        }
-    });
-})();
-*/
 
 // ── Draggable popup cards ──────────────────────────────────────────────────
 // Grab the card's title to drag. Position resets when the overlay hides so
