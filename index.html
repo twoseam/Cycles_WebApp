@@ -9,6 +9,9 @@
         /* Sophisticated monospace for labels, durations, the log — replaces
            Courier New across the UI for a modern/typographic feel. */
         @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+        /* VT323 — classic dot-matrix / terminal typeface, used for the
+           mobile track-title row to mimic a dot-matrix printer readout. */
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
         /* DSEG 7-seg font — explicit @font-face from the keshikan/DSEG GitHub
            mirror (the old `@import` of the npm dseg.min.css was silently failing,
@@ -1846,23 +1849,28 @@
             .slot-stepper button { width: 36px; }
         }
 
-        /* Touch-device-only rules. Export, Import, and Memory Slots are
-           all write-to-SD features that don't work on phones/tablets (no
-           File System Access API) regardless of window width — hidden by
-           device rather than viewport so a narrow desktop window still
-           shows them.
-           Previously used `(hover: none) and (pointer: coarse)` but some
-           iOS/Android browsers report both mouse-like and touch-like
-           capabilities, so only `pointer: coarse` is a reliable match. */
+        /* Touch-device FUNCTIONAL rules — Export, Import, Memory Slots
+           are all write-to-SD features that require File System Access,
+           so they're hidden on any touch device regardless of viewport
+           size. The stock-track preview button is redundant too (tap on
+           a tile loads the track into the player). Aesthetic mobile
+           rules are split into the wider-matching block below so narrow
+           desktop windows mimic the phone look. */
         @media (pointer: coarse) {
             #btn-export,
             #import-section,
             #slot-section { display: none !important; }
+            #stock-section .stock-thumb .stock-play-btn { display: none; }
+        }
 
-            /* Mobile only: clock sits alongside Speed/Direction in the
-               pedal-panel row, aligned to the bottom of the button group.
-               Pedal buttons shrink to leave room. Track title/meta row
-               sits below the transport buttons. */
+        /* Mobile AESTHETIC rules — fire on any touch device OR on a
+           narrow desktop window (≤ 600 px) so previewing the phone look
+           in a desktop browser doesn't require a real phone. */
+        @media (pointer: coarse), (max-width: 600px) {
+            /* Clock sits alongside Speed/Direction in the pedal-panel
+               row, aligned to the bottom of the button group. Pedal
+               buttons shrink to leave room. Track title/meta row sits
+               below the transport buttons. */
             #pedal-panel {
                 align-items: flex-end;
             }
@@ -1953,17 +1961,27 @@
                 padding-left: 0;
                 padding-right: 0;
             }
+            /* Track-title row under the transport. Contained within the
+               module; scrolls horizontally if the string is longer than
+               the module width. VT323 typeface for a dot-matrix-printer
+               feel. */
             #mobile-title-row {
                 display: block;
+                max-width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+                scrollbar-width: none;
+                white-space: nowrap;
                 text-align: center;
-                font-family: 'Roboto Mono', 'Courier New', monospace;
-                font-size: 11px;
-                letter-spacing: 0.16em;
+                font-family: 'VT323', 'Roboto Mono', 'Courier New', monospace;
+                font-size: 20px;
+                letter-spacing: 0.08em;
                 color: var(--fg-muted);
                 text-transform: uppercase;
-                padding-top: 10px;
-                line-height: 1.5;
+                padding-top: 12px;
+                line-height: 1.2;
             }
+            #mobile-title-row::-webkit-scrollbar { display: none; }
             #mobile-title-row:empty { display: none; }
 
             /* Stock tracks on touch: 3-row × 2-col pages, horizontal
@@ -1992,11 +2010,9 @@
                 flex: none;
                 scroll-snap-align: start;
             }
-            /* Hide the preview play button — tap-to-load replaces it. */
-            #stock-section .stock-thumb .stock-play-btn { display: none; }
             /* Hide the prev/next arrow UI — swipe is the primary gesture
-               on touch. Also hide the decorative left/right walls; on a
-               phone the swipe gesture is obvious enough on its own. */
+               on touch. Also hide the decorative left/right walls; at
+               mobile widths the swipe gesture is obvious enough. */
             #stock-controls,
             #stock-section::after,
             #stock-section .stock-wall-left { display: none; }
@@ -6663,24 +6679,39 @@ async function init() {
 }
 
 // ── Mobile layout reparent ────────────────────────────────────────────────
-// On touch devices, move the 0:00 counter into the top pedal-panel row
-// (right of Speed/Direction) so it doesn't crowd the CRUSH fader. Move
-// the track-info label out of #pedal-panel to its own row below the
-// transport buttons. On non-touch we leave the DOM alone.
-(function applyMobileLayoutRearrange() {
-    if (!matchMedia('(pointer: coarse)').matches) return;
-
+// On touch devices or narrow desktop windows, move the 0:00 counter into
+// the top pedal-panel row (right of Speed/Direction) so it doesn't crowd
+// the CRUSH fader. Move the track-info label out of #pedal-panel to its
+// own row below the transport buttons. Reruns on viewport crossings so
+// resizing across 600 px live-updates the DOM.
+function applyMobileLayoutRearrange() {
+    const mobileLayout = matchMedia('(pointer: coarse), (max-width: 600px)').matches;
     const counter    = document.getElementById('viewer-counter');
     const pedalPanel = document.getElementById('pedal-panel');
     const fileLabel  = document.getElementById('viewer-file-label');
     const titleRow   = document.getElementById('mobile-title-row');
-    if (counter && pedalPanel && counter.parentNode !== pedalPanel) {
-        pedalPanel.appendChild(counter);
+    const transport  = document.getElementById('transport');
+
+    if (mobileLayout) {
+        if (counter && pedalPanel && counter.parentNode !== pedalPanel) {
+            pedalPanel.appendChild(counter);
+        }
+        if (fileLabel && titleRow && titleRow.firstChild !== fileLabel) {
+            titleRow.appendChild(fileLabel);
+        }
+    } else {
+        // Restore desktop DOM: counter back to transport, file-label back
+        // to pedal-panel.
+        if (counter && transport && counter.parentNode !== transport) {
+            transport.insertBefore(counter, transport.firstChild);
+        }
+        if (fileLabel && pedalPanel && fileLabel.parentNode !== pedalPanel) {
+            pedalPanel.appendChild(fileLabel);
+        }
     }
-    if (fileLabel && titleRow && titleRow.firstChild !== fileLabel) {
-        titleRow.appendChild(fileLabel);
-    }
-})();
+}
+applyMobileLayoutRearrange();
+window.matchMedia('(max-width: 600px)').addEventListener('change', applyMobileLayoutRearrange);
 
 // ── Mobile landing modal ──────────────────────────────────────────────────
 // Shown once per browser on touch devices (phones/tablets), explaining
