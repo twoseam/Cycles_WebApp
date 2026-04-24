@@ -4183,6 +4183,21 @@ async function refreshUI(autoLoad = false) {
         thumb.dataset.filename = s.filename;
         thumb.dataset.slotNum = s.slotNum;
 
+        // Slot-to-slot drag: carries just the source slot number. The
+        // delegated drop handler on #slot-grid reads it and runs the
+        // move / overwrite flow.
+        thumb.draggable = true;
+        thumb.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData(SLOT_DRAG_MIME, JSON.stringify({ srcSlotNum: s.slotNum }));
+            e.dataTransfer.effectAllowed = 'move';
+            thumb.classList.add('dragging');
+            mountGhostEmptySlots();
+        });
+        thumb.addEventListener('dragend', () => {
+            thumb.classList.remove('dragging');
+            clearGhostEmptySlots();
+        });
+
         const header = document.createElement('div');
         header.className = 'slot-header';
 
@@ -4204,6 +4219,9 @@ async function refreshUI(autoLoad = false) {
         delBtn.className   = 'slot-delete';
         delBtn.textContent = '×';
         delBtn.title       = `Delete Slot ${String(s.slotNum).padStart(2,'0')}`;
+        // Prevent clicking × from initiating a slot drag.
+        delBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+        delBtn.addEventListener('dragstart', (e) => { e.preventDefault(); e.stopPropagation(); });
         delBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const slotLabel = `Slot ${String(s.slotNum).padStart(2,'0')}`;
@@ -4395,6 +4413,41 @@ function formatDurMSS(sec) {
 async function unlinkAllSlotVariants(dir, slotNum) {
     for (const name of slotAllVariants(slotNum)) {
         try { await dir.removeEntry(name); } catch { /* missing — fine */ }
+    }
+}
+
+// Rename a file within a directory. Prefers the fast `FileSystemHandle.move()`
+// API (Chromium) and falls back to copy+delete for browsers without it.
+async function renameFileInDir(dir, oldName, newName) {
+    const h = await dir.getFileHandle(oldName);
+    if (typeof h.move === 'function') {
+        await h.move(newName);
+        return;
+    }
+    const buf    = await (await h.getFile()).arrayBuffer();
+    const newH   = await dir.getFileHandle(newName, { create: true });
+    const writer = await newH.createWritable();
+    await writer.write(buf);
+    await writer.close();
+    await dir.removeEntry(oldName);
+}
+
+// Move a memory slot from srcNum → dstNum. Clears all variants of dstNum
+// first (destructive overwrite — caller is expected to have confirmed),
+// then renames whichever variant of srcNum exists to the matching dst
+// filename. Slot invariant guarantees at most one variant per slot, so
+// the loop renames exactly one file under normal conditions.
+async function moveSlotFiles(dir, srcNum, dstNum) {
+    if (srcNum === dstNum) return;
+    await unlinkAllSlotVariants(dir, dstNum);
+    for (const oldName of slotAllVariants(srcNum)) {
+        const m = oldName.match(SLOT_FILENAME_RE);
+        if (!m) continue;
+        const isMono   = !!m[2];
+        const isStream = !!m[3];
+        const newName  = slotFilenameVariant(dstNum, { mono: isMono, stream: isStream });
+        try { await renameFileInDir(dir, oldName, newName); }
+        catch { /* variant didn't exist — fine */ }
     }
 }
 
@@ -5008,6 +5061,7 @@ document.getElementById('btn-import').addEventListener('click', async () => {
 // removed from Assets/Stock_Tracks/ in the repo.
 const STOCK_BASE = 'https://cycleslooper.com/Assets/Stock_Tracks/';
 const STOCK_DRAG_MIME = 'application/x-cycles-stock-track';
+const SLOT_DRAG_MIME  = 'application/x-cycles-slot-move';
 
 // Animate a height change on #slot-grid across a DOM mutation. The
 // starting height + overflow clipping are applied BEFORE `mutator()`
@@ -5551,6 +5605,86 @@ renderStockTracks();
         catch { return; }
         if (!payload || !payload.track) return;
         await handleStockTrackDrop(payload.track, payload.displayTitle || payload.track.file, slotNum);
+    });
+})();
+
+// ── Slot-to-slot drag-drop (rearrange memory slots) ─────────────────────────
+// Occupied slot tiles are made draggable in refreshUI; they set SLOT_DRAG_MIME
+// on dragstart. Dropping onto an empty tile moves the slot in; dropping onto
+// another occupied slot prompts "Overwrite Slot NN?" (red confirm) before
+// clobbering. Ghost empty slots are mounted on dragstart so you can drop
+// beyond the current grid extent, same as the stock-track flow.
+(function initSlotReorderDropTargets() {
+    const slotGrid = document.getElementById('slot-grid');
+    if (!slotGrid) return;
+
+    const thumbUnder  = (e) => e.target.closest('.slot-thumb');
+    const isSlotDrag  = (e) => Array.from(e.dataTransfer?.types || []).includes(SLOT_DRAG_MIME);
+    const clearHighlights = () => {
+        slotGrid.querySelectorAll('.slot-thumb.drop-target').forEach(t => t.classList.remove('drop-target'));
+    };
+
+    slotGrid.addEventListener('dragover', (e) => {
+        if (!isSlotDrag(e)) return;
+        const thumb = thumbUnder(e);
+        if (!thumb) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (!thumb.classList.contains('drop-target')) {
+            clearHighlights();
+            thumb.classList.add('drop-target');
+        }
+    });
+    slotGrid.addEventListener('dragleave', (e) => {
+        if (!slotGrid.contains(e.relatedTarget)) clearHighlights();
+    });
+    slotGrid.addEventListener('drop', async (e) => {
+        if (!isSlotDrag(e)) return;
+        const thumb = thumbUnder(e);
+        if (!thumb) return;
+        e.preventDefault();
+        clearHighlights();
+
+        const dstSlotNum = parseInt(thumb.dataset.slotNum, 10);
+        if (!(dstSlotNum >= 1 && dstSlotNum <= 99)) return;
+
+        let payload;
+        try { payload = JSON.parse(e.dataTransfer.getData(SLOT_DRAG_MIME)); }
+        catch { return; }
+        const srcSlotNum = parseInt(payload?.srcSlotNum, 10);
+        if (!(srcSlotNum >= 1 && srcSlotNum <= 99)) return;
+        if (srcSlotNum === dstSlotNum) return;
+
+        // If the destination is occupied (i.e. the current DOM tile isn't
+        // `.empty`), ask before clobbering. Empty + ghost tiles go through
+        // without a prompt.
+        const dstOccupied = !thumb.classList.contains('empty');
+        if (dstOccupied) {
+            const ok = await dialogConfirm(
+                `Overwrite Slot ${String(dstSlotNum).padStart(2, '0')}?`,
+                'The slot currently in that position will be deleted.',
+                { okLabel: 'Overwrite', okVariant: 'danger' },
+            );
+            if (!ok) return;
+        }
+
+        try {
+            await moveSlotFiles(g_memorySlotsHandle, srcSlotNum, dstSlotNum);
+        } catch (err) {
+            await dialogAlert('Could not move slot', err.message);
+            return;
+        }
+
+        // Drop selection + any in-flight playback — simplest correct
+        // behavior; the user can re-click a tile after the refresh.
+        if (g_selection) {
+            _killSource();
+            g_selection = null;
+            document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
+            document.getElementById('btn-play').innerHTML = ICON_PLAY;
+        }
+
+        await refreshUI();
     });
 })();
 
