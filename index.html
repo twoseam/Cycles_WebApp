@@ -6829,12 +6829,12 @@ function setupTitleMarquee() {
         clone.style.textShadow    = 'inherit';
         row.appendChild(clone);
 
-        // Inline-block children start left-aligned (total width >
-        // container when gap ≈ container width). Add a center offset so
-        // the original's resting position is horizontally centered —
-        // then the clone also lands centered at the end of scroll, at
-        // the exact same pixel x.
-        const centerOffset        = (containerW - labelW) / 2;
+        // Short titles (labelW < containerW) rest centered. Long titles
+        // rest left-justified at x=0 — centering a title wider than the
+        // container would push its left edge off-screen. Clamp the offset
+        // at 0 so long titles start at the natural padding-left position;
+        // the wrap math still lands the clone at that same starting x.
+        const centerOffset        = Math.max(0, (containerW - labelW) / 2);
         const wrapAt              = labelW + gapPx;          // one full offset cycle
         const fps                 = 4;
         const stepPx              = 10;
