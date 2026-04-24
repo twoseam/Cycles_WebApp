@@ -830,16 +830,16 @@
         #import-popup-card,
         #import-tutorial-card,
         #modal-card {
+            /* !important on the visual layer because each card's
+               individual rule (declared later in source) otherwise
+               wins on background / border / box-shadow. The panel
+               aesthetic is a global opt-in, not a per-card choice. */
             position: relative;
-            background: var(--bg-panel);
-            border: 2px solid var(--border-dark);
-            /* Outer ring in panel color, sitting just outside the dark
-               border. Invisible on the card itself; on the darkened
-               backdrop it reads as a second stroke around the panel. */
-            outline: 6px solid var(--bg-panel);
+            background: var(--bg-panel) !important;
+            border: 3px solid var(--border-dark) !important;
+            outline: 12px solid var(--bg-panel);
             outline-offset: 0;
             box-shadow: none !important;
-            padding: 20px;
             margin: 20px;
         }
         #connect-card::before,
