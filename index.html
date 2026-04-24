@@ -2461,17 +2461,44 @@
         }
 
         /* ── Log — teletype output ── */
-        #log {
-            background: var(--bg-inset);
-            border: 1px solid var(--border-dark);
-            padding: 8px 10px;
+        /* Diagnostic log — hidden from the UI (kept in the DOM so log()
+           calls don't error; output is still captured for debugging). */
+        #log { display: none; }
+
+        /* Site footer — huge top margin pushes the footer well below the
+           last module so the user gets plenty of scroll leeway past the
+           content. Discreet copyright line + contact links, monospace to
+           match the rest of the site. */
+        #site-footer {
+            margin-top: 35vh;
+            padding: 28px 0 80px;
+            border-top: 1px solid var(--border);
+            color: var(--fg-muted);
             font-family: 'Roboto Mono', 'Courier New', monospace;
             font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        #site-footer .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        #site-footer .footer-links {
+            display: flex;
+            gap: 22px;
+        }
+        #site-footer a {
             color: var(--fg-muted);
-            min-height: 44px;
-            max-height: 150px;
-            overflow-y: auto;
-            letter-spacing: 0.02em;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: color 0.12s, border-color 0.12s;
+        }
+        #site-footer a:hover {
+            color: var(--fg);
+            border-bottom-color: var(--fg-muted);
         }
     </style>
 </head>
@@ -2610,6 +2637,17 @@
 
 <!-- ── Log ────────────────────────────────────────────────────────────────── -->
 <pre id="log"></pre>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer id="site-footer">
+    <div class="footer-inner">
+        <div class="footer-copyright">© 2026 TwoSeam, LLC. All rights reserved.</div>
+        <div class="footer-links">
+            <a href="mailto:info@TwoSeam.com">info@TwoSeam.com</a>
+            <a href="https://www.reddit.com/user/TwoSeam/" target="_blank" rel="noopener noreferrer">Reddit</a>
+        </div>
+    </div>
+</footer>
 
 <!-- Theme customizer opens as a detached browser window via ⚙ button;
      no in-page modal markup needed. -->
@@ -6223,6 +6261,10 @@ async function triggerConnect() {
 }
 
 function showConnectPrompt() {
+    // Bypass on browsers without File System Access (mobile, Safari, Firefox)
+    // so the layout is viewable on those devices. Paired with the commented-
+    // out "unsupported browser" block in init(); restore together.
+    if (!('showDirectoryPicker' in window)) return;
     // Clone the header logo into the connect card (same brand colors)
     const logoSrc = document.querySelector('#logo svg');
     const logoSlot = document.querySelector('.connect-logo');
