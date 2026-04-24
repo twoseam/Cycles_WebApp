@@ -1717,7 +1717,8 @@
                     'playback stock'
                     'import   stock'
                     'slots    slots'
-                    'log      log';
+                    'log      log'
+                    'footer   footer';
                 column-gap: 24px;
                 row-gap: 24px;
                 align-items: start;
@@ -1736,6 +1737,7 @@
             #import-section   { grid-area: import;   margin: 0; }
             #slot-section     { grid-area: slots;    margin: 0; }
             #log              { grid-area: log; }
+            #site-footer      { grid-area: footer; }
 
             /* Stock carousel: 3-col vertical-scroll grid flowing row-first
                (read left→right, top→bottom). Tiles use compact styling
@@ -1806,13 +1808,41 @@
                the header-right column at narrow widths. */
             #header { gap: 10px; }
             #logo svg { width: 180px; height: auto; }
+            /* Mobile can't write to the SD card (no File System Access),
+               so the "Checking for CYCLES card…" / "connected" status is
+               irrelevant and just clutters the header. Same reasoning
+               applies to the Export button and the whole Import module —
+               neither is usable without card write access, so hide both
+               in Mobile only (Vertical still keeps them). */
+            #card-status,
+            #btn-export,
+            #import-section { display: none; }
             #pedal-panel { gap: 16px; flex-wrap: wrap; row-gap: 14px; }
-            #transport { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
+            /* Mobile transport: row 1 = playback buttons spanning the full
+               column (evenly distributed). Row 2 = counter on the left,
+               Export on the right. Grid template keeps everything aligned
+               regardless of button widths. */
+            #transport {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-areas:
+                    'buttons buttons'
+                    'counter export';
+                column-gap: 10px;
+                row-gap: 26px;
+            }
             #transport .spacer { display: none; }
-            #transport button:not(#btn-export) { width: 40px; height: 40px; }
-            #viewer-counter { height: 46px; padding: 12px 18px; }
+            #transport-buttons {
+                grid-area: buttons;
+                display: flex;
+                gap: 8px;
+                justify-content: space-between;
+                width: 100%;
+            }
+            #transport-buttons button { flex: 1; height: 44px; }
+            #viewer-counter { grid-area: counter; justify-self: start; height: 46px; padding: 12px 18px; }
             .seg-val { top: 12px; left: 18px; }
-            #btn-export { height: 40px; margin-left: auto; }
+            #btn-export { grid-area: export; height: 46px; margin: 0; }
             .slot-stepper button { width: 36px; }
         }
 
@@ -2470,7 +2500,7 @@
            content. Discreet copyright line + contact links, monospace to
            match the rest of the site. */
         #site-footer {
-            margin-top: 35vh;
+            margin-top: 17vh;
             padding: 28px 0 80px;
             border-top: 1px solid var(--border);
             color: var(--fg-muted);
