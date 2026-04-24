@@ -513,10 +513,11 @@
         }
         /* Desktop: LCD row sits inline in #pedal-panel after Speed /
            Direction, pushed to the right with margin-left: auto. Height
-           matches the shrunk pedal-opt buttons (26 px) so the row reads
-           as a sibling control, not a banner. Width is natural (label +
-           padding), capped so very long titles fit alongside the
-           controls. */
+           matches the pedal-opt face (26 px) and the row is offset down-
+           right by 4 px so it sits at the same visual level as a
+           *pressed* button — i.e., flush with the surface the buttons
+           are raised from. Unpressed buttons then pop up above the LCD
+           baseline, preserving the "LCD inset / buttons raised" look. */
         #pedal-panel > #mobile-title-row {
             flex: 0 1 auto;
             margin: 0 0 0 auto;
@@ -525,6 +526,7 @@
             line-height: 24px;
             min-width: 220px;
             max-width: 420px;
+            transform: translateY(4px);
         }
 
         /* ── Waveform viewer — instrument display ── */
@@ -692,11 +694,18 @@
             display: inline-block;
             background: var(--seg-bg);
             border: 1px solid var(--seg-border);
-            padding: 14px 22px;
-            height: 52px;
+            padding: 10px 18px;
+            height: 44px;
             box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
             white-space: nowrap;
         }
+        /* Clock drops into the pressed-button Y position in whichever
+           container it lives: transport row = 6 px (matches
+           #transport button:active translate), pedal-panel = 4 px
+           (matches .pedal-opt.active translate). Bottom lines up with
+           the pressed button baseline either way. */
+        #transport    > #viewer-counter { transform: translateY(6px); }
+        #pedal-panel  > #viewer-counter { transform: translateY(4px); }
 
         /* "All-8s" ghost backdrop — simulates unlit 7-seg segments so the off
            bars are faintly visible behind the lit digits. Real hardware
@@ -729,8 +738,8 @@
                 0 0 2px rgba(80,255,80,0.4),
                 0 0 6px rgba(50,220,50,0.25);
             position: absolute;
-            top: 14px;
-            left: 22px;
+            top: 10px;
+            left: 18px;
         }
 
         /* ── Section label — engraved/stencil style ── */
@@ -1937,9 +1946,8 @@
                 width: 100%;
             }
             #transport-buttons button { flex: 1; height: 44px; }
-            #viewer-counter { grid-area: counter; justify-self: start; height: 46px; padding: 12px 18px; }
-            .seg-val { top: 12px; left: 18px; }
-            #btn-export { grid-area: export; height: 46px; margin: 0; }
+            #viewer-counter { grid-area: counter; justify-self: start; }
+            #btn-export { grid-area: export; height: 44px; margin: 0; }
             .slot-stepper button { width: 36px; }
         }
 
@@ -1977,11 +1985,16 @@
                 padding: 0 4px;
                 font-size: 10px;
             }
+            /* Mobile override — revert to the compact 26-px clock that
+               matches the shrunk pedal buttons. translateY(4 px) is
+               already applied globally to #pedal-panel > #viewer-counter
+               (see base rules) so its bottom lines up with the pressed
+               pedal-opt. */
             #pedal-panel #viewer-counter {
                 margin-left: auto;
                 align-self: flex-end;
-                height: 32px;
-                padding: 6px 10px;
+                height: 26px;
+                padding: 0 10px;
             }
             #pedal-panel #viewer-counter .seg-ghost,
             #pedal-panel #viewer-counter .seg-val { font-size: 14px; }
