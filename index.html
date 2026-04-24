@@ -143,7 +143,9 @@
 
             /* Big tactile buttons + tiles that press into the page when
                clicked (transport row, slot thumbs, stock thumbs, etc.).
-               6-step stack + a soft ground shadow to "lift" the block. */
+               10-step stack + a soft ground shadow to "lift" the block.
+               Paired with translate(10px,10px) on :active so the block
+               lands flush with where its shadow was. */
             --shadow-tactile:
                 1px 1px 0 var(--shadow-stack),
                 2px 2px 0 var(--shadow-stack),
@@ -151,7 +153,11 @@
                 4px 4px 0 var(--shadow-stack),
                 5px 5px 0 var(--shadow-stack),
                 6px 6px 0 var(--shadow-stack),
-                7px 8px 6px rgba(0, 0, 0, 0.20);
+                7px 7px 0 var(--shadow-stack),
+                8px 8px 0 var(--shadow-stack),
+                9px 9px 0 var(--shadow-stack),
+                10px 10px 0 var(--shadow-stack),
+                11px 12px 8px rgba(0, 0, 0, 0.22);
 
             /* Floating dialog / popup / modal cards sitting above the page.
                4-step stack + a softer ground shadow. */
@@ -228,7 +234,11 @@
                 3px 3px 0 #0a0805,
                 4px 4px 0 #0a0805,
                 5px 5px 0 #0a0805,
-                6px 6px 0 #0a0805;
+                6px 6px 0 #0a0805,
+                7px 7px 0 #0a0805,
+                8px 8px 0 #0a0805,
+                9px 9px 0 #0a0805,
+                10px 10px 0 #0a0805;
             --shadow-card:
                 1px 1px 0 #0a0805,
                 2px 2px 0 #0a0805,
@@ -648,15 +658,18 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 6px;
         }
         #transport-buttons {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        #transport button:not(#btn-export) { width: 44px; height: 44px; padding: 0; font-size: 16px; letter-spacing: 0; border-radius: 0; }
-        #btn-loop { width: 44px; padding: 0; }
+        /* Transport buttons — landscape rectangle (slightly wider than
+           tall) so the row reads as a hardware transport bar. Mobile
+           bumps these up further in the pointer:coarse block. */
+        #transport button:not(#btn-export) { width: 56px; height: 42px; padding: 0; font-size: 16px; letter-spacing: 0; border-radius: 0; }
+        #btn-loop { width: 56px; padding: 0; }
         #transport button {
             display: inline-flex;
             align-items: center;
@@ -684,7 +697,7 @@
         #btn-export:active, #btn-import:active,
         .slot-thumb:active,
         .stock-thumb:active {
-            transform: translate(6px, 6px);
+            transform: translate(10px, 10px);
             box-shadow: 0 0 0 transparent;
             transition: none;
         }
@@ -692,7 +705,12 @@
         /* ── 7-segment counter ── */
         #viewer-counter {
             position: relative;
-            display: inline-block;
+            /* Grid-stack so the ghost ("8:88" backdrop) and the lit
+               value sit in the same cell and both vertically center
+               regardless of the DSEG font's intrinsic line-box height. */
+            display: inline-grid;
+            grid-template-columns: 1fr;
+            align-items: center;
             background: var(--seg-bg);
             border: 1px solid var(--seg-border);
             padding: 10px 18px;
@@ -700,12 +718,18 @@
             box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
             white-space: nowrap;
         }
+        #viewer-counter .seg-ghost,
+        #viewer-counter .seg-val {
+            grid-row: 1;
+            grid-column: 1;
+            line-height: 1;
+        }
         /* Clock drops into the pressed-button Y position in whichever
-           container it lives: transport row = 6 px (matches
+           container it lives: transport row = 10 px (matches
            #transport button:active translate), pedal-panel = 4 px
            (matches .pedal-opt.active translate). Bottom lines up with
            the pressed button baseline either way. */
-        #transport    > #viewer-counter { transform: translateY(6px); }
+        #transport    > #viewer-counter { transform: translateY(10px); }
         #pedal-panel  > #viewer-counter { transform: translateY(4px); }
 
         /* "All-8s" ghost backdrop — simulates unlit 7-seg segments so the off
@@ -728,7 +752,10 @@
             color: rgba(68,221,34,0.22);
         }
 
-        /* Lit segments — bright green with a soft green bloom (LED glow). */
+        /* Lit segments — bright green with a soft green bloom (LED glow).
+           Inside #viewer-counter the position/top/left are overridden
+           by the grid-stack rule above; .slot-display + #popup-slot-display
+           still rely on the absolute positioning. */
         .seg-val {
             font-family: 'DSEG7 Classic', 'Courier New', monospace;
             font-weight: 700;
@@ -741,6 +768,9 @@
             position: absolute;
             top: 10px;
             left: 18px;
+        }
+        #viewer-counter .seg-val {
+            position: static;
         }
 
         /* ── Section label — engraved/stencil style ── */
@@ -960,9 +990,16 @@
            so they read as "not real content" while still filling the
            carousel row for scrolling tests. */
         #stock-grid .stock-thumb.dummy {
-            opacity: 0.35;
+            /* Greyed-out "ghost" tile: keep the body fully opaque so
+               shadows of populated tiles above don't bleed through, but
+               desaturate the bg + border with a grey blend so the tile
+               reads as empty / coming-soon instead of mimicking real
+               content. Inner text/play-btn still get the opacity dim. */
+            background: color-mix(in srgb, var(--bg-raised), #888 25%);
+            border-color: color-mix(in srgb, var(--border), #888 30%);
             cursor: default;
         }
+        #stock-grid .stock-thumb.dummy > * { opacity: 0.35; }
         #stock-grid .stock-thumb.dummy:hover {
             background: var(--bg-raised);
             border-color: var(--border);
@@ -1994,31 +2031,32 @@
                the full column (evenly distributed). Row 2 = counter on
                the left, Export on the right. Grid template keeps everything
                aligned regardless of button widths. */
+            /* Single-row transport on Narrow: buttons cluster centered
+               in the 1fr column, Export sits in the auto column on the
+               right. On Mobile the Export hides via pointer:coarse, and
+               the auto column collapses so buttons take the full width. */
             #transport {
                 display: grid;
                 grid-template-columns: 1fr auto;
-                grid-template-areas:
-                    'buttons buttons'
-                    'counter export';
+                grid-template-areas: 'buttons export';
                 column-gap: 10px;
-                row-gap: 26px;
+                align-items: center;
             }
             #transport .spacer { display: none; }
             #transport-buttons {
                 grid-area: buttons;
                 display: flex;
-                gap: 8px;
-                justify-content: space-between;
+                gap: 6px;
+                justify-content: center;
                 width: 100%;
             }
-            /* Square transport buttons on Narrow / Mobile — flex:1 fills
-               the row width across 4 buttons, aspect-ratio:1 makes height
-               equal width so each button is a square tap target. Selector
-               mirrors the base rule at L658 (#transport button:not(...))
-               so specificity matches and this override wins by source
-               order inside the media query. */
-            #transport button:not(#btn-export) { width: auto; height: auto; aspect-ratio: 1; flex: 1; }
-            #viewer-counter { grid-area: counter; justify-self: start; }
+            /* Transport buttons keep the base 44 × 44 size on Narrow
+               (Mobile bumps them in the pointer:coarse block below).
+               Cluster centered so the four icons read as a single
+               transport unit instead of spread to the row edges. */
+            /* Note: #viewer-counter (the clock) is reparented out of
+               #transport into #pedal-panel by JS on Narrow / Mobile, so
+               no grid-area assignment is needed here. */
             #btn-export { grid-area: export; height: 44px; margin: 0; }
             .slot-stepper button { width: 36px; }
         }
@@ -2035,6 +2073,12 @@
             #import-section,
             #slot-section { display: none !important; }
             #stock-section .stock-thumb .stock-play-btn { display: none; }
+            /* Bump transport button size on actual phones — 60 × 60 is a
+               more comfortable thumb target than the desktop 44 × 44.
+               Selector mirrors the base rule at L658 so specificity
+               matches and source order wins. */
+            #transport button:not(#btn-export) { width: 72px; height: 54px; }
+            #btn-loop { width: 72px; }
         }
 
         /* Narrow + Mobile AESTHETIC rules — fire on either Narrow
@@ -2176,29 +2220,6 @@
             #stock-section #stock-grid .stock-thumb {
                 flex: none;
                 scroll-snap-align: start;
-                /* Deeper press feel on Narrow / Mobile — tiles are ~2x
-                   the area of the transport buttons, so the same 6px
-                   translate looked half as crisp. Bump translate to 10px
-                   AND deepen the rest shadow to match (10-step stack +
-                   stronger ground shadow), so the tile lands flush with
-                   its shadow on press just like transport buttons do. */
-                box-shadow:
-                    1px 0 0 var(--shadow-stack, var(--border)),
-                    2px 0 0 var(--shadow-stack, var(--border)),
-                    3px 0 0 var(--shadow-stack, var(--border)),
-                    4px 0 0 var(--shadow-stack, var(--border)),
-                    5px 0 0 var(--shadow-stack, var(--border)),
-                    6px 0 0 var(--shadow-stack, var(--border)),
-                    7px 0 0 var(--shadow-stack, var(--border)),
-                    8px 0 0 var(--shadow-stack, var(--border)),
-                    9px 0 0 var(--shadow-stack, var(--border)),
-                    10px 0 0 var(--shadow-stack, var(--border)),
-                    11px 12px 8px rgba(0,0,0,0.22);
-            }
-            #stock-section #stock-grid .stock-thumb:active {
-                transform: translate(10px, 10px);
-                box-shadow: 0 0 0 transparent;
-                transition: none;
             }
             /* Hide the prev/next arrow UI — swipe is the primary gesture
                on touch. Also hide the decorative left/right walls; at
