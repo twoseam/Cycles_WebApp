@@ -1,0 +1,723 @@
+/* CYCLES — shared chrome styles. Every site page (Data Manager, Owners
+   Manual, Contact, and any future static pages) links this file. Tokens,
+   reset, header, theme toggle, nav drawer, footer, module base, and the
+   placeholder-body used by stub pages all live here. Edit once, every
+   page updates. */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+/* VT323 — dot-matrix / terminal typeface. Used for the LCD-styled
+   copyright line; index.html also uses it for the track-title row. */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+:root {
+    /* ── Brand accents ── */
+    --brand-red:      #d43800;
+    --brand-blue:     #1e48d4;
+    --brand-red-dark: #a02800;
+
+    /* ── Page backgrounds ── */
+    --bg:         #fbf7df;
+    --bg-label:   #fffdf9;
+    --bg-inset:   #f5f2e6;
+    --bg-raised:  #eae3cc;
+    --bg-panel:   #e4dcbe;
+    --bg-hover:   #ddd4b6;
+    --bg-screen:  #d6cdac;
+    --bg-counter: #1c1710;
+
+    /* ── Text / foreground ── */
+    --fg:         #1c1710;
+    --fg-dim:     #3a2e18;
+    --fg-muted:   #6a5c38;
+    --fg-faint:   #8a7c58;
+    --on-accent:  #ffffff;
+
+    /* ── Borders & dividers ── */
+    --border:        #a09060;
+    --border-light:  #ccc4a0;
+    --border-dark:   #706040;
+    --border-strong: #1c1710;
+    --border-subtle: #ddd4b6;
+
+    /* ── LEDs ── */
+    --led-green:        #44dd22;
+    --led-green-border: #2a9040;
+    --led-green-dark:   #1a8830;
+    --led-red:          #cc2828;
+    --led-red-border:   #992222;
+    --led-amber-border: #a07810;
+
+    /* ── Memory-slot feature word colors ── */
+    --fmt-overdub: #f48107;
+    --fmt-undo:    #8a3fc7;
+
+    /* ── 7-segment displays ── */
+    --seg-bg:       #23242c;
+    --seg-border:   #2a2c30;
+    --seg-text:     #ff4242;
+    --seg-text-hot: #ff3030;
+
+    /* ── Waveform viewer ── */
+    --wave-guide: #bfb596;
+    --playhead:   rgba(28, 23, 10, 0.45);
+    --time-label: #6a5c38;
+
+    /* ── Logo ── */
+    --logo-dark: #18191e;
+
+    /* ── Derived / legacy aliases ── */
+    --accent:     var(--brand-red);
+    --accent-dim: color-mix(in srgb, var(--brand-red) 30%, transparent);
+    --bg-alt:     var(--bg-inset);
+    --border-mid: var(--border);
+
+    /* ── Shadows (tunable stack color + composed stacks) ── */
+    --shadow-stack: var(--border);
+    --shadow-tactile:
+        1px 1px 0 var(--shadow-stack),
+        2px 2px 0 var(--shadow-stack),
+        3px 3px 0 var(--shadow-stack),
+        4px 4px 0 var(--shadow-stack),
+        5px 5px 0 var(--shadow-stack),
+        6px 6px 0 var(--shadow-stack),
+        7px 7px 0 var(--shadow-stack),
+        8px 8px 0 var(--shadow-stack),
+        9px 9px 0 var(--shadow-stack),
+        10px 10px 0 var(--shadow-stack),
+        11px 12px 8px rgba(0, 0, 0, 0.22);
+    --shadow-card:
+        1px 1px 0 var(--shadow-stack),
+        2px 2px 0 var(--shadow-stack),
+        3px 3px 0 var(--shadow-stack),
+        4px 4px 0 var(--shadow-stack),
+        5px 6px 4px rgba(0, 0, 0, 0.14);
+    --shadow-button:
+        1px 1px 0 var(--shadow-stack),
+        2px 2px 0 var(--shadow-stack),
+        3px 3px 0 var(--shadow-stack),
+        4px 4px 0 var(--shadow-stack);
+    --shadow-button-blue:
+        1px 1px 0 color-mix(in srgb, var(--brand-blue), black 25%),
+        2px 2px 0 color-mix(in srgb, var(--brand-blue), black 25%),
+        3px 3px 0 color-mix(in srgb, var(--brand-blue), black 25%),
+        4px 4px 0 color-mix(in srgb, var(--brand-blue), black 25%);
+}
+
+body.dark {
+    --bg:         #22201b;
+    --bg-label:   #000000;
+    --bg-inset:   #131211;
+    --bg-raised:  #45423a;
+    --bg-panel:   #302d27;
+    --bg-hover:   #3a3731;
+    --bg-screen:  #42413d;
+
+    --fg:         #e6e6e6;
+    --fg-dim:     #e9e2e2;
+    --fg-muted:   #f4ecec;
+    --fg-faint:   #9a8c65;
+
+    --border:        #6e6c68;
+    --border-light:  #212121;
+    --border-dark:   #747272;
+    --border-strong: #e6e6e6;
+    --border-subtle: #2a241a;
+
+    --fmt-undo:   #c58af4;
+
+    --wave-guide: #525252;
+    --playhead:   rgba(230, 230, 230, 0.45);
+    --time-label: #949494;
+
+    --logo-dark:  #f1e7d2;
+
+    --accent-dim: color-mix(in srgb, var(--brand-red) 22%, transparent);
+
+    --shadow-tactile:
+        1px 1px 0 #0a0805,
+        2px 2px 0 #0a0805,
+        3px 3px 0 #0a0805,
+        4px 4px 0 #0a0805,
+        5px 5px 0 #0a0805,
+        6px 6px 0 #0a0805,
+        7px 7px 0 #0a0805,
+        8px 8px 0 #0a0805,
+        9px 9px 0 #0a0805,
+        10px 10px 0 #0a0805;
+    --shadow-card:
+        1px 1px 0 #0a0805,
+        2px 2px 0 #0a0805,
+        3px 3px 0 #0a0805,
+        4px 4px 0 #0a0805;
+    --shadow-button:
+        1px 1px 0 #0a0805,
+        2px 2px 0 #0a0805,
+        3px 3px 0 #0a0805,
+        4px 4px 0 #0a0805;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Hide body until shared.js finishes injecting chrome — prevents a
+   brief flash where empty header/footer slots are visible before JS
+   mounts them. shared.js adds `.cycles-ready` once injection completes. */
+body {
+    visibility: hidden;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    background-color: var(--bg);
+    color: var(--fg);
+}
+body.cycles-ready { visibility: visible; }
+
+#app {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 28px 24px;
+}
+
+/* ── Header ── */
+#header {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+#logo {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+#logo svg .st1 { fill: var(--brand-blue); }
+#logo svg .st0 { fill: var(--brand-red); }
+#logo-sub {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+}
+#header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 8px;
+}
+#card-status {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+/* Indicator light — small square, vintage style */
+.led {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 1px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-dark);
+    flex-shrink: 0;
+}
+.led.green { background: var(--led-green); border-color: var(--led-green-border); }
+.led.red   { background: var(--led-red);   border-color: var(--led-red-border); }
+.led.amber { background: var(--accent);    border-color: var(--led-amber-border); }
+
+/* ── Theme toggle ── */
+#theme-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.theme-toggle {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    user-select: none;
+}
+.theme-toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+.theme-toggle-track {
+    display: inline-block;
+    position: relative;
+    width: 40px;
+    height: 18px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.08);
+    opacity: 0.75;
+    transition: opacity 0.14s ease;
+}
+.theme-toggle:hover .theme-toggle-track { opacity: 1; }
+.theme-toggle-label {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.theme-toggle-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    color: var(--fg);
+    pointer-events: none;
+    display: inline-flex;
+}
+.theme-toggle-icon svg { width: 100%; height: 100%; display: block; }
+.theme-toggle-icon.sun  { left: 4px; }
+.theme-toggle-icon.moon { right: 4px; }
+.theme-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    box-shadow: 1px 1px 0 var(--border);
+    transition: left 0.16s cubic-bezier(.4, 1.1, .5, 1), background 0.15s, box-shadow 0.15s;
+}
+.theme-toggle input:checked ~ .theme-toggle-track .theme-toggle-thumb {
+    left: 22px;
+}
+.theme-toggle:active .theme-toggle-thumb {
+    box-shadow: 1px 1px 0 var(--border);
+    transform: translate(1px, 1px);
+}
+
+/* Per-theme shadow-stack color picker — hidden in production, JS remains
+   wired so saved colors are still applied on load. */
+.shadow-picker { display: none; }
+.shadow-picker input[type="color"] {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--border-dark);
+    background: transparent;
+    width: 24px;
+    height: 18px;
+    padding: 0;
+    cursor: pointer;
+}
+.shadow-picker input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.shadow-picker input[type="color"]::-webkit-color-swatch { border: none; }
+
+#btn-theme-customize {
+    display: none;
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 7px 4px;
+    letter-spacing: 0;
+}
+
+/* ── Menu button + pop-down drawer ── */
+#menu-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+#menu-hamburger {
+    height: 36px;
+    padding: 0 14px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--bg-raised);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.14s ease;
+}
+#menu-hamburger:hover { background: var(--bg-hover); }
+#menu-hamburger .menu-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+#menu-hamburger .menu-bars { display: none; }
+
+#menu-dropdown {
+    display: grid;
+    grid-template-rows: 0fr;
+    background: var(--bg-panel);
+    transition: grid-template-rows 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#menu-dropdown .menu-dropdown-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+#menu-dropdown.open { grid-template-rows: 1fr; }
+
+@media (pointer: coarse) {
+    #menu-hamburger { width: 36px; padding: 0; }
+    #menu-hamburger .menu-label { display: none; }
+    #menu-hamburger .menu-bars {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+    #menu-hamburger .menu-bars span {
+        display: block;
+        width: 18px;
+        height: 2px;
+        background: var(--fg);
+    }
+    #menu-dropdown .main-nav-tab {
+        padding: 16px 24px;
+        font-size: 13px;
+    }
+}
+
+.main-nav-tab {
+    display: block;
+    padding: 10px 20px;
+    background: transparent;
+    color: var(--fg-muted);
+    border: none;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.14s ease, color 0.14s ease;
+}
+.main-nav-tab:hover {
+    background: var(--bg-hover);
+    color: var(--fg);
+}
+.main-nav-tab.active {
+    background: var(--bg-inset);
+    color: var(--fg);
+    font-weight: 700;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Social icons row appended to the end of the nav drawer menu list.
+   Thin separator above, same padding as .main-nav-tab so the row sits
+   flush with the list items. Envelope is a toggle button for an inline
+   email submenu; Instagram + Reddit are plain links. */
+#menu-dropdown .main-nav-socials {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+}
+#menu-dropdown .main-nav-socials a,
+#menu-dropdown .main-nav-email-toggle {
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+    color: var(--fg-muted);
+    text-decoration: none;
+    transition: color 0.14s ease;
+}
+#menu-dropdown .main-nav-email-toggle {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+#menu-dropdown .main-nav-socials a:hover,
+#menu-dropdown .main-nav-email-toggle:hover,
+#menu-dropdown .main-nav-email-toggle[aria-expanded="true"] {
+    color: var(--fg);
+}
+#menu-dropdown .main-nav-socials svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+@media (pointer: coarse) {
+    #menu-dropdown .main-nav-socials {
+        padding: 16px 24px;
+        gap: 22px;
+    }
+    #menu-dropdown .main-nav-socials svg {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+/* Email submenu — collapsed by default. Click the envelope toggle to
+   reveal Default Mail / Gmail / Outlook / Copy Address as nested nav
+   tabs. Uses the same grid-template-rows 0fr → 1fr height trick as the
+   drawer itself, so the expand animation feels consistent. */
+#menu-dropdown .main-nav-email-submenu {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#menu-dropdown .main-nav-email-submenu-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+#menu-dropdown .main-nav-email-submenu.open {
+    grid-template-rows: 1fr;
+}
+
+/* Nested nav tabs — slightly quieter + indented so they read as a
+   submenu. Copy-address button wears .main-nav-tab so it lines up with
+   the real links; we just override the few button-specific defaults. */
+#menu-dropdown .main-nav-tab-sub {
+    padding-left: 36px;
+    font-size: 10px;
+    color: var(--fg-muted);
+}
+#menu-dropdown button.main-nav-tab-sub {
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+}
+#menu-dropdown button.main-nav-tab-sub:disabled {
+    color: var(--fg);
+    cursor: default;
+}
+@media (pointer: coarse) {
+    #menu-dropdown .main-nav-tab-sub {
+        padding-left: 40px;
+    }
+}
+
+/* ── Module (shared container pattern — index.html sections, stub
+   placeholders, and future cards all use this). */
+.module {
+    position: relative;
+    background: var(--bg-panel);
+    border: 2px solid var(--border-dark);
+    padding: 36px 22px 26px;
+    margin: 24px 0;
+}
+.module::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 10px 10px, var(--border-dark) 2.5px, transparent 3px),
+        radial-gradient(circle at calc(100% - 10px) 10px, var(--border-dark) 2.5px, transparent 3px),
+        radial-gradient(circle at 10px calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px),
+        radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px);
+}
+.module-code {
+    position: absolute;
+    top: -14px;
+    left: 20px;
+    background: var(--bg-label);
+    padding: 6px 10px;
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: 14.4px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+}
+
+/* ── Placeholder body — used by stub pages ── */
+.placeholder-body {
+    padding: 40px 12px 28px;
+    text-align: center;
+}
+.placeholder-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--fg);
+    margin-bottom: 14px;
+}
+.placeholder-sub {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    margin-bottom: 24px;
+}
+.placeholder-copy {
+    max-width: 52ch;
+    margin: 0 auto;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--fg-dim);
+}
+
+/* ── Site footer ──
+   Column layout with two sections:
+     1. .footer-top — two columns, nav list on the left (vertical),
+        contact icons in a row on the right. Top-aligned so the first
+        nav item and the icon row share the same baseline. Wraps to
+        stacked on narrow viewports.
+     2. .footer-copyright — full-width centered line under both. */
+#site-footer {
+    margin-top: 17vh;
+    padding: 28px 0 80px;
+    border-top: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: flex;
+    flex-direction: column;
+}
+#site-footer .footer-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+#site-footer .footer-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+#site-footer a {
+    color: var(--fg-muted);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.12s, border-color 0.12s;
+}
+#site-footer a:hover {
+    color: var(--fg);
+    border-bottom-color: var(--fg-muted);
+}
+#site-footer .footer-nav a.current {
+    color: var(--fg);
+    font-weight: 700;
+    pointer-events: none;
+}
+#site-footer .footer-copyright {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 9px;
+}
+
+/* Contact row — icon-only links (email, Instagram, Reddit). Icons
+   inherit currentColor so they track fg-muted (rest) / fg (hover). */
+#site-footer .footer-contact {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+#site-footer .footer-contact > a {
+    display: inline-flex;
+    line-height: 0;
+    border-bottom: none;
+    color: var(--fg-muted);
+    transition: color 0.14s ease;
+}
+#site-footer .footer-contact > a:hover {
+    color: var(--fg);
+    border-bottom: none;
+}
+#site-footer .footer-contact svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+/* Email icon hover dropdown — exposes Gmail / Outlook-web / Copy
+   alternatives. Trigger is a real `mailto:` link so mobile tap still
+   works; desktop hover or keyboard focus reveals the panel. The wrap
+   carries a transparent padding at its bottom so the mouse can transit
+   from icon → menu without leaving the hover target. */
+#site-footer .email-menu {
+    position: relative;
+    display: inline-flex;
+}
+#site-footer .email-menu-trigger {
+    display: inline-flex;
+    line-height: 0;
+    border-bottom: none;
+    color: var(--fg-muted);
+    transition: color 0.14s ease;
+}
+#site-footer .email-menu:hover .email-menu-trigger,
+#site-footer .email-menu:focus-within .email-menu-trigger {
+    color: var(--fg);
+    border-bottom: none;
+}
+#site-footer .email-menu-dropdown-wrap {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding-bottom: 8px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s linear 0.14s;
+    z-index: 10;
+}
+#site-footer .email-menu:hover .email-menu-dropdown-wrap,
+#site-footer .email-menu:focus-within .email-menu-dropdown-wrap {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+    transition: opacity 0.14s ease, transform 0.14s ease;
+}
+#site-footer .email-menu-dropdown {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+}
+#site-footer .email-menu-dropdown li { display: block; }
+#site-footer .email-menu-dropdown a,
+#site-footer .email-menu-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 8px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: none;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    text-align: left;
+    white-space: nowrap;
+    color: var(--fg-muted);
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+}
+#site-footer .email-menu-dropdown a:hover,
+#site-footer .email-menu-dropdown button:hover {
+    background: var(--bg-hover);
+    color: var(--fg);
+    border-bottom: none;
+}
+#site-footer .email-menu-dropdown button:disabled {
+    color: var(--fg);
+    background: transparent;
+    cursor: default;
+}

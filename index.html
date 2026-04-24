@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CYCLES — Data Manager</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="cycles-shared.css">
     <style>
-        /* Sophisticated monospace for labels, durations, the log — replaces
-           Courier New across the UI for a modern/typographic feel. */
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
-        /* VT323 — classic dot-matrix / terminal typeface, used for the
-           LCD track-title row to mimic a dot-matrix printer readout. */
-        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        /* Roboto Mono + VT323 are imported by cycles-shared.css. DSEG
+           stays local since only this page uses it. */
 
         /* DSEG 7-seg font — explicit @font-face from the keshikan/DSEG GitHub
            mirror (the old `@import` of the npm dseg.min.css was silently failing,
@@ -35,505 +32,9 @@
             font-display: swap;
         }
 
-        :root {
-            /* ═══════════════════════════════════════════════════════════════
-               COLOR PALETTE
-               Every color used in the site lives here. Edit a value and
-               the whole page repaints. Grouped by what each color
-               affects so you can find things fast.
-               ═══════════════════════════════════════════════════════════════ */
-
-            /* ── Brand accents ─────────────────────────────────────────
-               The two main brand colors.
-               Red  = destructive actions, warnings, the red of the CYCLES logo.
-               Blue = primary buttons, selected states, callouts,
-                      the blue of the CYCLES logo.
-               Change these two and most of the UI recolors. */
-            --brand-red:      #d43800;
-            --brand-blue:     #1e48d4;
-            /* Darker variant of brand-red for pressed/active-state outlines. */
-            --brand-red-dark: #a02800;
-
-            /* ── Page backgrounds ──────────────────────────────────────
-               Warm cream palette for the vintage-hardware look. Page body
-               sits on --bg; modules and tiles layer these other tones
-               on top. Lightest first, darkest last. */
-            --bg:         #fbf7df;   /* page body (default background)              */
-            --bg-label:   #fffdf9;   /* little tag labels ("PLAYBACK", "IMPORT"…)   */
-            --bg-inset:   #f5f2e6;   /* input fields, recessed input zones           */
-            --bg-raised:  #eae3cc;   /* buttons, tiles, popup cards                  */
-            --bg-panel:   #e4dcbe;   /* each module's main face                      */
-            --bg-hover:   #ddd4b6;   /* button/tile hover state                      */
-            --bg-screen:  #d6cdac;   /* empty waveform viewer backdrop               */
-            --bg-counter: #1c1710;   /* black background behind the big 7-seg timer  */
-
-            /* ── Text / foreground ─────────────────────────────────────
-               Tiers from darkest to lightest. Use --fg for body copy
-               and fade down to --fg-faint for the least important text. */
-            --fg:         #1c1710;   /* primary copy and titles                      */
-            --fg-dim:     #3a2e18;   /* secondary copy                               */
-            --fg-muted:   #6a5c38;   /* labels, captions, "TARGET SLOT" tags         */
-            --fg-faint:   #8a7c58;   /* placeholders, almost-hidden hints            */
-            --on-accent:  #ffffff;   /* text drawn on top of brand-colored buttons   */
-
-            /* ── Borders & dividers ────────────────────────────────────
-               Button outlines, module frames, subtle section dividers. */
-            --border:        #a09060;   /* default outline                           */
-            --border-light:  #ccc4a0;   /* faint separators (inside slot tiles, etc) */
-            --border-dark:   #706040;   /* hover outlines, emphasized edges          */
-            --border-strong: #1c1710;   /* heavy borders (waveform canvas edge)      */
-            --border-subtle: #ddd4b6;   /* very faint canvas guide                   */
-
-            /* ── LEDs (the little round status dots) ───────────────────
-               Slot-active dot, card-connection LED, etc. Each has a main
-               color plus the darker outline ring that surrounds it. */
-            --led-green:        #44dd22;
-            --led-green-border: #2a9040;
-            --led-green-dark:   #1a8830;   /* stronger outline for "lit" state */
-            --led-red:          #cc2828;
-            --led-red-border:   #992222;
-            --led-amber-border: #a07810;
-
-            /* ── Memory-slot feature word colors ──────────────────────
-               The two colored words that appear on every slot tile:
-               "OVERDUB" (orange) and "UNDO" (purple). Fade to grey
-               when those features aren't available on that slot. */
-            --fmt-overdub: #f48107;   /* orange — Overdub label when active */
-            --fmt-undo:    #8a3fc7;   /* purple — Undo label when active    */
-
-            /* ── 7-segment displays (glowing red DSEG digits) ─────────
-               The clock-style numbers used for slot numbers and timers.
-               Dark backdrop, thin inner frame, neon-red digits on top. */
-            --seg-bg:       #23242c;
-            --seg-border:   #2a2c30;
-            --seg-text:     #ff4242;   /* softer red (small popup stepper)  */
-            --seg-text-hot: #ff3030;   /* harder red (main Import panel)    */
-
-            /* ── Waveform viewer (audio display area) ─────────────────
-               Guide lines, playhead marker, time-axis labels. */
-            --wave-guide: #bfb596;
-            --playhead:   rgba(28, 23, 10, 0.45);
-            --time-label: #6a5c38;
-
-            /* ── Logo ─────────────────────────────────────────────────
-               Colors inside the inline SVG logo in the header. Red uses
-               --brand-red automatically; dark text is here. */
-            --logo-dark: #18191e;
-
-            /* ── Derived / legacy aliases ─────────────────────────────
-               These point at other variables — kept so existing refs
-               don't break. You shouldn't need to touch these. */
-            --accent:     var(--brand-red);
-            --accent-dim: color-mix(in srgb, var(--brand-red) 30%, transparent);
-            --bg-alt:     var(--bg-inset);
-            --border-mid: var(--border);
-
-            /* ═══════════════════════════════════════════════════════════════
-               SHADOWS
-               Stacked hard-edged "printed panel" shadows give everything a
-               screen-printed-on-paper feel. Three standard sizes below —
-               use the token rather than writing a shadow by hand.
-               ═══════════════════════════════════════════════════════════════ */
-
-            /* Tunable color for the stacked-step "3-D" shadow under every
-               tactile button/tile. Defaults to --border but a color-picker
-               in the header lets the user override per theme via
-               localStorage. All shadow composites below use this. */
-            --shadow-stack: var(--border);
-
-            /* Big tactile buttons + tiles that press into the page when
-               clicked (transport row, slot thumbs, stock thumbs, etc.).
-               10-step stack + a soft ground shadow to "lift" the block.
-               Paired with translate(10px,10px) on :active so the block
-               lands flush with where its shadow was. */
-            --shadow-tactile:
-                1px 1px 0 var(--shadow-stack),
-                2px 2px 0 var(--shadow-stack),
-                3px 3px 0 var(--shadow-stack),
-                4px 4px 0 var(--shadow-stack),
-                5px 5px 0 var(--shadow-stack),
-                6px 6px 0 var(--shadow-stack),
-                7px 7px 0 var(--shadow-stack),
-                8px 8px 0 var(--shadow-stack),
-                9px 9px 0 var(--shadow-stack),
-                10px 10px 0 var(--shadow-stack),
-                11px 12px 8px rgba(0, 0, 0, 0.22);
-
-            /* Floating dialog / popup / modal cards sitting above the page.
-               4-step stack + a softer ground shadow. */
-            --shadow-card:
-                1px 1px 0 var(--shadow-stack),
-                2px 2px 0 var(--shadow-stack),
-                3px 3px 0 var(--shadow-stack),
-                4px 4px 0 var(--shadow-stack),
-                5px 6px 4px rgba(0, 0, 0, 0.14);
-
-            /* Small action buttons (Cancel, Import, modal buttons, etc.)
-               and mini-cards inside popups. 4-step stack, no ground shadow. */
-            --shadow-button:
-                1px 1px 0 var(--shadow-stack),
-                2px 2px 0 var(--shadow-stack),
-                3px 3px 0 var(--shadow-stack),
-                4px 4px 0 var(--shadow-stack);
-
-            /* Brand-blue variant of --shadow-button for primary confirm
-               buttons. Uses a darker shade of brand-blue for the stack. */
-            --shadow-button-blue:
-                1px 1px 0 color-mix(in srgb, var(--brand-blue), black 25%),
-                2px 2px 0 color-mix(in srgb, var(--brand-blue), black 25%),
-                3px 3px 0 color-mix(in srgb, var(--brand-blue), black 25%),
-                4px 4px 0 color-mix(in srgb, var(--brand-blue), black 25%);
-        }
-
-        /* ── Dark mode ─────────────────────────────────────────────────
-           Warm charcoal variant of the vintage-hardware palette. Keeps
-           the same hue relationships — just inverts lightness. Brand
-           accents (red/blue) read well on both so they don't change.
-           Shadow-tactile's 6-step stack is redefined to ride on a dark
-           step color; without this the printed-shadow effect inverts
-           weirdly against a dark panel. */
-        body.dark {
-            --bg:         #22201b;
-            --bg-label:   #000000;
-            --bg-inset:   #131211;
-            --bg-raised:  #45423a;
-            --bg-panel:   #302d27;
-            --bg-hover:   #3a3731;
-            --bg-screen:  #42413d;
-
-            --fg:         #e6e6e6;
-            --fg-dim:     #e9e2e2;
-            --fg-muted:   #f4ecec;
-            --fg-faint:   #9a8c65;
-
-            --border:        #6e6c68;
-            --border-light:  #212121;
-            --border-dark:   #747272;
-            --border-strong: #e6e6e6;
-            --border-subtle: #2a241a;
-
-            --fmt-undo:   #c58af4;
-
-            --wave-guide: #525252;
-            --playhead:   rgba(230, 230, 230, 0.45);
-            --time-label: #949494;
-
-            --logo-dark:  #f1e7d2;
-
-            /* Re-derive accent-dim against a dark page (more transparent
-               so it doesn't blow out on the deeper bg). */
-            --accent-dim: color-mix(in srgb, var(--brand-red) 22%, transparent);
-
-            /* Dark mode drops the soft ambient ground-shadow from the
-               tactile + card stacks (it reads as grime over the dark
-               bg). Stepped panel shadow is kept so buttons/tiles still
-               have their printed-panel feel. */
-            --shadow-tactile:
-                1px 1px 0 #0a0805,
-                2px 2px 0 #0a0805,
-                3px 3px 0 #0a0805,
-                4px 4px 0 #0a0805,
-                5px 5px 0 #0a0805,
-                6px 6px 0 #0a0805,
-                7px 7px 0 #0a0805,
-                8px 8px 0 #0a0805,
-                9px 9px 0 #0a0805,
-                10px 10px 0 #0a0805;
-            --shadow-card:
-                1px 1px 0 #0a0805,
-                2px 2px 0 #0a0805,
-                3px 3px 0 #0a0805,
-                4px 4px 0 #0a0805;
-            --shadow-button:
-                1px 1px 0 #0a0805,
-                2px 2px 0 #0a0805,
-                3px 3px 0 #0a0805,
-                4px 4px 0 #0a0805;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 12px;
-            background-color: var(--bg);
-            color: var(--fg);
-        }
-
-        #app {
-            max-width: 850px;
-            margin: 0 auto;
-            padding: 28px 24px;
-        }
-
-        /* ── Header ── */
-        #header {
-            display: flex;
-            align-items: stretch;
-            justify-content: space-between;
-            padding-bottom: 14px;
-            margin-bottom: 18px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        #logo { display: flex; flex-direction: column; gap: 22px; }
-        #logo svg .st1 { fill: var(--brand-blue); }
-        #logo svg .st0 { fill: var(--brand-red); }
-        #logo-sub {
-            font-size: 9px;
-            letter-spacing: 0.14em;
-            color: var(--fg-muted);
-            text-transform: uppercase;
-        }
-
-        /* Card status pins to the bottom of the header-right column so the
-           LED + "connected" label visually aligns with the logo subtitle row.
-           (Theme button is display:none, so the column usually has one
-           child; flex-end keeps status at the bottom regardless.) */
-        #header-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            justify-content: flex-end;
-            gap: 8px;
-        }
-
-        #card-status {
-            font-size: 9px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--fg-muted);
-            display: flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        /* Indicator light — small square, vintage style */
-        .led {
-            display: inline-block;
-            width: 7px; height: 7px;
-            border-radius: 1px;
-            background: var(--bg-inset);
-            border: 1px solid var(--border-dark);
-            flex-shrink: 0;
-        }
-        .led.green { background: var(--led-green); border-color: var(--led-green-border); }
-        .led.red   { background: var(--led-red);   border-color: var(--led-red-border); }
-        .led.amber { background: var(--accent);    border-color: var(--led-amber-border); }
-
-        #theme-controls {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-        /* Sliding LIGHT/DARK toggle — wide rectangular track with a
-           chunky rectangular thumb sliding across one half. The current
-           mode name sits on the *opposite* half of the track (so the
-           exposed area carries the label). Label swaps + thumb
-           translates on state change. Matches the page's printed-panel
-           aesthetic: hard edges, monospace label, tactile shadow stack
-           on the thumb. */
-        .theme-toggle {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-            user-select: none;
-        }
-        .theme-toggle input {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-            pointer-events: none;
-        }
-        .theme-toggle-track {
-            display: inline-block;
-            position: relative;
-            width: 40px;
-            height: 18px;
-            background: var(--bg-inset);
-            border: 1px solid var(--border);
-            box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.08);
-            opacity: 0.75;
-            transition: opacity 0.14s ease;
-        }
-        .theme-toggle:hover .theme-toggle-track { opacity: 1; }
-        /* Labels retained in DOM for a11y but visually hidden — the toggle
-           now reads as a quiet on/off switch rather than a labeled control. */
-        .theme-toggle-label {
-            position: absolute;
-            width: 1px; height: 1px;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            clip-path: inset(50%);
-            white-space: nowrap;
-        }
-        /* Sun + moon icons inside the track. Thumb slides over whichever
-           icon matches the current mode, leaving the *other* icon visible
-           — one icon is exposed at a time, indicating the current state. */
-        .theme-toggle-icon {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 10px;
-            height: 10px;
-            color: var(--fg);
-            pointer-events: none;
-            display: inline-flex;
-        }
-        .theme-toggle-icon svg { width: 100%; height: 100%; display: block; }
-        .theme-toggle-icon.sun  { left: 4px; }
-        .theme-toggle-icon.moon { right: 4px; }
-        .theme-toggle-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 14px;
-            height: 12px;
-            background: var(--bg-raised);
-            border: 1px solid var(--border);
-            box-shadow: 1px 1px 0 var(--border);
-            transition: left 0.16s cubic-bezier(.4, 1.1, .5, 1), background 0.15s, box-shadow 0.15s;
-        }
-        /* Track inner = 38 px. Thumb 14 + 2 border = 16 visual. Travel =
-           38 − 14 − 4 = 20. Thumb moves from left:2 to left:22. */
-        .theme-toggle input:checked ~ .theme-toggle-track .theme-toggle-thumb {
-            left: 22px;
-        }
-        .theme-toggle:active .theme-toggle-thumb {
-            box-shadow: 1px 1px 0 var(--border);
-            transform: translate(1px, 1px);
-        }
-        /* Theme customizer hidden from production — JS stays in place
-           for when we want to bring it back, just the visible ⚙ entry
-           point is taken out. */
-        /* Color picker for the --shadow-stack var — hidden for now.
-           The init IIFE still reads the picker's saved localStorage
-           values on load and reapplies them, so your chosen colors
-           keep working. To bring the picker back, drop the `display:
-           none` override below. */
-        .shadow-picker { display: none; }
-        .shadow-picker input[type="color"] {
-            appearance: none;
-            -webkit-appearance: none;
-            border: 1px solid var(--border-dark);
-            background: transparent;
-            width: 24px;
-            height: 18px;
-            padding: 0;
-            cursor: pointer;
-        }
-        .shadow-picker input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        .shadow-picker input[type="color"]::-webkit-color-swatch { border: none; }
-
-        #btn-theme-customize {
-            display: none;
-            font-size: 14px;
-            line-height: 1;
-            padding: 2px 7px 4px;
-            letter-spacing: 0;
-        }
-
-        /* Theme customizer lives in a detached browser window now — all
-           its styling is injected into the popup on open. No in-page
-           modal CSS here. */
-
-
-        /* ── Main nav — hamburger menu ─────────────────────────────────
-           Top-right hamburger button opens a small dropdown panel with
-           the three site pages (Data Manager / Owners Manual / Contact).
-           Same chrome on every layout mode — consistent nav regardless
-           of viewport width. */
-        #menu-wrapper {
-            position: relative;
-            display: inline-flex;
-        }
-        #menu-hamburger {
-            height: 36px;
-            padding: 0 14px;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            background: var(--bg-raised);
-            color: var(--fg);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-family: inherit;
-            transition: background 0.14s ease;
-        }
-        #menu-hamburger:hover { background: var(--bg-hover); }
-        /* Desktop default: MENU text label. Hamburger bars hidden. */
-        #menu-hamburger .menu-label {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-        }
-        #menu-hamburger .menu-bars { display: none; }
-        /* Pop-down drawer — lives in the page flow directly below the
-           header. Uses the grid-template-rows 0fr → 1fr trick so the
-           height transition always targets the drawer's *actual* content
-           height, keeping the animation speed visually consistent across
-           modes regardless of how tall the content is. */
-        #menu-dropdown {
-            display: grid;
-            grid-template-rows: 0fr;
-            background: var(--bg-panel);
-            transition: grid-template-rows 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        #menu-dropdown .menu-dropdown-inner {
-            overflow: hidden;
-            min-height: 0;
-        }
-        #menu-dropdown.open { grid-template-rows: 1fr; }
-        /* Mobile (pointer:coarse): swap MENU text for 3-line hamburger
-           icon, and bump menu-item padding for thumb-sized tap targets. */
-        @media (pointer: coarse) {
-            #menu-hamburger { width: 36px; padding: 0; }
-            #menu-hamburger .menu-label { display: none; }
-            #menu-hamburger .menu-bars {
-                display: inline-flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 4px;
-            }
-            #menu-hamburger .menu-bars span {
-                display: block;
-                width: 18px;
-                height: 2px;
-                background: var(--fg);
-            }
-            #menu-dropdown .main-nav-tab {
-                padding: 16px 24px;
-                font-size: 13px;
-            }
-        }
-        .main-nav-tab {
-            display: block;
-            padding: 10px 20px;
-            background: transparent;
-            color: var(--fg-muted);
-            border: none;
-            font-family: inherit;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            text-decoration: none;
-            transition: background 0.14s ease, color 0.14s ease;
-        }
-        .main-nav-tab:hover {
-            background: var(--bg-hover);
-            color: var(--fg);
-        }
-        .main-nav-tab.active {
-            background: var(--bg-inset);
-            color: var(--fg);
-            font-weight: 700;
-            cursor: default;
-            pointer-events: none;
-        }
-
+        /* Tokens, dark-mode overrides, base reset, body, #app, header,
+           theme toggle, nav drawer, and .main-nav-tab live in
+           cycles-shared.css. Page-specific styles continue below. */
 
         .card-ok {
             display: flex;
@@ -926,20 +427,9 @@
             border-color: var(--accent);
         }
 
-        /* ── Apollo-era rack modules ──
-           Each section gets a framed panel treatment: darker outer border,
-           four corner "screws" painted via radial gradients, and a small
-           module-code label hanging off the top edge. Not skeuomorphic —
-           graphic-inspired. */
-        .module {
-            position: relative;
-            background: var(--bg-panel);
-            border: 2px solid var(--border-dark);
-            padding: 36px 22px 26px;
-            margin: 24px 0;
-        }
-        /* While a module is being dragged, the others get a subtle dim +
-           smooth transform transition so they slide into their new spots. */
+        /* .module base styling (border, padding, screw dots via ::before,
+           module-code label) lives in cycles-shared.css. Rules below are
+           index-specific: the drag-and-drop behavior + popup card variant. */
         body.module-dragging .module {
             transition: transform 0.22s ease, opacity 0.18s ease;
         }
@@ -993,31 +483,6 @@
                 radial-gradient(circle at calc(100% - 10px) 10px, var(--border-dark) 2.5px, transparent 3px),
                 radial-gradient(circle at 10px calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px),
                 radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px);
-        }
-
-        .module::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background:
-                radial-gradient(circle at 10px 10px, var(--border-dark) 2.5px, transparent 3px),
-                radial-gradient(circle at calc(100% - 10px) 10px, var(--border-dark) 2.5px, transparent 3px),
-                radial-gradient(circle at 10px calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px),
-                radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--border-dark) 2.5px, transparent 3px);
-        }
-        .module-code {
-            position: absolute;
-            top: -14px;
-            left: 20px;
-            background: var(--bg-label);
-            padding: 6px 10px;
-            font-family: 'Roboto Mono', 'Courier New', monospace;
-            font-size: 14.4px;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            color: var(--fg-muted);
-            text-transform: uppercase;
         }
 
         /* ── Slot grid ── */
@@ -3104,119 +2569,17 @@
            calls don't error; output is still captured for debugging). */
         #log { display: none; }
 
-        /* Site footer — huge top margin pushes the footer well below the
-           last module so the user gets plenty of scroll leeway past the
-           content. Discreet copyright line + contact links, monospace to
-           match the rest of the site. */
-        #site-footer {
-            margin-top: 17vh;
-            padding: 28px 0 80px;
-            border-top: 1px solid var(--border);
-            color: var(--fg-muted);
-            font-family: 'Roboto Mono', 'Courier New', monospace;
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-        #site-footer .footer-inner {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        #site-footer .footer-links {
-            display: flex;
-            gap: 22px;
-        }
-        #site-footer a {
-            color: var(--fg-muted);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: color 0.12s, border-color 0.12s;
-        }
-        #site-footer a:hover {
-            color: var(--fg);
-            border-bottom-color: var(--fg-muted);
-        }
+        /* #site-footer chrome (typography, nav row layout, hover states)
+           lives in cycles-shared.css. Only the Wide-mode grid-area
+           assignment stays inline, earlier in this file. */
     </style>
 </head>
-<body>
+<body data-page="app">
 <div id="app">
 
-<!-- ── Header ─────────────────────────────────────────────────────────────── -->
-<div id="header">
-    <div id="logo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136.73 23.06" width="28em">
-          <defs><style>.st0{fill:var(--brand-red)}.st1{fill:var(--logo-dark)}</style></defs>
-          <g>
-            <path class="st1" d="M20.33,7.28h-7.12c-1.85,0-3.23.26-4.14.77-1.19.67-1.78,1.84-1.78,3.52s.6,2.82,1.8,3.46c.88.47,2.25.71,4.11.71h11.89c.41,0,.94-.26,1.59-.77.09-.07.56-.48,1.4-1.24l-6.7-6.07c-.29-.26-.64-.39-1.05-.39ZM20.2,13.56h-6.99c-2.07,0-3.26-.31-3.58-.95-.1-.2-.15-.54-.15-1.03,0-.56.07-.95.21-1.18.38-.62,1.55-.92,3.51-.92h6.94l4.47,4.08h-4.42Z"/>
-            <path class="st1" d="M103.36,0h-18.79c-2.13,0-3.96.74-5.47,2.22-1.52,1.48-2.27,3.29-2.27,5.41v5.92h-5.92V0h-2.19v13.54c0,.61.21,1.13.64,1.56.43.43.95.65,1.55.65h8.15c-.01-.15-.04-.3-.04-.46v-7.54c0-1.53.54-2.83,1.63-3.92,1.09-1.09,2.4-1.63,3.92-1.63h52.15V0h-33.36Z"/>
-            <path class="st1" d="M95.62,13.56h-11.51v1.2c0,.3.11.54.33.73.2.17.45.26.76.26h26.14c.41,0,.61-.21.61-.62,0-.32-.2-.55-.61-.71-.43-.17-1.07-.3-1.91-.42-.26-.04-.93-.11-1.99-.21-2.93-.3-5.03-.72-6.29-1.27-2.23-.95-3.34-2.54-3.34-4.77,0-.16.03-.31.04-.46h-12.64c-.31,0-.56.09-.76.26-.22.19-.33.43-.33.73v1.2h11.7c.09.4.21.79.37,1.16.27.64.64,1.23,1.11,1.76.38.42.81.81,1.31,1.16h-3Z"/>
-            <path class="st1" d="M103.37,7.95c0,.34.28.57.83.71,1.1.18,1.93.3,2.51.35,2.33.26,3.8.44,4.42.56,1.78.35,3.13.89,4.07,1.62,1.19.93,1.78,2.22,1.78,3.86s-.57,2.96-1.71,4.09c-1.14,1.13-2.51,1.7-4.1,1.7h-26.6l-5.47-.03-19.15.03h-3.32c-3.3,0-5.9-.7-7.79-2.09-2.15-1.58-3.22-3.97-3.22-7.17,0-1.64.29-3.07.85-4.3h-3.06c-.41,0-.79.16-1.15.48l-12.48,11.23c-1.37,1.23-2.93,1.85-4.68,1.85h-11.89c-3.3,0-5.9-.7-7.79-2.09-2.15-1.58-3.22-3.97-3.22-7.17s1.07-5.6,3.21-7.22c1.91-1.45,4.51-2.17,7.8-2.17h7.12c1.74,0,3.24.57,4.49,1.7l7.04,6.36,6.97-6.28c1.31-1.18,2.84-1.77,4.59-1.77h18.02v5.09h-4.8c-1.85,0-3.23.26-4.14.77-1.19.67-1.78,1.84-1.78,3.52s.6,2.82,1.8,3.46c.88.47,2.25.71,4.11.71h6.99V0h-20.21c-2.3,0-4.32.78-6.05,2.34l-5.5,4.95-5.56-5.03c-1.68-1.51-3.67-2.27-5.97-2.27h-7.12c-3.92,0-7.04.93-9.37,2.78C1.28,4.82,0,7.76,0,11.58s1.28,6.75,3.85,8.75c2.31,1.8,5.43,2.71,9.36,2.71h4.8v.02h7.09c2.31,0,4.36-.81,6.14-2.43l12.28-11.15h.06c-.1.67-.16,1.37-.16,2.11,0,3.83,1.28,6.75,3.85,8.75,2.31,1.8,5.43,2.71,9.36,2.71h54.54c2.21,0,4.09-.78,5.66-2.34,1.56-1.56,2.35-3.44,2.35-5.65,0-1.1-.24-2.15-.73-3.14-.48-.99-1.17-1.8-2.05-2.43h20.32v-2.19h-32.69c-.44.01-.67.23-.67.67ZM56.63,13.56c-2.07,0-3.26-.31-3.58-.95-.1-.2-.15-.54-.15-1.03,0-.56.07-.95.21-1.18.38-.62,1.55-.92,3.51-.92h4.8v4.08h-4.8Z"/>
-          </g>
-          <path class="st0" d="M56.63,19.39h54.54c1.2,0,2.23-.42,3.09-1.27.86-.84,1.28-1.87,1.28-3.07,0-1.9-1.22-3.22-3.65-3.95-.07-.02-2.33-.39-6.78-1.12-2.44-.39-3.65-1.14-3.65-2.23,0-.52.19-.96.56-1.34.38-.38.82-.57,1.34-.57h33.36v-2.19h-52.15c-1.12,0-2.08.42-2.89,1.26-.81.84-1.21,1.82-1.21,2.95v7.33c0,.74.19,1.4.54,2.02h-10.1c-1.01,0-1.87-.36-2.58-1.07-.71-.72-1.06-1.58-1.06-2.59V0h-2.19v13.54c0,1.4.45,2.62,1.31,3.66h-9.76c-2.27,0-4-.36-5.18-1.08-1.47-.91-2.2-2.42-2.2-4.53,0-3.83,2.46-5.75,7.38-5.75h4.8v-2.19h-18.02c-1.42,0-2.63.45-3.64,1.36l-7.92,7.14-7.98-7.22c-.95-.86-2.13-1.29-3.55-1.29h-7.12c-2.88,0-5.13.59-6.77,1.76-1.87,1.35-2.8,3.41-2.8,6.18s.94,4.81,2.82,6.12c1.61,1.12,3.86,1.69,6.76,1.69h11.89c1.42,0,2.66-.48,3.74-1.45l12.47-11.24c.64-.58,1.35-.87,2.11-.87h5.92c-1.52,1.34-2.28,3.25-2.28,5.75,0,2.77.94,4.81,2.82,6.12,1.61,1.12,3.86,1.69,6.76,1.69M27.3,16.24c-.71.64-1.44.96-2.2.96h-11.89c-2.27,0-4-.36-5.18-1.08-1.47-.91-2.2-2.42-2.2-4.53,0-3.83,2.46-5.75,7.38-5.75h7.12c.75,0,1.42.27,2.01.79l7.81,7.06-2.85,2.56ZM102.92,11.57c2.26.36,4.52.72,6.78,1.09,2.44.42,3.65,1.21,3.65,2.4,0,.59-.21,1.1-.64,1.52s-.94.63-1.54.63h-26.6c-.51,0-.96-.23-1.35-.69-.37-.44-.56-.92-.56-1.44v-2.67h14.64c-.48-.53-.84-1.12-1.11-1.76h-13.53v-2.67c0-.52.19-1.01.57-1.46.38-.45.83-.67,1.34-.67h15.19c-.32.58-.49,1.21-.49,1.91,0,1.86,1.22,3.13,3.65,3.82Z"/>
-        </svg>
-        <div id="logo-sub">Looper Workstation Data Manager</div>
-    </div>
-    <div id="header-right">
-        <div id="theme-controls">
-            <label class="theme-toggle" title="Toggle dark mode">
-                <input type="checkbox" id="btn-theme" />
-                <span class="theme-toggle-track">
-                    <span class="theme-toggle-label light">LIGHT</span>
-                    <span class="theme-toggle-label dark">DARK</span>
-                    <span class="theme-toggle-icon moon" aria-hidden="true">
-                        <svg viewBox="0 0 12 12">
-                            <mask id="toggle-moon-mask">
-                                <rect width="12" height="12" fill="white"/>
-                                <circle cx="8.5" cy="4" r="4" fill="black"/>
-                            </mask>
-                            <circle cx="6" cy="6" r="4.5" fill="currentColor" mask="url(#toggle-moon-mask)"/>
-                        </svg>
-                    </span>
-                    <span class="theme-toggle-icon sun" aria-hidden="true">
-                        <svg viewBox="0 0 12 12" fill="currentColor">
-                            <circle cx="6" cy="6" r="2.2"/>
-                            <rect x="5.25" y="0"    width="1.5" height="2"/>
-                            <rect x="5.25" y="10"   width="1.5" height="2"/>
-                            <rect x="0"    y="5.25" width="2"   height="1.5"/>
-                            <rect x="10"   y="5.25" width="2"   height="1.5"/>
-                            <g transform="rotate(45 6 6)">
-                                <rect x="5.25" y="0.5" width="1.5" height="1.8"/>
-                                <rect x="5.25" y="9.7" width="1.5" height="1.8"/>
-                                <rect x="0.5"  y="5.25" width="1.8" height="1.5"/>
-                                <rect x="9.7"  y="5.25" width="1.8" height="1.5"/>
-                            </g>
-                        </svg>
-                    </span>
-                    <span class="theme-toggle-thumb"></span>
-                </span>
-            </label>
-            <label class="shadow-picker" title="Button shadow color (per theme)">
-                <span>SHADOW</span>
-                <input type="color" id="btn-shadow-color">
-            </label>
-            <button id="btn-theme-customize" title="Customize colors">⚙</button>
-            <div id="menu-wrapper">
-                <button id="menu-hamburger" aria-label="Menu" aria-expanded="false" aria-controls="menu-dropdown">
-                    <span class="menu-label">Menu</span>
-                    <span class="menu-bars"><span></span><span></span><span></span></span>
-                </button>
-            </div>
-        </div>
-        <div id="card-status">Checking for CYCLES card…</div>
-    </div>
-</div>
-
-<!-- ── Main Nav Drawer (pops down from under the header) ───────────────────── -->
-<div id="menu-dropdown" role="menu">
-    <div class="menu-dropdown-inner">
-        <a class="main-nav-tab active" href="index.html" aria-current="page" role="menuitem">Data Manager</a>
-        <a class="main-nav-tab" href="manual.html" role="menuitem">Owners Manual</a>
-        <a class="main-nav-tab" href="contact.html" role="menuitem">Contact</a>
-    </div>
-</div>
+<!-- ── Header + nav drawer (markup injected by cycles-shared.js) ──────────── -->
+<div id="header"></div>
+<div id="menu-dropdown"></div>
 
 <!-- ── Playback (pedal controls + waveform + transport) ────────────────────── -->
 <div id="playback-section" class="module">
@@ -3322,16 +2685,8 @@
 <!-- ── Log ────────────────────────────────────────────────────────────────── -->
 <pre id="log"></pre>
 
-<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
-<footer id="site-footer">
-    <div class="footer-inner">
-        <div class="footer-copyright">© 2026 TwoSeam, LLC. All rights reserved.</div>
-        <div class="footer-links">
-            <a href="mailto:info@TwoSeam.com">info@TwoSeam.com</a>
-            <a href="https://www.reddit.com/user/TwoSeam/" target="_blank" rel="noopener noreferrer">Reddit</a>
-        </div>
-    </div>
-</footer>
+<!-- ── Footer (markup injected by cycles-shared.js) ───────────────────────── -->
+<footer id="site-footer"></footer>
 
 <!-- Theme customizer opens as a detached browser window via ⚙ button;
      no in-page modal markup needed. -->
@@ -3353,11 +2708,14 @@
         <div class="mobile-landing-logo"></div>
         <h1>Mobile Preview</h1>
         <p>CYCLES Data Manager is a desktop-first app. Most of the features require a microSD card and cannot be accessed from a phone.</p>
+        <br>
         <p class="mobile-landing-list-title">On Mobile you can</p>
         <ul>
             <li>Browse the full stock loop library</li>
             <li>Audition Effects</li>
-            <li>Read the manual <span class="mobile-landing-soon">(coming soon)</span></li>
+            <li>Read the manual</li>
+                -
+                
         </ul>
         <button id="btn-mobile-landing-ok" type="button">Got it</button>
     </div>
@@ -3430,6 +2788,10 @@
         <div id="modal-buttons"></div>
     </div>
 </div>
+
+<!-- Shared chrome injection (runs before the main inline script so the
+     injected header/footer elements exist when init() queries them). -->
+<script src="cycles-shared.js"></script>
 
 <script>
 'use strict';
@@ -7450,49 +6812,15 @@ window.matchMedia('(max-width: 600px)').addEventListener('change', applyNarrowOr
     }
 })();
 
-// ── Theme toggle ──────────────────────────────────────────────────────────────
-(function() {
-    const btn = document.getElementById('btn-theme');
-    const saved = localStorage.getItem('cycles-theme');
-    if (saved === 'dark') { document.body.classList.add('dark'); btn.checked = true; }
-
-    btn.addEventListener('change', () => {
-        const dark = btn.checked;
-        document.body.classList.toggle('dark', dark);
-        localStorage.setItem('cycles-theme', dark ? 'dark' : 'light');
-        if (g_viewerRaw) redrawViewer(getCurrentFrame());
-        applyShadowColorFromStorage();   // per-theme shadow override
-    });
-})();
-
-// ── Main nav menu ─────────────────────────────────────────────────────────
-// Click to toggle the pop-down drawer. Drawer lives below the header and
-// expands via max-height; modules below shift down naturally when it opens.
-(function() {
-    const btn = document.getElementById('menu-hamburger');
-    const dropdown = document.getElementById('menu-dropdown');
-    const wrapper = document.getElementById('menu-wrapper');
-    if (!btn || !dropdown || !wrapper) return;
-
-    const close = () => {
-        dropdown.classList.remove('open');
-        btn.setAttribute('aria-expanded', 'false');
-    };
-    const open = () => {
-        dropdown.classList.add('open');
-        btn.setAttribute('aria-expanded', 'true');
-    };
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdown.classList.contains('open') ? close() : open();
-    });
-    document.addEventListener('click', (e) => {
-        if (!wrapper.contains(e.target) && !dropdown.contains(e.target)) close();
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') close();
-    });
-})();
+// ── Theme-change hook ─────────────────────────────────────────────────────
+// cycles-shared.js owns the toggle + persistence. We listen for the event
+// it dispatches and refresh app-only state: the waveform viewer needs a
+// redraw (canvas colors are theme-dependent) and the shadow-stack override
+// must be reapplied from the per-theme localStorage key.
+window.addEventListener('cycles:themechange', () => {
+    if (g_viewerRaw) redrawViewer(getCurrentFrame());
+    applyShadowColorFromStorage();
+});
 
 // ── Button shadow-stack color picker ──────────────────────────────────────
 // Overrides --shadow-stack on :root, stored per-theme in localStorage so
