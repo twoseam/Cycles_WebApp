@@ -10,7 +10,7 @@
            Courier New across the UI for a modern/typographic feel. */
         @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
         /* VT323 — classic dot-matrix / terminal typeface, used for the
-           mobile track-title row to mimic a dot-matrix printer readout. */
+           LCD track-title row to mimic a dot-matrix printer readout. */
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
         /* DSEG 7-seg font — explicit @font-face from the keshikan/DSEG GitHub
@@ -461,9 +461,10 @@
 
         /* ── LCD track-title row ────────────────────────────────────────
            Global dot-matrix LCD readout shown above the waveform on every
-           layout (Wide / Vertical / Mobile). JS reparents #viewer-file-
-           label into this row; marquee scroll animates long titles. */
-        #mobile-title-row {
+           layout (Wide / Vertical / Narrow / Mobile). JS reparents
+           #viewer-file-label into this row; marquee scroll animates long
+           titles. */
+        #lcd-title-row {
             display: block;
             position: relative;
             margin: 14px 0 4px;
@@ -497,11 +498,11 @@
         /* Hide the pill only when it has no label at all (label still
            sits in pedal-panel because the JS reparent hasn't run). Empty
            label shows the "Please Load Song" placeholder. */
-        #mobile-title-row:not(:has(#viewer-file-label)) { display: none; }
-        #mobile-title-row #viewer-file-label:empty::before {
+        #lcd-title-row:not(:has(#viewer-file-label)) { display: none; }
+        #lcd-title-row #viewer-file-label:empty::before {
             content: 'Please Load Song';
         }
-        #mobile-title-row #viewer-file-label {
+        #lcd-title-row #viewer-file-label {
             font: inherit;
             letter-spacing: inherit;
             color: inherit;
@@ -518,7 +519,7 @@
            *pressed* button — i.e., flush with the surface the buttons
            are raised from. Unpressed buttons then pop up above the LCD
            baseline, preserving the "LCD inset / buttons raised" look. */
-        #pedal-panel > #mobile-title-row {
+        #pedal-panel > #lcd-title-row {
             flex: 0 1 auto;
             margin: 0 0 0 auto;
             height: 26px;
@@ -543,7 +544,7 @@
         #viewer-counter::after,
         .slot-display::after,
         #popup-slot-display::after,
-        #mobile-title-row::after {
+        #lcd-title-row::after {
             content: '';
             position: absolute;
             inset: 0;
@@ -1857,10 +1858,15 @@
         #popup-slot-val::-webkit-outer-spin-button,
         #popup-slot-val::-webkit-inner-spin-button { -webkit-appearance: none; }
 
-        /* ── Mobile / narrow-window layout (under 600 px) ──
-           File System Access API doesn't actually work on mobile browsers, but
-           the layout still needs to degrade gracefully for narrow desktop
-           windows and anyone poking at the site on their phone. */
+        /* ── Layout-mode reference ──────────────────────────────────────
+           Four modes, gated by orthogonal media queries:
+             1. Wide     — min-width: 1200px (composed two-column grid)
+             2. Vertical — 601–1199 px (single-column stack, default)
+             3. Narrow   — max-width: 600px (compact look; all features on)
+             4. Mobile   — pointer: coarse (compact look + Export/Import/
+                          Slots hidden — File System Access unavailable)
+           Narrow + Mobile share the AESTHETIC block at "narrow-or-mobile";
+           Mobile adds the FUNCTIONAL hides in the pointer:coarse-only block. */
 
         /* ── Wide-viewport composed module layout ────────────────────────
            On wide screens, arrange modules as:
@@ -1966,23 +1972,28 @@
             }
         }
 
+        /* Narrow mode — max-width: 600px. Fires for narrow desktop
+           windows AND for phones whose viewport happens to be < 600 px
+           (most of them). Mobile inherits these rules via viewport. */
         @media (max-width: 600px) {
             #app { padding: 18px 12px; }
-            /* Keep the Wide-style horizontal header in Mobile — logo +
+            /* Keep the Wide-style horizontal header in Narrow — logo +
                subtitle on the left, theme toggle + card status on the
                right — but scale the SVG logo down so it fits alongside
                the header-right column at narrow widths. */
             #header { gap: 10px; }
             #logo svg { width: 180px; height: auto; }
-            /* Mobile can't write to the SD card (no File System Access),
-               so the "Checking for CYCLES card…" / "connected" status is
-               irrelevant and just clutters the header. */
+            /* Card-status text only matters when File System Access is
+               available; on Mobile that's never (which is also why this
+               rule is paired with the pointer:coarse hides below). On
+               Narrow desktop the API works but the strip looks cramped
+               at this width, so it hides too. */
             #card-status { display: none; }
             #pedal-panel { gap: 16px; flex-wrap: wrap; row-gap: 14px; }
-            /* Mobile transport: row 1 = playback buttons spanning the full
-               column (evenly distributed). Row 2 = counter on the left,
-               Export on the right. Grid template keeps everything aligned
-               regardless of button widths. */
+            /* Narrow / Mobile transport: row 1 = playback buttons spanning
+               the full column (evenly distributed). Row 2 = counter on
+               the left, Export on the right. Grid template keeps everything
+               aligned regardless of button widths. */
             #transport {
                 display: grid;
                 grid-template-columns: 1fr auto;
@@ -2006,13 +2017,13 @@
             .slot-stepper button { width: 36px; }
         }
 
-        /* Touch-device FUNCTIONAL rules — Export, Import, Memory Slots
-           are all write-to-SD features that require File System Access,
-           so they're hidden on any touch device regardless of viewport
-           size. The stock-track preview button is redundant too (tap on
-           a tile loads the track into the player). Aesthetic mobile
-           rules are split into the wider-matching block below so narrow
-           desktop windows mimic the phone look. */
+        /* Mobile FUNCTIONAL rules (pointer: coarse only) — Export,
+           Import, Memory Slots are all write-to-SD features that require
+           File System Access, so they're hidden on any touch device
+           regardless of viewport size. The stock-track preview button is
+           redundant too (tap on a tile loads the track into the player).
+           Aesthetic rules shared with Narrow are in the combined block
+           below so narrow desktop windows mimic the phone look. */
         @media (pointer: coarse) {
             #btn-export,
             #import-section,
@@ -2020,9 +2031,11 @@
             #stock-section .stock-thumb .stock-play-btn { display: none; }
         }
 
-        /* Mobile AESTHETIC rules — fire on any touch device OR on a
-           narrow desktop window (≤ 600 px) so previewing the phone look
-           in a desktop browser doesn't require a real phone. */
+        /* Narrow + Mobile AESTHETIC rules — fire on either Narrow
+           (max-width: 600px) OR Mobile (pointer: coarse). Combined block
+           ensures the compact look matches whichever path got us here, so
+           previewing the phone aesthetic in a desktop browser doesn't
+           require a real phone. */
         @media (pointer: coarse), (max-width: 600px) {
             /* Clock sits alongside Speed/Direction in the pedal-panel
                row, aligned to the bottom of the button group. Pedal
@@ -2040,9 +2053,9 @@
                 padding: 0 4px;
                 font-size: 10px;
             }
-            /* Mobile override — revert to the compact 26-px clock that
-               matches the shrunk pedal buttons. translateY(4 px) is
-               already applied globally to #pedal-panel > #viewer-counter
+            /* Narrow / Mobile override — revert to the compact 26-px
+               clock that matches the shrunk pedal buttons. translateY(4 px)
+               is already applied globally to #pedal-panel > #viewer-counter
                (see base rules) so its bottom lines up with the pressed
                pedal-opt. */
             #pedal-panel #viewer-counter {
@@ -2114,9 +2127,9 @@
             }
             #fx-rack .fx-val { min-width: 26px; }
 
-            /* Stock-clip on mobile: zero out the negative margins that
-               normally tuck the clip under the decorative walls. Walls
-               are hidden on mobile so the margins were pushing content
+            /* Stock-clip on Narrow / Mobile: zero out the negative margins
+               that normally tuck the clip under the decorative walls. Walls
+               are hidden in this mode so the margins were pushing content
                left of the module's padding edge. */
             #stock-section .stock-clip {
                 margin-left: 0;
@@ -2124,9 +2137,9 @@
                 padding-left: 0;
                 padding-right: 0;
             }
-            /* Mobile-tight LCD row — global rule sets the full LCD
-               styling; here we just shrink the font for phone widths. */
-            #mobile-title-row { font-size: 14px; }
+            /* Narrow / Mobile LCD row — global rule sets the full LCD
+               styling; here we just shrink the font for narrow viewports. */
+            #lcd-title-row { font-size: 14px; }
 
             /* Stock tracks on touch: 3-row × 2-col pages, horizontal
                swipe scroll. Tiles flow column-first so each page reads
@@ -2160,7 +2173,7 @@
             }
             /* Hide the prev/next arrow UI — swipe is the primary gesture
                on touch. Also hide the decorative left/right walls; at
-               mobile widths the swipe gesture is obvious enough. */
+               narrow widths the swipe gesture is obvious enough. */
             #stock-controls,
             #stock-section::after,
             #stock-section .stock-wall-left { display: none; }
@@ -3005,8 +3018,8 @@
             </div>
             <span id="viewer-file-label"></span>
         </div>
-        <!-- Mobile-only LCD title line; populated by JS on touch/narrow. -->
-        <div id="mobile-title-row"></div>
+        <!-- LCD title line — appears in Narrow + Mobile modes; populated by JS. -->
+        <div id="lcd-title-row"></div>
         <div id="viewer">
             <canvas id="viewer-canvas" style="display:none"></canvas>
             <div id="viewer-empty">Select a memory slot</div>
@@ -3838,9 +3851,9 @@ function redrawViewer(playheadFrame = -1) {
 
 // ── Viewer: label ─────────────────────────────────────────────────────────────
 // Single source of truth for the track-info label shown in the pedal-
-// panel (desktop) / mobile-title-row (mobile). Every load path — stock
-// preview, memory-slot click, import fallback — builds its label via
-// this helper so the field order and separators are consistent.
+// panel (Wide / Vertical) / lcd-title-row (Narrow / Mobile). Every load
+// path — stock preview, memory-slot click, import fallback — builds its
+// label via this helper so the field order and separators are consistent.
 // Order: Title — Artist — BPM — Key — Duration — Format — Size.
 // Any missing fields are omitted silently.
 function buildViewerLabel(parts = {}) {
@@ -5861,8 +5874,9 @@ function applySlotGridLayout() {
 // mounted on-demand once the user drags into the bottom ghost row —
 // see maybeExtendGhostsForHover below.
 // Live column count for the slot grid — reads computed CSS so the ghost
-// math tracks whichever layout is active (5-col in narrow mode, 8-col in
-// wide mode). Returns 8 as a fallback if the element isn't mounted yet.
+// math tracks whichever layout is active (8-col Wide / 5-col Vertical /
+// 3-col Narrow + Mobile). Returns 8 as a fallback if the element isn't
+// mounted yet.
 function getSlotCols() {
     const grid = document.getElementById('slot-grid');
     if (!grid) return 8;
@@ -5874,8 +5888,8 @@ function getSlotCols() {
 // When the viewport crosses a column-count breakpoint the CSS grid
 // re-shapes, so the row-fill padding in refreshUI goes stale. Re-run
 // refreshUI on each transition so the trailing empty tiles match the
-// new row width. Two breakpoints matter: 1200 (wide 2×2 ↔ intermediate)
-// and 600 (intermediate ↔ mobile).
+// new row width. Two breakpoints matter: 1200 (Wide ↔ Vertical) and
+// 600 (Vertical ↔ Narrow).
 const _rerunOnBreakpoint = () => {
     if (typeof refreshUI === 'function') refreshUI().catch(() => {});
 };
@@ -5955,8 +5969,9 @@ function maybeExtendGhostsForHover(slotNum) {
     if (!Number.isFinite(slotNum)) return;
     if (g_ghostCeiling <= 0 || g_ghostCeiling >= 99) return;
     const cols = getSlotCols();
-    // 4-col (mobile) mode caps at one row of ghosts — further expansion
-    // would push the tiles off-screen on narrow viewports.
+    // 3-col (Narrow / Mobile) mode caps at one row of ghosts — further
+    // expansion would push the tiles off-screen at narrow viewports.
+    // Gate at <= 4 for a defensive safety margin.
     if (cols <= 4) return;
     if (slotNum <= g_ghostCeiling - cols) return;  // not in last row
 
@@ -6096,6 +6111,25 @@ async function handleStockTrackClick(track, displayTitle) {
     }
 }
 
+// Shared "load + play" for stock tracks. Used by the desktop hover-play
+// button and the mobile tile-tap. Fetches + decodes, drops any existing
+// selection, pushes the track into the viewer with its rich label, and
+// starts playback from 0 so one gesture = "play this track."
+async function previewStockTrack(track, title) {
+    _killSource();
+    document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
+    g_selection = null;
+    try {
+        const { interleaved } = await fetchAndDecodeStockTrack(track);
+        loadViewerFromInterleaved(interleaved, buildStockTrackLabel(track, title));
+        playFrom(0);
+        document.getElementById('btn-play').innerHTML = ICON_PAUSE;
+    } catch (err) {
+        log(`Stock preview error: ${err.message}`);
+        document.getElementById('btn-play').innerHTML = ICON_PLAY;
+    }
+}
+
 // Drop target: stock track dragged onto a slot tile. Short tracks (≤ 1:30)
 // import silently to the dropped slot. Long tracks still show the full
 // format picker, with the slot prefilled from the drop target.
@@ -6197,20 +6231,7 @@ async function renderStockTracks() {
         playBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             e.stopImmediatePropagation();
-            _killSource();
-            document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
-            g_selection = null;
-            try {
-                const { interleaved } = await fetchAndDecodeStockTrack(track);
-                loadViewerFromInterleaved(interleaved, buildStockTrackLabel(track, title));
-                // Auto-start playback — matches the mobile tap-to-play
-                // behavior so "click the play button" actually plays.
-                playFrom(0);
-                document.getElementById('btn-play').innerHTML = ICON_PAUSE;
-            } catch (err) {
-                log(`Stock preview error: ${err.message}`);
-                document.getElementById('btn-play').innerHTML = ICON_PLAY;
-            }
+            await previewStockTrack(track, title);
         });
         thumb.appendChild(playBtn);
 
@@ -6221,20 +6242,7 @@ async function renderStockTracks() {
             // includes metadata (artist, bpm, key, duration) so the
             // track-title row under the transport carries context.
             if (matchMedia('(pointer: coarse)').matches) {
-                _killSource();
-                document.querySelectorAll('.slot-thumb').forEach(el => el.classList.remove('active'));
-                g_selection = null;
-                try {
-                    const { interleaved } = await fetchAndDecodeStockTrack(track);
-                    loadViewerFromInterleaved(interleaved, buildStockTrackLabel(track, title));
-                    // Auto-start playback on touch so tapping a tile is a
-                    // one-gesture "play this" instead of "load then hit play".
-                    playFrom(0);
-                    document.getElementById('btn-play').innerHTML = ICON_PAUSE;
-                } catch (err) {
-                    log(`Stock preview error: ${err.message}`);
-                    document.getElementById('btn-play').innerHTML = ICON_PLAY;
-                }
+                await previewStockTrack(track, title);
                 return;
             }
             handleStockTrackClick(track, title);
@@ -6907,7 +6915,7 @@ async function init() {
     }
 }
 
-// ── LCD marquee on the mobile title row ──────────────────────────────────
+// ── LCD marquee on the LCD title row ─────────────────────────────────────
 // Cycle, 4 fps stepped, pacman wrap via mirrored clone. The gap between
 // the two copies is sized to one container width so the clone sits fully
 // off-screen right while the original is at rest — that way the scroll
@@ -6923,7 +6931,7 @@ async function init() {
 //               start, clone back off-screen right. Same visual.
 let g_marqueeInterval = null;
 function setupTitleMarquee() {
-    const row   = document.getElementById('mobile-title-row');
+    const row   = document.getElementById('lcd-title-row');
     const label = document.getElementById('viewer-file-label');
     if (!row || !label) return;
 
@@ -7017,19 +7025,19 @@ function setupTitleMarquee() {
 
 // ── Layout reparent ────────────────────────────────────────────────────
 // The LCD track-title row is global — file-label is always reparented
-// into #mobile-title-row, and the row itself lives in different
+// into #lcd-title-row, and the row itself lives in different
 // containers per layout:
-//   Wide / Vertical desktop: row sits inside #pedal-panel, inline with
+//   Wide / Vertical: row sits inside #pedal-panel, inline with
 //     Speed/Direction; width is natural, pushed to the right via
 //     margin-left: auto.
-//   Mobile: row sits above the waveform (inside #playback-layout) in
-//     its own band; the clock moves up into #pedal-panel.
-function applyMobileLayoutRearrange() {
-    const mobileLayout   = matchMedia('(pointer: coarse), (max-width: 600px)').matches;
+//   Narrow / Mobile: row sits above the waveform (inside #playback-layout)
+//     in its own band; the clock moves up into #pedal-panel.
+function applyNarrowOrMobileLayoutRearrange() {
+    const narrowOrMobile = matchMedia('(pointer: coarse), (max-width: 600px)').matches;
     const counter        = document.getElementById('viewer-counter');
     const pedalPanel     = document.getElementById('pedal-panel');
     const fileLabel      = document.getElementById('viewer-file-label');
-    const titleRow       = document.getElementById('mobile-title-row');
+    const titleRow       = document.getElementById('lcd-title-row');
     const transport      = document.getElementById('transport');
     const viewer         = document.getElementById('viewer');
     const playbackLayout = document.getElementById('playback-layout');
@@ -7039,7 +7047,7 @@ function applyMobileLayoutRearrange() {
         titleRow.appendChild(fileLabel);
     }
 
-    if (mobileLayout) {
+    if (narrowOrMobile) {
         // LCD row above the waveform inside #playback-layout.
         if (titleRow && playbackLayout && viewer && titleRow.parentNode !== playbackLayout) {
             playbackLayout.insertBefore(titleRow, viewer);
@@ -7059,8 +7067,8 @@ function applyMobileLayoutRearrange() {
         }
     }
 }
-applyMobileLayoutRearrange();
-window.matchMedia('(max-width: 600px)').addEventListener('change', applyMobileLayoutRearrange);
+applyNarrowOrMobileLayoutRearrange();
+window.matchMedia('(max-width: 600px)').addEventListener('change', applyNarrowOrMobileLayoutRearrange);
 
 // ── Mobile landing modal ──────────────────────────────────────────────────
 // Shown once per browser on touch devices (phones/tablets), explaining
@@ -7078,11 +7086,9 @@ window.matchMedia('(max-width: 600px)').addEventListener('change', applyMobileLa
 
     if (!previewMode && !matchMedia('(pointer: coarse)').matches) return;
     const STORAGE_KEY = 'cyclesMobileLandingDismissed';
-    // TEMPORARILY DISABLED for mobile-layout testing — normally gates the
-    // modal to once per browser. Restore the block below when done.
-    // if (!previewMode) {
-    //     try { if (localStorage.getItem(STORAGE_KEY)) return; } catch {}
-    // }
+    // TODO restore once-per-browser gate: `if (!previewMode) { try { if
+    // (localStorage.getItem(STORAGE_KEY)) return; } catch {} }`. Disabled
+    // for mobile-layout testing — see _Memory/project_pending_checklist.md.
 
     const modal = document.getElementById('mobile-landing-modal');
     const btn   = document.getElementById('btn-mobile-landing-ok');
