@@ -2176,6 +2176,29 @@
             #stock-section #stock-grid .stock-thumb {
                 flex: none;
                 scroll-snap-align: start;
+                /* Deeper press feel on Narrow / Mobile — tiles are ~2x
+                   the area of the transport buttons, so the same 6px
+                   translate looked half as crisp. Bump translate to 10px
+                   AND deepen the rest shadow to match (10-step stack +
+                   stronger ground shadow), so the tile lands flush with
+                   its shadow on press just like transport buttons do. */
+                box-shadow:
+                    1px 0 0 var(--shadow-stack, var(--border)),
+                    2px 0 0 var(--shadow-stack, var(--border)),
+                    3px 0 0 var(--shadow-stack, var(--border)),
+                    4px 0 0 var(--shadow-stack, var(--border)),
+                    5px 0 0 var(--shadow-stack, var(--border)),
+                    6px 0 0 var(--shadow-stack, var(--border)),
+                    7px 0 0 var(--shadow-stack, var(--border)),
+                    8px 0 0 var(--shadow-stack, var(--border)),
+                    9px 0 0 var(--shadow-stack, var(--border)),
+                    10px 0 0 var(--shadow-stack, var(--border)),
+                    11px 12px 8px rgba(0,0,0,0.22);
+            }
+            #stock-section #stock-grid .stock-thumb:active {
+                transform: translate(10px, 10px);
+                box-shadow: 0 0 0 transparent;
+                transition: none;
             }
             /* Hide the prev/next arrow UI — swipe is the primary gesture
                on touch. Also hide the decorative left/right walls; at
