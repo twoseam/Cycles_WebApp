@@ -1845,8 +1845,11 @@
            all write-to-SD features that don't work on phones/tablets (no
            File System Access API) regardless of window width — hidden by
            device rather than viewport so a narrow desktop window still
-           shows them. */
-        @media (hover: none) and (pointer: coarse) {
+           shows them.
+           Previously used `(hover: none) and (pointer: coarse)` but some
+           iOS/Android browsers report both mouse-like and touch-like
+           capabilities, so only `pointer: coarse` is a reliable match. */
+        @media (pointer: coarse) {
             #btn-export,
             #import-section,
             #slot-section { display: none; }
@@ -2633,8 +2636,8 @@
     <div class="module-code">Stock Tracks</div>
     <div class="section-header">
         <div id="stock-controls">
-            <button id="btn-stock-prev" class="stock-arrow" type="button" aria-label="Previous">◀</button>
-            <button id="btn-stock-next" class="stock-arrow" type="button" aria-label="Next">▶</button>
+            <button id="btn-stock-prev" class="stock-arrow" type="button" aria-label="Previous">◀&#xFE0E;</button>
+            <button id="btn-stock-next" class="stock-arrow" type="button" aria-label="Next">▶&#xFE0E;</button>
         </div>
     </div>
     <div class="stock-clip">
@@ -2664,8 +2667,8 @@
     <div class="section-header">
         <button class="section-wipe" id="btn-wipe-slots" title="Delete all memory slots">Delete All SLots</button>
         <div id="slot-controls">
-            <button id="btn-slot-prev" class="stock-arrow" type="button" aria-label="Previous">◀</button>
-            <button id="btn-slot-next" class="stock-arrow" type="button" aria-label="Next">▶</button>
+            <button id="btn-slot-prev" class="stock-arrow" type="button" aria-label="Previous">◀&#xFE0E;</button>
+            <button id="btn-slot-next" class="stock-arrow" type="button" aria-label="Next">▶&#xFE0E;</button>
         </div>
     </div>
     <div id="slot-grid"></div>
