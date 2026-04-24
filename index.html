@@ -447,7 +447,8 @@
            of the inset display. pointer-events:none so canvas drags pass through. */
         #viewer-counter::after,
         .slot-display::after,
-        #popup-slot-display::after {
+        #popup-slot-display::after,
+        #mobile-title-row::after {
             content: '';
             position: absolute;
             inset: 0;
@@ -1901,7 +1902,7 @@
                 flex-direction: column;
                 gap: 10px;
             }
-            #playback-layout > #viewer { margin-top: 14px; }
+            #playback-layout > #viewer { margin-top: 4px; }
             #fx-rack { width: 100%; padding: 10px 14px; }
             #fx-rack .fx-slot {
                 flex-direction: row;
@@ -1961,31 +1962,52 @@
                 padding-left: 0;
                 padding-right: 0;
             }
-            /* Track-title row under the transport. Contained within the
-               module; scrolls horizontally if the string is longer than
-               the module width. VT323 typeface for a dot-matrix-printer
-               feel. */
+            /* Track-title row under the transport. Styled as a vintage
+               LCD readout — deep inset panel, soft green phosphor text
+               with glow, VT323 dot-matrix typeface. Contained within the
+               module; the user can swipe the text horizontally if the
+               string is longer than the window. */
             #mobile-title-row {
                 display: block;
-                max-width: 100%;
+                position: relative;
+                margin: 14px 0 0;
+                padding: 2px 10px;
+                background: #0a1a0c;
+                border: 1px solid var(--seg-border);
+                border-radius: 2px;
+                box-shadow:
+                    inset 0 1px 3px rgba(0, 0, 0, 0.7),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.025);
                 overflow-x: auto;
                 overflow-y: hidden;
                 scrollbar-width: none;
                 white-space: nowrap;
                 text-align: center;
                 font-family: 'VT323', 'Roboto Mono', 'Courier New', monospace;
-                font-size: 22px;
-                letter-spacing: 0.06em;
-                color: var(--fg-muted);
+                font-size: 14px;
+                letter-spacing: 0.08em;
+                color: #5fff6a;
+                text-shadow: 0 0 5px rgba(95, 255, 106, 0.3);
                 text-transform: uppercase;
-                padding-top: 12px;
-                line-height: 1.2;
+                line-height: 1.15;
+                /* Subtle scanlines on top of the phosphor to complete
+                   the LCD look — every other pixel row is faintly
+                   darkened via a repeating linear-gradient. */
+                background-image:
+                    repeating-linear-gradient(
+                        to bottom,
+                        rgba(0, 0, 0, 0.18) 0,
+                        rgba(0, 0, 0, 0.18) 1px,
+                        transparent 1px,
+                        transparent 3px
+                    );
+                background-color: #0a1a0c;
             }
             #mobile-title-row::-webkit-scrollbar { display: none; }
             #mobile-title-row:empty { display: none; }
             /* The reparented #viewer-file-label has its own 9px rule
                that would override the container's VT323 sizing —
-               force it to inherit so the dot-matrix look applies. */
+               force it to inherit so the LCD look applies. */
             #mobile-title-row #viewer-file-label {
                 font: inherit;
                 letter-spacing: inherit;
@@ -1994,6 +2016,7 @@
                 overflow: visible;
                 white-space: inherit;
                 margin: 0;
+                text-shadow: inherit;
             }
 
             /* Stock tracks on touch: 3-row × 2-col pages, horizontal
@@ -2865,6 +2888,8 @@
             </div>
             <span id="viewer-file-label"></span>
         </div>
+        <!-- Mobile-only LCD title line; populated by JS on touch/narrow. -->
+        <div id="mobile-title-row"></div>
         <div id="viewer">
             <canvas id="viewer-canvas" style="display:none"></canvas>
             <div id="viewer-empty">Select a memory slot</div>
@@ -2893,9 +2918,6 @@
         </div>
         <button id="btn-export">Export</button>
     </div>
-    <!-- Mobile-only title line; populated by JS when viewer-file-label
-         is reparented out of the pedal-panel on touch devices. -->
-    <div id="mobile-title-row"></div>
 </div>
 
 <!-- ── Stock Music ────────────────────────────────────────────────────────── -->
@@ -6723,6 +6745,61 @@ async function init() {
         showConnectPrompt();
     }
 }
+
+// ── LCD marquee on the mobile title row ──────────────────────────────────
+// When the reparented #viewer-file-label is wider than the title row,
+// step the label left one tick every 250 ms (4 fps) so the text scrolls
+// like a classic LCD display. When it fully clears the left edge, it
+// wraps back around from the right. Static if the text fits.
+let g_marqueeInterval = null;
+function setupTitleMarquee() {
+    const row   = document.getElementById('mobile-title-row');
+    const label = document.getElementById('viewer-file-label');
+    if (!row || !label) return;
+
+    if (g_marqueeInterval) { clearInterval(g_marqueeInterval); g_marqueeInterval = null; }
+    label.style.transform = '';
+    label.style.display   = '';
+
+    // Only animate when the label sits inside the title-row (mobile
+    // aesthetic active) and the content overflows the container.
+    if (label.parentNode !== row) return;
+
+    requestAnimationFrame(() => {
+        const containerW = row.clientWidth;
+        const contentW   = label.scrollWidth;
+        if (contentW <= containerW) return;   // fits, no scroll
+
+        // Display as inline-block so translateX affects layout-free.
+        label.style.display = 'inline-block';
+        const stepPx = 10;
+        const pauseTicks = 4;           // pause ≈ 1s at the right-side start
+        const totalTravel = contentW + containerW;
+        let tick = -pauseTicks;         // negative = initial pause before first step
+        g_marqueeInterval = setInterval(() => {
+            if (tick < 0) { tick++; return; }
+            const offset = containerW - tick * stepPx;
+            if (offset < -contentW) {
+                tick = -pauseTicks;     // pause, then restart from right edge
+                label.style.transform = `translateX(${containerW}px)`;
+                return;
+            }
+            label.style.transform = `translateX(${offset}px)`;
+            tick++;
+        }, 250);
+    });
+}
+
+// Rerun marquee setup when the label text changes (new track loaded) or
+// the viewport resizes (container width changes).
+(function bindMarqueeObservers() {
+    const label = document.getElementById('viewer-file-label');
+    if (label) {
+        const obs = new MutationObserver(setupTitleMarquee);
+        obs.observe(label, { childList: true, characterData: true, subtree: true });
+    }
+    window.addEventListener('resize', setupTitleMarquee);
+})();
 
 // ── Mobile layout reparent ────────────────────────────────────────────────
 // On touch devices or narrow desktop windows, move the 0:00 counter into
