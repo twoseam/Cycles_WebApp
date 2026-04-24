@@ -4337,11 +4337,16 @@ document.querySelectorAll('.pedal-opt[data-speed]').forEach(btn => {
     btn.addEventListener('click', () => {
         const newSpeed = parseFloat(btn.dataset.speed);
         if (newSpeed === g_speed) return;
+        // Capture the live playhead at the OLD speed before swapping
+        // g_speed — getCurrentFrame multiplies elapsed time by g_speed
+        // so reading it after the change applies the new factor to
+        // time that actually played at the old rate, landing at the
+        // wrong frame.
+        const resumeFrame = g_currentSrc ? getCurrentFrame() : null;
         g_speed = newSpeed;
         document.querySelectorAll('.pedal-opt[data-speed]').forEach(b =>
             b.classList.toggle('active', parseFloat(b.dataset.speed) === g_speed));
-        if (g_currentSrc) {
-            const resumeFrame = getCurrentFrame();
+        if (resumeFrame !== null) {
             playFrom(resumeFrame);
         }
     });
