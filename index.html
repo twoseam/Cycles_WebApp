@@ -1516,7 +1516,7 @@
            back to the single-column stack. */
         @media (min-width: 1200px) {
             #app {
-                max-width: 1300px;
+                /* max-width: 1300px declared in cycles-shared.css */
                 display: grid;
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
                 grid-template-areas:
@@ -1613,7 +1613,7 @@
            windows AND for phones whose viewport happens to be < 600 px
            (most of them). Mobile inherits these rules via viewport. */
         @media (max-width: 600px) {
-            #app { padding: 18px 12px; }
+            /* #app padding declared in cycles-shared.css */
             /* Keep the Wide-style horizontal header in Narrow — logo +
                subtitle on the left, theme toggle + card status on the
                right — but scale the SVG logo down so it fits alongside

@@ -170,10 +170,35 @@ body {
 }
 body.cycles-ready { visibility: visible; }
 
+/* ── App container ──
+   Single source of truth for page width across every page. Three
+   breakpoints, mirroring the four layout modes used in index.html:
+     • default        850px, 28/24 padding   (Vertical mode, 601–1199 px)
+     • ≥1200px        1300px max             (Wide mode — matches index.html grid)
+     • ≤600px         18/12 padding          (Narrow / Mobile)
+   Pages that want a 2-column grid (data manager) layer it on top by
+   setting display: grid + grid-template-areas inside the same media
+   query — no need to redeclare max-width or padding. */
 #app {
     max-width: 850px;
     margin: 0 auto;
     padding: 28px 24px;
+}
+@media (min-width: 1200px) {
+    #app { max-width: 1300px; }
+}
+@media (max-width: 600px) {
+    #app { padding: 18px 12px; }
+}
+
+/* Reading-content wrapper — used by stub pages + spec doc. Sits
+   inside #app and constrains a single column of text to a comfortable
+   reading width, even when the outer canvas is 1300 px wide. Pages
+   with a multi-column grid (data manager) skip this and use #app's
+   full width directly. */
+.page-content {
+    max-width: 760px;
+    margin: 0 auto;
 }
 
 /* ── Header ── */
