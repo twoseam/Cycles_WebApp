@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYCLES v2 — Hardware Requirements</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="cycles-shared.css">
+    <style>
+        :root {
+            --spec-fg: var(--fg);
+            --spec-fg-muted: var(--fg-muted);
+            --spec-bg: var(--bg);
+            --spec-card: var(--bg-label);
+            --spec-border: var(--border);
+            --spec-accent: var(--brand-red);
+            --spec-accent-soft: rgba(184, 51, 42, 0.08);
+            --spec-code-bg: rgba(0, 0, 0, 0.04);
+        }
+        body.dark {
+            --spec-code-bg: rgba(255, 255, 255, 0.06);
+            --spec-accent-soft: rgba(212, 56, 0, 0.18);
+        }
+
+        .v2spec-wrap {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 32px 20px 64px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.55;
+            color: var(--spec-fg);
+        }
+
+        .v2spec-title {
+            border-bottom: 2px solid var(--spec-fg);
+            padding-bottom: 18px;
+            margin-bottom: 24px;
+        }
+        .v2spec-title h1 {
+            font-family: "Roboto Mono", "SF Mono", Menlo, Consolas, monospace;
+            font-size: 26px;
+            font-weight: 600;
+            margin: 0 0 4px;
+            letter-spacing: -0.01em;
+        }
+        .v2spec-title .v2spec-subtitle {
+            font-size: 14px;
+            color: var(--spec-fg-muted);
+            margin: 0;
+        }
+        .v2spec-title .v2spec-meta {
+            font-family: "Roboto Mono", "SF Mono", Menlo, Consolas, monospace;
+            font-size: 11px;
+            color: var(--spec-fg-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 12px;
+        }
+
+        .v2spec-intro {
+            font-size: 14px;
+            color: var(--spec-fg-muted);
+            margin: 0 0 28px;
+            padding: 14px 18px;
+            background: var(--spec-accent-soft);
+            border-left: 3px solid var(--spec-accent);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .v2spec-section {
+            background: var(--spec-card);
+            border: 1px solid var(--spec-border);
+            border-radius: 8px;
+            padding: 22px 26px;
+            margin-bottom: 18px;
+            page-break-inside: avoid;
+        }
+        .v2spec-section .v2spec-eyebrow {
+            font-family: "Roboto Mono", "SF Mono", Menlo, Consolas, monospace;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--spec-accent);
+            margin: 0 0 4px;
+        }
+        .v2spec-section h2 {
+            font-size: 19px;
+            font-weight: 600;
+            margin: 0 0 12px;
+        }
+        .v2spec-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 16px 0 6px;
+            color: var(--spec-fg);
+        }
+        .v2spec-section p { margin: 0 0 10px; }
+        .v2spec-section ul { padding-left: 20px; margin: 0 0 10px; }
+        .v2spec-section li { margin-bottom: 4px; }
+        .v2spec-section strong { font-weight: 600; }
+
+        .v2spec-no-pill {
+            display: inline-block;
+            background: var(--spec-fg);
+            color: var(--spec-bg);
+            font-family: "Roboto Mono", "SF Mono", Menlo, Consolas, monospace;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .v2spec-decided {
+            display: inline-block;
+            background: var(--spec-accent);
+            color: white;
+            font-family: "Roboto Mono", "SF Mono", Menlo, Consolas, monospace;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .v2spec-ws-group {
+            margin-bottom: 22px;
+        }
+        .v2spec-ws-group:last-child { margin-bottom: 0; }
+        .v2spec-ws-grouptitle {
+            font-family: "Roboto Mono", "SF Mono", Menlo, Consolas, monospace;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--spec-fg-muted);
+            margin: 0 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--spec-border);
+        }
+        .v2spec-ws-item {
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+        .v2spec-ws-itemtitle {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .v2spec-ws-context {
+            font-size: 13px;
+            color: var(--spec-fg-muted);
+            margin-bottom: 8px;
+        }
+        .v2spec-ws-context ul {
+            padding-left: 18px;
+            margin: 4px 0;
+        }
+        .v2spec-ws-fill {
+            display: block;
+            border-bottom: 1px solid var(--spec-fg-muted);
+            height: 26px;
+            margin-bottom: 4px;
+        }
+
+        @media print {
+            body { background: white !important; }
+            #header, #menu-dropdown, #site-footer { display: none !important; }
+            .v2spec-wrap { padding: 0; max-width: none; }
+            .v2spec-section { box-shadow: none; }
+            .v2spec-ws-item { page-break-inside: avoid; }
+            .v2spec-section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body data-page="v2-spec">
+<div id="app">
+
+<div id="header"></div>
+<div id="menu-dropdown"></div>
+
+<div class="v2spec-wrap">
+
+    <header class="v2spec-title">
+        <h1>CYCLES v2 — Hardware Requirements</h1>
+        <p class="v2spec-subtitle">Plain-language requirements for the v2 custom PCB. Capability-level, not chip-specific.</p>
+        <p class="v2spec-meta">Prepared for EE consultation · 2026-04-28</p>
+    </header>
+
+    <p class="v2spec-intro">CYCLES is a stereo audio looper pedal. v1 runs on the Daisy Seed dev board; v2 will move to a custom PCB. This document captures non-negotiable capability requirements (sections 1–6 + 8) and a worksheet of component decisions where EE input is wanted (section 7).</p>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 1</p>
+        <h2>USB Firmware Updates</h2>
+        <p>End users must be able to update firmware by plugging a USB cable into the pedal and using a web browser — no extra software, no separate programmer.</p>
+        <p><strong>Implication for chip choice:</strong> the main chip must support this natively. Some cheaper chips can't — they require an extra helper chip on the board, or only support updates through a serial cable. Those are not acceptable.</p>
+        <h3>Connector + protection</h3>
+        <ul>
+            <li>USB-C connector (not micro/mini), accessible on the enclosure</li>
+            <li>ESD protection on the USB data lines</li>
+            <li>A way to recover the pedal if firmware corrupts (recessed button, internal jumper, or equivalent)</li>
+            <li>USB 5 V rail kept isolated from audio analog rails</li>
+        </ul>
+    </section>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 2</p>
+        <h2><span class="v2spec-no-pill">No</span> Wireless</h2>
+        <p>No Bluetooth, no WiFi. Decided against — adds cost, certification work, RF noise near audio, and pairing UX issues without solving a real user need. USB-C handles all file transfer.</p>
+    </section>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 3</p>
+        <h2>Power Input</h2>
+        <p>Pedal will be sold <strong>without</strong> a wall wart. User supplies their own power.</p>
+        <p><strong>Required spec on packaging + manual + enclosure label:</strong> "Regulated 9 V DC center-negative, 500 mA min, UL/CE-listed PSU recommended."</p>
+        <h3>EE must design defensively on the DC input</h3>
+        <ul>
+            <li>Reverse polarity protection</li>
+            <li>Overvoltage clamp / TVS (in case user plugs in 18 V by mistake)</li>
+            <li>Inrush current limiting</li>
+        </ul>
+        <p>Goal: a wrong or noisy PSU damages itself, not the pedal.</p>
+    </section>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 4</p>
+        <h2>MIDI</h2>
+        <p>Both physical and USB MIDI required.</p>
+        <h3>Physical MIDI</h3>
+        <ul>
+            <li>Two 3.5 mm TRS jacks: one IN, one OUT/THRU</li>
+            <li><strong>TRS MIDI Type A</strong> (MIDI Association ratified standard, 2018) — most common in modern pedals</li>
+            <li>Standard MIDI input opto-isolation + output current-limiting per spec</li>
+            <li>Ship a TRS-to-5-pin-DIN adapter cable in the box (kills compatibility complaints from users with legacy gear)</li>
+        </ul>
+        <h3>USB MIDI</h3>
+        <ul>
+            <li>Bidirectional in + out over the existing USB-C cable</li>
+            <li>No extra hardware — comes free with the USB connection already required for firmware updates</li>
+            <li>Lets the pedal talk to a DAW / phone / laptop without any extra cabling</li>
+        </ul>
+        <p><strong>MCU implication:</strong> any modern MCU has spare UART peripherals to handle MIDI. Not a constraint.</p>
+    </section>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 5</p>
+        <h2>Expression / Aux Combo Input</h2>
+        <p>One 3.5 mm TRS jack that auto-detects whether an <strong>expression pedal</strong> (continuous rocker) or an <strong>aux footswitch</strong> (1–2 momentary switches) is connected.</p>
+        <p><strong>Firmware-assignable target:</strong> user picks via menu what the jack controls — could be a built-in pedal parameter (mix, stretch, speed, volume, etc.) or a programmable target the user defines.</p>
+        <h3>EE notes</h3>
+        <ul>
+            <li>Standard tip-ring-sleeve jack with detection circuit (Empress-style)</li>
+            <li>Analog input pin on MCU for expression voltage</li>
+            <li>Digital input + pull-up for aux switch detection</li>
+            <li>~$1–2 in parts, minimal panel space</li>
+        </ul>
+    </section>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 6</p>
+        <h2>Enclosure + PCB Layout</h2>
+        <p><strong>Target enclosure:</strong> folded sheet metal (TBD — open to EE input on alternatives like cast aluminum / Hammond-style if there's a strong reason).</p>
+        <h3>Total I/O count (drives panel layout + board-split decision)</h3>
+        <ul>
+            <li>4 audio jacks: stereo IN L/R + stereo OUT L/R</li>
+            <li>1 USB-C</li>
+            <li>2 MIDI: IN + OUT (3.5 mm TRS)</li>
+            <li>1 EXP/AUX combo (3.5 mm TRS)</li>
+            <li>1 DC power in</li>
+            <li><strong>8 jacks total</strong></li>
+        </ul>
+        <p>Plus on the top face: 3 footswitches, 2 pots, 1 rotary encoder w/ switch, 7-segment 2-digit display, 8 RGB LEDs, 3 toggles.</p>
+        <h3>PCB split is EE's call</h3>
+        <p>Common options for this much I/O:</p>
+        <ul>
+            <li>Single board (cheapest, fewest failure points — only if enclosure size allows)</li>
+            <li>Main board + jack daughterboard (frees the main board from edge constraints)</li>
+            <li>Top control board + bottom audio board (good for short, wide enclosures)</li>
+        </ul>
+        <p>EE to propose based on final enclosure dimensions.</p>
+    </section>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 7</p>
+        <h2>Component Worksheet</h2>
+        <p>For each item below, please share what you're thinking — chip/part recommendations, alternatives you'd consider, trade-offs, and any open questions.</p>
+
+        <div class="v2spec-ws-group">
+            <div class="v2spec-ws-grouptitle">Brain &amp; memory</div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">1. Main chip (MCU)</div>
+                <div class="v2spec-ws-context">Currently STM32H750 (Daisy Seed). Strong preference to stay on STM32H7-series for firmware portability.</div>
+                <span class="v2spec-ws-fill"></span><span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">2. External SDRAM size</div>
+                <div class="v2spec-ws-context">64 MB today on Daisy. With eMMC handling bulk loop storage (item 3), SDRAM only needs to be a working buffer for the audio engine.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">3. Loop storage — three-tier architecture<span class="v2spec-decided">Decided</span></div>
+                <div class="v2spec-ws-context">
+                    <ul>
+                        <li><strong>eMMC</strong> is the live recording target (4–16 GB, sized for performance, not capacity). All real-time writes go here.</li>
+                        <li><strong>MicroSD card slot</strong> is for user library + emergency backup mirror of the live loop. User-removable for sneaker-net to laptop.</li>
+                        <li>SDRAM (item 2) is the working buffer for the audio engine.</li>
+                        <li>Raw NAND was considered and rejected — wear-leveling firmware is multi-week senior work and a fit only at much higher production scale.</li>
+                    </ul>
+                    EE input wanted on: eMMC chip choice + size, microSD slot type/orientation.
+                </div>
+                <span class="v2spec-ws-fill"></span><span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">4. Firmware storage</div>
+                <div class="v2spec-ws-context">Internal MCU flash or external chip?</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+        </div>
+
+        <div class="v2spec-ws-group">
+            <div class="v2spec-ws-grouptitle">Audio path</div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">5. Audio codec (ADC/DAC chip)</div>
+                <div class="v2spec-ws-context">Biggest factor in audio quality + noise floor.</div>
+                <span class="v2spec-ws-fill"></span><span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">6. Audio input circuitry</div>
+                <div class="v2spec-ws-context">Buffer / anti-aliasing / impedance for guitar + line level.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">7. Audio output circuitry</div>
+                <div class="v2spec-ws-context">Buffers + low-pass filter.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">8. Bypass topology</div>
+                <div class="v2spec-ws-context">True-bypass relay vs buffered bypass.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+        </div>
+
+        <div class="v2spec-ws-group">
+            <div class="v2spec-ws-grouptitle">Power</div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">9. Power supply topology</div>
+                <div class="v2spec-ws-context">Single-rail vs separated analog/digital rails.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">10. Bulk capacitance</div>
+                <div class="v2spec-ws-context">Target μF.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">11. DC input protection</div>
+                <div class="v2spec-ws-context">Reverse-polarity, overvoltage, inrush (already required, see Section 3).</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+        </div>
+
+        <div class="v2spec-ws-group">
+            <div class="v2spec-ws-grouptitle">Connectors / panel</div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">12. Audio jacks</div>
+                <div class="v2spec-ws-context">Neutrik metal vs plastic, mono vs TRS inputs.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">13. DC jack</div>
+                <div class="v2spec-ws-context">Standard 2.1 mm barrel center-negative?</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+        </div>
+
+        <div class="v2spec-ws-group">
+            <div class="v2spec-ws-grouptitle">Controls</div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">14. Footswitch type</div>
+                <div class="v2spec-ws-context">Soft momentary vs mechanical stomp.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">15. Pots</div>
+                <div class="v2spec-ws-context">Sealed vs open, shaft style.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">16. Rotary encoder</div>
+                <div class="v2spec-ws-context">With push-switch (current).</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">17. Toggle switches</div>
+                <div class="v2spec-ws-context">3 currently. Type/style?</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">18. 7-seg display</div>
+                <div class="v2spec-ws-context">2-digit, color, brightness, viewing angle.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">19. LEDs</div>
+                <div class="v2spec-ws-context">8 RGB, currently APA102.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+        </div>
+
+        <div class="v2spec-ws-group">
+            <div class="v2spec-ws-grouptitle">Mechanical</div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">20. Enclosure size envelope</div>
+                <div class="v2spec-ws-context">Drives PCB layout.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">21. Knob style</div>
+                <div class="v2spec-ws-context">Chicken-head, pointer, full-skirt, etc.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">22. Footprint shape</div>
+                <div class="v2spec-ws-context">Boss-style, MXR-style, custom.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+        </div>
+
+        <div class="v2spec-ws-group">
+            <div class="v2spec-ws-grouptitle">Design-level</div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">23. PCB layer count</div>
+                <div class="v2spec-ws-context">2 / 4 / 6 layer.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">24. EMI shielding</div>
+                <div class="v2spec-ws-context">Chassis ground strategy, internal shields.</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+
+            <div class="v2spec-ws-item">
+                <div class="v2spec-ws-itemtitle">25. PCB split</div>
+                <div class="v2spec-ws-context">Single vs main + daughterboard vs top + bottom (see Section 6).</div>
+                <span class="v2spec-ws-fill"></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="v2spec-section">
+        <p class="v2spec-eyebrow">Section 8</p>
+        <h2>Certifications (target markets: US + Europe)</h2>
+        <ul>
+            <li><strong>FCC Part 15 Class B</strong> (US) — unintentional emissions test</li>
+            <li><strong>CE Mark</strong> (Europe) — equivalent EMC compliance</li>
+            <li><strong>RoHS</strong> (Europe) — lead-free, no banned substances. Spec accordingly.</li>
+            <li><strong>REACH</strong> (Europe) — chemical disclosure paperwork</li>
+            <li><strong>WEEE</strong> (Europe) — recycling scheme registration</li>
+        </ul>
+        <h3>Not needed (no AC mains, no radio)</h3>
+        <ul>
+            <li>UL / CSA on the pedal itself (only the wall wart needs it — user's responsibility since we don't ship one)</li>
+            <li>FCC ID (no intentional radio)</li>
+        </ul>
+        <p><strong>Lock the design before testing.</strong> Cert has to be redone if the PCB layout or enclosure changes significantly.</p>
+    </section>
+
+</div>
+
+<footer id="site-footer"></footer>
+
+</div>
+
+<script src="cycles-shared.js"></script>
+</body>
+</html>
