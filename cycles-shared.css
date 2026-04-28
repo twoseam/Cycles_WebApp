@@ -178,7 +178,8 @@ body.cycles-ready { visibility: visible; }
      • ≤600px         18/12 padding          (Narrow / Mobile)
    Pages that want a 2-column grid (data manager) layer it on top by
    setting display: grid + grid-template-areas inside the same media
-   query — no need to redeclare max-width or padding. */
+   query — no need to redeclare max-width or padding. Stub pages +
+   spec doc let their .module / wrapper fill #app directly. */
 #app {
     max-width: 850px;
     margin: 0 auto;
@@ -189,16 +190,6 @@ body.cycles-ready { visibility: visible; }
 }
 @media (max-width: 600px) {
     #app { padding: 18px 12px; }
-}
-
-/* Reading-content wrapper — used by stub pages + spec doc. Sits
-   inside #app and constrains a single column of text to a comfortable
-   reading width, even when the outer canvas is 1300 px wide. Pages
-   with a multi-column grid (data manager) skip this and use #app's
-   full width directly. */
-.page-content {
-    max-width: 760px;
-    margin: 0 auto;
 }
 
 /* ── Header ── */
