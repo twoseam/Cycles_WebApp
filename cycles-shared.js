@@ -89,7 +89,7 @@
         if (page === 'tutorial') return 'Tutorial';
         if (page === 'shop')     return 'Shop';
         if (page === 'contact')  return 'Contact';
-        if (page === 'v2-spec')  return 'Developer Login';
+        if (page === 'v2')       return 'v2';
         return 'Looper Workstation Data Manager';
     }
 
@@ -165,7 +165,7 @@
         ${navTab('tutorial.html', 'Tutorial',         'tutorial')}
         ${navTab('shop.html',     'Shop',             'shop')}
         ${navTab('contact.html',  'Contact',          'contact')}
-        ${navTab('v2-spec.html',  'Developer Login',  'v2-spec')}
+        ${navTab('v2.html',       'v2',               'v2')}
         <div class="main-nav-socials">
             <button type="button" class="main-nav-email-toggle" aria-label="Email options" aria-expanded="false" aria-controls="main-nav-email-submenu">${ICON_EMAIL}</button>
             <a href="https://www.instagram.com/michaelmartinkc/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">${ICON_INSTAGRAM}</a>
@@ -189,7 +189,7 @@
             ${footerLink('tutorial.html', 'Tutorial',         'tutorial')}
             ${footerLink('shop.html',     'Shop',             'shop')}
             ${footerLink('contact.html',  'Contact',          'contact')}
-            ${footerLink('v2-spec.html',  'Developer Login',  'v2-spec')}
+            ${footerLink('v2.html',       'v2',               'v2')}
         </nav>
         <div class="footer-contact">
             ${emailMenuHTML}

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYCLES v2 — Hardware Requirements</title>
+    <title>CYCLES — v2</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="cycles-shared.css">
     <style>
@@ -59,6 +59,27 @@
         .v2spec strong { font-weight: 600; }
         .v2spec em { font-style: italic; color: var(--fg-dim); }
 
+        /* Two-column grid for sections 1–7 below the full-width
+           header module. Single column under 900 px; 2-col with dense
+           auto-flow above so the tall worksheet doesn't strand its
+           neighbour with a gap. */
+        .v2spec-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            align-items: start;
+            margin-top: 24px;
+        }
+        @media (min-width: 900px) {
+            .v2spec-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-auto-flow: dense;
+            }
+        }
+        .v2spec-grid > .module {
+            margin: 0;
+        }
+
         .v2spec-decided {
             display: inline-block;
             background: var(--brand-red);
@@ -112,9 +133,10 @@
             line-height: 1.55;
         }
 
-        /* Editable modules — click anywhere inside a module to edit
-           the copy. Refresh resets everything (intentional — scratch
-           pad, not a persistent editor). */
+        /* Editable modules — click any module to edit. Edits auto-save
+           to localStorage on every keystroke (persists across refresh).
+           Save-to-File button writes a clean v2-spec.html with edits
+           baked in; Reset wipes localStorage and reverts. */
         .v2spec .module[contenteditable="true"] {
             cursor: text;
         }
@@ -134,17 +156,66 @@
             background: var(--bg-inset, transparent);
         }
 
+        /* Floating edit toolbar — fixed bottom-right, brand-styled.
+           Shows last-saved indicator + Save-to-File + Reset buttons. */
+        .v2spec-toolbar {
+            position: fixed;
+            bottom: 18px;
+            right: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: var(--bg-label);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            font-family: 'Roboto Mono', 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 11px;
+        }
+        .v2spec-toolbar-status {
+            color: var(--fg-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            min-width: 86px;
+            text-align: right;
+        }
+        .v2spec-toolbar-status.dirty { color: var(--brand-red); }
+        .v2spec-toolbar button {
+            font: inherit;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            color: var(--fg);
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .v2spec-toolbar button:hover {
+            background: var(--bg-hover);
+        }
+        .v2spec-toolbar button.primary {
+            background: var(--brand-red);
+            border-color: var(--brand-red-dark);
+            color: #fff;
+        }
+        .v2spec-toolbar button.primary:hover {
+            background: var(--brand-red-dark);
+        }
+
         @media print {
             body { background: white !important; }
             #header, #menu-dropdown, #site-footer { display: none !important; }
             #app { max-width: none; padding: 0; }
-            .v2spec-edit-hint { display: none !important; }
+            .v2spec-edit-hint, .v2spec-toolbar { display: none !important; }
             .v2spec .module { page-break-inside: avoid; outline: none !important; }
             .v2spec-ws-row { page-break-inside: avoid; }
         }
     </style>
 </head>
-<body data-page="v2-spec">
+<body data-page="v2">
 <div id="app">
 
 <div id="header"></div>
@@ -152,7 +223,7 @@
 
 <article class="v2spec">
 
-    <p class="v2spec-edit-hint">Click any module to edit copy. Refresh to reset.</p>
+    <p class="v2spec-edit-hint">Click any module to edit. Edits auto-save in your browser. Use the toolbar (bottom-right) to download a saved copy or reset.</p>
 
     <div class="module">
         <div class="module-code">CYCLES v2 Hardware</div>
@@ -161,9 +232,10 @@
             <p class="v2spec-lede">Plain-language requirements for the v2 custom PCB. Capability-level, not chip-specific.</p>
             <p class="v2spec-date">Prepared for EE consultation · 2026-04-28</p>
         </div>
-        <p class="v2spec-intro">CYCLES is a stereo audio looper pedal. v1 runs on the Daisy Seed dev board; v2 will move to a custom PCB. Sections 1–6 + 8 capture non-negotiable capabilities. Section 7 is a worksheet of decisions where EE input is wanted.</p>
+        <p class="v2spec-intro">CYCLES is a stereo audio looper pedal. v1 runs on the Daisy Seed dev board; v2 will move to a custom PCB. Sections 1–5 + 7 capture non-negotiable capabilities. Section 6 is a worksheet of decisions where EE input is wanted. No wireless on this product — USB-C handles all file transfer.</p>
     </div>
 
+    <div class="v2spec-grid">
 
     <div class="module">
         <div class="module-code">1 · USB Firmware Updates</div>
@@ -173,20 +245,14 @@
         <ul>
             <li>USB-C connector, accessible on the enclosure</li>
             <li>ESD protection on the data lines</li>
-            <li>Recovery path if firmware corrupts (recessed button, internal jumper, etc.)</li>
+            <li><strong>Firmware recovery button</strong> — recessed switch on the enclosure (paperclip-accessible) that forces the chip into bootloader mode regardless of firmware state. Required so a failed update can always be recovered from a browser. Pedal-industry standard (Hologram, Empress, Chase Bliss).</li>
             <li>USB 5 V rail isolated from audio analog rails</li>
         </ul>
     </div>
 
 
     <div class="module">
-        <div class="module-code">2 · No Wireless</div>
-        <p>No Bluetooth, no WiFi. Adds cost, certification, RF noise near audio, and pairing UX issues without solving a real user need. USB-C handles all file transfer.</p>
-    </div>
-
-
-    <div class="module">
-        <div class="module-code">3 · Power Input</div>
+        <div class="module-code">2 · Power Input</div>
         <p>Pedal ships <strong>without</strong> a wall wart. User supplies their own.</p>
         <p>Spec on packaging + manual + enclosure label: <em>"Regulated 9 V DC center-negative, 500 mA min, UL/CE-listed PSU recommended."</em></p>
         <h3>Defensive DC input design</h3>
@@ -200,7 +266,7 @@
 
 
     <div class="module">
-        <div class="module-code">4 · MIDI</div>
+        <div class="module-code">3 · MIDI</div>
         <p>Both physical and USB MIDI required.</p>
         <h3>Physical MIDI</h3>
         <ul>
@@ -218,7 +284,7 @@
 
 
     <div class="module">
-        <div class="module-code">5 · Expression / Aux Combo Jack</div>
+        <div class="module-code">4 · Expression / Aux Combo Jack</div>
         <p>One 3.5 mm TRS jack auto-detects expression pedal (continuous rocker) vs aux footswitch (1–2 momentary switches).</p>
         <p>Firmware-assignable target — user picks via menu what the jack controls.</p>
         <ul>
@@ -229,7 +295,7 @@
 
 
     <div class="module">
-        <div class="module-code">6 · Enclosure + I/O</div>
+        <div class="module-code">5 · Enclosure + I/O</div>
         <p>Target enclosure: folded sheet metal (open to alternatives if there's a strong reason).</p>
         <h3>Total I/O — 8 jacks</h3>
         <ul>
@@ -246,7 +312,7 @@
 
 
     <div class="module">
-        <div class="module-code">7 · Component Worksheet</div>
+        <div class="module-code">6 · Component Worksheet</div>
         <p>For each item: chip/part recommendation, alternatives, trade-offs, open questions.</p>
 
         <div class="v2spec-ws-cat">Brain &amp; memory</div>
@@ -339,7 +405,7 @@
             <div class="v2spec-ws-num">11.</div>
             <div class="v2spec-ws-body">
                 <div class="v2spec-ws-title">DC input protection</div>
-                <p class="v2spec-ws-context">Reverse-polarity, overvoltage, inrush (already required, see Section 3).</p>
+                <p class="v2spec-ws-context">Reverse-polarity, overvoltage, inrush (already required, see Section 2).</p>
             </div>
         </div>
 
@@ -459,14 +525,14 @@
             <div class="v2spec-ws-num">25.</div>
             <div class="v2spec-ws-body">
                 <div class="v2spec-ws-title">PCB split</div>
-                <p class="v2spec-ws-context">Single vs main + daughterboard vs top + bottom (see Section 6).</p>
+                <p class="v2spec-ws-context">Single vs main + daughterboard vs top + bottom (see Section 5).</p>
             </div>
         </div>
     </div>
 
 
     <div class="module">
-        <div class="module-code">8 · Certifications · US + Europe</div>
+        <div class="module-code">7 · Certifications · US + Europe</div>
         <ul>
             <li><strong>FCC Part 15 Class B</strong> (US) — unintentional emissions</li>
             <li><strong>CE Mark</strong> (Europe) — EMC compliance</li>
@@ -482,12 +548,100 @@
         <p>Cert has to be redone if the PCB layout or enclosure changes significantly. Lock the design before testing.</p>
     </div>
 
+    </div><!-- /.v2spec-grid -->
+
 </article>
+
+<div class="v2spec-toolbar" role="toolbar" aria-label="Edit toolbar">
+    <span class="v2spec-toolbar-status" id="v2spec-status">No edits</span>
+    <button type="button" id="v2spec-save" class="primary" title="Download v2-spec.html with your edits baked in">Save to File</button>
+    <button type="button" id="v2spec-reset" title="Discard all edits, reload original">Reset</button>
+</div>
 
 <footer id="site-footer"></footer>
 
 </div>
 
 <script src="cycles-shared.js"></script>
+<script>
+(function () {
+    var STORAGE_KEY = 'cycles-v2-spec-edits-v1';
+    var modules = Array.prototype.slice.call(document.querySelectorAll('.v2spec .module'));
+    var status = document.getElementById('v2spec-status');
+
+    // Restore prior edits before enabling editing, so re-render is clean.
+    try {
+        var stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            var data = JSON.parse(stored);
+            modules.forEach(function (m, i) {
+                if (data[i] != null) m.innerHTML = data[i];
+            });
+            setStatus('Restored', false);
+        }
+    } catch (e) { /* ignore corrupt storage */ }
+
+    function setStatus(text, dirty) {
+        status.textContent = text;
+        status.classList.toggle('dirty', !!dirty);
+    }
+
+    function persist() {
+        var snapshot = modules.map(function (m) { return m.innerHTML; });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        var t = new Date();
+        var hh = String(t.getHours()).padStart(2, '0');
+        var mm = String(t.getMinutes()).padStart(2, '0');
+        setStatus('Saved ' + hh + ':' + mm, false);
+    }
+
+    var saveTimer = null;
+    modules.forEach(function (m) {
+        m.contentEditable = 'true';
+        m.spellcheck = false;
+        m.addEventListener('input', function () {
+            setStatus('Editing…', true);
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(persist, 400);
+        });
+    });
+
+    // ── Save to File ──────────────────────────────────────────────
+    // Clones the document, strips editing artifacts, downloads as
+    // v2-spec.html. User drops the file into the webapp folder
+    // (replacing the old one) to commit edits to the live site.
+    document.getElementById('v2spec-save').addEventListener('click', function () {
+        var clone = document.documentElement.cloneNode(true);
+        clone.querySelectorAll('.v2spec .module').forEach(function (m) {
+            m.removeAttribute('contenteditable');
+            m.removeAttribute('spellcheck');
+        });
+        var hint = clone.querySelector('.v2spec-edit-hint');
+        if (hint) hint.remove();
+        var toolbar = clone.querySelector('.v2spec-toolbar');
+        if (toolbar) toolbar.remove();
+        // Drop the editor script (the last <script> in body).
+        var scripts = clone.querySelectorAll('body script');
+        if (scripts.length) scripts[scripts.length - 1].remove();
+
+        var html = '<!DOCTYPE html>\n' + clone.outerHTML;
+        var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'v2.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('v2spec-reset').addEventListener('click', function () {
+        if (!confirm('Discard all edits and reload the original?')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+    });
+})();
+</script>
 </body>
 </html>
