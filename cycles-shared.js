@@ -89,6 +89,7 @@
         if (page === 'tutorial') return 'Tutorial';
         if (page === 'shop')     return 'Shop';
         if (page === 'contact')  return 'Contact';
+        if (page === 'v2-spec')  return 'Developer Login';
         return 'Looper Workstation Data Manager';
     }
 
@@ -159,11 +160,12 @@
 
     const menuDropdownHTML = `
     <div class="menu-dropdown-inner">
-        ${navTab('index.html',    'Data Manager',   'app')}
-        ${navTab('manual.html',   'Owners Manual',  'manual')}
-        ${navTab('tutorial.html', 'Tutorial',       'tutorial')}
-        ${navTab('shop.html',     'Shop',           'shop')}
-        ${navTab('contact.html',  'Contact',        'contact')}
+        ${navTab('index.html',    'Data Manager',     'app')}
+        ${navTab('manual.html',   'Owners Manual',    'manual')}
+        ${navTab('tutorial.html', 'Tutorial',         'tutorial')}
+        ${navTab('shop.html',     'Shop',             'shop')}
+        ${navTab('contact.html',  'Contact',          'contact')}
+        ${navTab('v2-spec.html',  'Developer Login',  'v2-spec')}
         <div class="main-nav-socials">
             <button type="button" class="main-nav-email-toggle" aria-label="Email options" aria-expanded="false" aria-controls="main-nav-email-submenu">${ICON_EMAIL}</button>
             <a href="https://www.instagram.com/michaelmartinkc/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">${ICON_INSTAGRAM}</a>
@@ -182,11 +184,12 @@
     const footerHTML = `
     <div class="footer-top">
         <nav class="footer-nav">
-            ${footerLink('index.html',    'Data Manager',   'app')}
-            ${footerLink('manual.html',   'Owners Manual',  'manual')}
-            ${footerLink('tutorial.html', 'Tutorial',       'tutorial')}
-            ${footerLink('shop.html',     'Shop',           'shop')}
-            ${footerLink('contact.html',  'Contact',        'contact')}
+            ${footerLink('index.html',    'Data Manager',     'app')}
+            ${footerLink('manual.html',   'Owners Manual',    'manual')}
+            ${footerLink('tutorial.html', 'Tutorial',         'tutorial')}
+            ${footerLink('shop.html',     'Shop',             'shop')}
+            ${footerLink('contact.html',  'Contact',          'contact')}
+            ${footerLink('v2-spec.html',  'Developer Login',  'v2-spec')}
         </nav>
         <div class="footer-contact">
             ${emailMenuHTML}
