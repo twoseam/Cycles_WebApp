@@ -134,6 +134,53 @@
         }
         .man .module { scroll-margin-top: 20px; }
 
+        /* ── Visual menu: mini pedal diagrams ── */
+        .tag-hold, .tag-move {
+            font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase; color: #fff;
+            padding: 2px 7px; border-radius: 3px;
+        }
+        .tag-hold { background: #d43800; } .tag-move { background: #1e48d4; }
+        .mini { display: block; width: 100%; height: auto; border: 2px solid var(--border-dark); background: #fff1d2; }
+        .mflow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 6px 0 10px; }
+        .mflow figure { margin: 0; }
+        .mflow figcaption { margin-top: 8px; font-size: 14px; line-height: 1.45; }
+        .mflow .stepn {
+            font-family: 'Roboto Mono', monospace; font-weight: 700; color: var(--brand-red);
+            margin-right: 6px;
+        }
+        .mcard {
+            display: grid; grid-template-columns: 250px 1fr; gap: 22px; align-items: start;
+            padding: 18px 0; border-top: 1px solid var(--border-light); break-inside: avoid;
+        }
+        .mcard-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+        .mcode {
+            font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: 700;
+            background: var(--fg); color: var(--bg); padding: 2px 8px; letter-spacing: 0.08em;
+        }
+        .mtitle { font-size: 18px; font-weight: 700; color: var(--fg); }
+        .mgesture { margin: 0 0 12px !important; }
+        .mopt {
+            display: grid; grid-template-columns: 44px 100px 1fr; gap: 12px; align-items: center;
+            padding: 8px 0; border-top: 1px dotted var(--border);
+        }
+        .mopt .strip { display: flex; gap: 3px; }
+        .mopt .strip i { display: block; width: 9px; height: 16px; border: 1px solid rgba(0,0,0,0.4); background: #cfc6a4; }
+        .mopt .what { line-height: 1.35; }
+        .mopt .what b { color: var(--fg); }
+        .mopt .dir { display: block; font-size: 12px; color: var(--fg-muted); }
+        .mdefault {
+            font-family: 'Roboto Mono', monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
+            border: 1px solid var(--border-dark); padding: 1px 5px; margin-left: 8px; vertical-align: 1px;
+            color: var(--fg-muted);
+        }
+        @media (max-width: 700px) {
+            .mflow { grid-template-columns: 1fr; }
+            .mcard { grid-template-columns: 1fr; }
+            .mcard .mini { max-width: 320px; }
+        }
+
+
         /* ── Print / PDF ── */
         @media print {
             @page { size: letter; margin: 0.7in 0.75in; }
@@ -158,6 +205,8 @@
             .man h3, .note, .callouts li, tr, .steps li { break-inside: avoid; }
             .man h3 { break-after: avoid; }
             .note { background: #f4f4f4; }
+            .mcard { grid-template-columns: 2.3in 1fr; }
+            .mini, .mopt .strip i, .tag-hold, .tag-move, .mcode { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .seg, .led, .pin, .callouts .num, .panel { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .man a { color: inherit; text-decoration: none; }
             .tbl-wrap { overflow: visible; }
@@ -513,21 +562,14 @@
 <!-- ── 12 Menu ───────────────────────────────────────────────────────────── -->
 <div class="module pg" id="menu">
     <div class="module-code">12 · Menu</div>
-    <ul>
-        <li><strong>Enter:</strong> hold the BANK encoder for 2 seconds. LEDs breathe blue. Playback stops; the loop is kept.</li>
-        <li><strong>Change a setting:</strong> hold a footswitch and move a control (table below). Changes apply right away.</li>
-        <li><strong>Exit and save:</strong> double-click the encoder. LEDs breathe white.</li>
-    </ul>
-    <div class="tbl-wrap"><table>
-        <tr><th>Code</th><th>Hold + move</th><th>Setting</th><th>Options</th><th>Default</th></tr>
-        <tr><td><strong>A1</strong></td><td>REC/DUB + turn BANK</td><td>Record format</td><td><span class="seg">on</span> <span class="led blue"></span>stereo · <span class="seg">OF</span> <span class="led red"></span>mono</td><td>Stereo</td></tr>
-        <tr><td><strong>A2</strong></td><td>REC/DUB + LEVEL</td><td>Record mode</td><td><span class="seg">on</span> <span class="led blue"></span>Auto · <span class="seg">OF</span> <span class="led red"></span>Manual</td><td>Manual</td></tr>
-        <tr><td><strong>A3</strong></td><td>REC/DUB + CRUSH</td><td>Crush strength</td><td><span class="seg">01</span> <span class="led white"></span>Light · <span class="seg">02</span> <span class="led orange"></span>Normal · <span class="seg">03</span> <span class="led red"></span>Heavy</td><td>02</td></tr>
-        <tr><td><strong>A4</strong></td><td>REC/DUB + hold BANK</td><td>Card space used</td><td>Shows 00–99 %</td><td>—</td></tr>
-        <tr><td><strong>B3</strong></td><td>EFFECT + CRUSH</td><td>LED brightness</td><td>0–99. <strong>0 turns all LEDs off.</strong></td><td>Full</td></tr>
-        <tr><td><strong>C1</strong></td><td>STOP + turn BANK</td><td>Overdub end</td><td><span class="seg">on</span> <span class="led orange"></span>ends itself at loop end · <span class="seg">OF</span> <span class="led green"></span>runs until you tap</td><td>OF</td></tr>
-        <tr><td><strong>C3</strong></td><td>STOP + CRUSH</td><td>STOP footswitch role</td><td><span class="seg">on</span> <span class="led purple"></span>FX2 · <span class="seg">OF</span> <span class="led red"></span>Stop</td><td>OF</td></tr>
-    </table></div>
+    <p>Every setting is one move: <span class="tag-hold">hold</span> a footswitch, <span class="tag-move">move</span> a control. The display and LEDs show the result right away.</p>
+
+    <h3>Getting in and out</h3>
+    <div class="mflow" id="menu-flow"></div>
+
+    <h3>Settings</h3>
+    <div id="menu-cards"></div>
+
     <div class="note">
         <span class="lbl">Tips</span>
         <ul>
@@ -538,6 +580,7 @@
     </div>
 
     <h3>Factory reset</h3>
+    <div class="mcard" id="menu-reset"></div>
     <ol class="steps">
         <li>Hold <strong>REC/DUB + STOP</strong> while powering on.</li>
         <li>The display counts <span class="seg">05</span> → <span class="seg">01</span>. Keep holding to the end.</li>
@@ -758,6 +801,117 @@
         const t = setInterval(() => { if (tryClone()) clearInterval(t); }, 50);
         setTimeout(() => clearInterval(t), 3000);
     }
+})();
+</script>
+
+<script>
+// ── Visual menu ──────────────────────────────────────────────────────────
+// Mini pedal diagram. o = { hold:[...'rec'|'fx'|'stop'], move:'bank'|'level'|
+// 'crush', press:true (encoder push instead of turn), tag:'TURN', leds:colour,
+// fill:n (LEDs lit, default 8), disp:'on' }
+(function () {
+    const COL = { red:'#e02020', blue:'#2a62ff', green:'#22dd22', orange:'#ff8a00',
+                  purple:'#9a3fe0', yellow:'#ffd800', white:'#ffffff', off:'#cfc6a4' };
+    const HOLD = '#d43800', MOVE = '#1e48d4', INK = '#6b6250', BODY = '#d9d9d9';
+    const FS  = { rec:[45,196,'REC/DUB'], fx:[125,196,'EFFECT'], stop:[205,196,'STOP'] };
+    const ROT = { bank:[45,122,17,'BANK'], level:[205,42,16,'LEVEL'], crush:[205,122,16,'CRUSH'] };
+
+    function arc(cx, cy, r) {           // clockwise arrow over the top of a knob
+        const a0 = -150 * Math.PI/180, a1 = -30 * Math.PI/180;
+        const x0 = cx + r*Math.cos(a0), y0 = cy + r*Math.sin(a0);
+        const x1 = cx + r*Math.cos(a1), y1 = cy + r*Math.sin(a1);
+        return `<path d="M${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 0 1 ${x1.toFixed(1)},${y1.toFixed(1)}" fill="none" stroke="${MOVE}" stroke-width="2.5"/>` +
+               `<path d="M${(x1-6).toFixed(1)},${(y1-5).toFixed(1)} L${(x1+1).toFixed(1)},${(y1+3).toFixed(1)} L${(x1+6).toFixed(1)},${(y1-6).toFixed(1)}" fill="none" stroke="${MOVE}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+               `<path d="M${(x0+6).toFixed(1)},${(y0-5).toFixed(1)} L${(x0-1).toFixed(1)},${(y0+3).toFixed(1)} L${(x0-6).toFixed(1)},${(y0-6).toFixed(1)}" fill="none" stroke="${MOVE}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+    function mini(o) {
+        o = o || {}; const hold = o.hold || [];
+        let g = `<svg class="mini" viewBox="0 0 250 236" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">`;
+        // display
+        g += `<rect x="18" y="18" width="54" height="36" rx="3" fill="#23242c"/>` +
+             `<text x="45" y="44" text-anchor="middle" font-family="Roboto Mono, monospace" font-weight="700" font-size="22" fill="${o.disp ? '#ff4242' : '#5a2a2a'}" xml:space="preserve">${o.disp || '--'}</text>` +
+             `<text x="45" y="65" text-anchor="middle" font-size="7" fill="${INK}">MEMORY</text>`;
+        // toggles
+        [['SPEED',100],['DIR',125],['EFFECT',150]].forEach(([t,x]) => {
+            g += `<rect x="${x-4}" y="26" width="8" height="16" rx="4" fill="${BODY}" stroke="${INK}" stroke-width="1"/>` +
+                 `<text x="${x}" y="53" text-anchor="middle" font-size="5.5" fill="${INK}">${t}</text>`;
+        });
+        // LED strip
+        const lit = o.leds ? (o.fill == null ? 8 : o.fill) : 0;
+        for (let i = 0; i < 8; i++) {
+            g += `<rect x="${90 + i*9.4}" y="114" width="6.4" height="15" fill="${i < lit ? COL[o.leds] : COL.off}" stroke="rgba(0,0,0,0.35)" stroke-width="0.6"/>`;
+        }
+        g += `<text x="125" y="108" text-anchor="middle" font-size="6" fill="${INK}">PROGRESS</text>`;
+        // rotary controls
+        Object.entries(ROT).forEach(([k,[cx,cy,r,label]]) => {
+            const on = o.move === k;
+            g += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${on && o.press ? MOVE : BODY}" stroke="${on ? MOVE : INK}" stroke-width="${on ? 3 : 1}"/>` +
+                 `<line x1="${cx}" y1="${cy}" x2="${cx + r*0.55}" y2="${cy + r*0.75}" stroke="${on && o.press ? '#fff' : '#333'}" stroke-width="1.5"/>` +
+                 `<text x="${cx}" y="${cy + r + 11}" text-anchor="middle" font-size="7" font-weight="${on ? 700 : 400}" fill="${on ? MOVE : INK}">${label}</text>`;
+            if (on && !o.press) g += arc(cx, cy, r + 7);
+            if (on) g += `<text x="${cx}" y="${cy - r - (o.press ? 6 : 13)}" text-anchor="middle" font-size="8" font-weight="700" fill="${MOVE}" letter-spacing="0.6">${o.tag || (o.press ? 'PRESS' : 'TURN')}</text>`;
+        });
+        // footswitches
+        Object.entries(FS).forEach(([k,[cx,cy,label]]) => {
+            const on = hold.includes(k);
+            g += `<circle cx="${cx}" cy="${cy}" r="15" fill="${on ? HOLD : '#ececec'}" stroke="${on ? HOLD : INK}" stroke-width="${on ? 2 : 1}"/>` +
+                 `<circle cx="${cx}" cy="${cy}" r="9" fill="none" stroke="${on ? '#fff' : '#9a9a9a'}" stroke-width="1.5"/>` +
+                 `<text x="${cx}" y="${cy + 27}" text-anchor="middle" font-size="7" font-weight="${on ? 700 : 400}" fill="${on ? HOLD : INK}">${label}</text>`;
+            if (on) g += `<text x="${cx}" y="${cy - 20}" text-anchor="middle" font-size="8" font-weight="700" fill="${HOLD}" letter-spacing="0.6">HOLD</text>`;
+        });
+        return g + `</svg>`;
+    }
+    const strip = (c, n) => `<span class="strip">` + Array.from({length:8}, (_, i) =>
+        `<i style="${c && i < (n == null ? 8 : n) ? 'background:' + COL[c] : ''}"></i>`).join('') + `</span>`;
+
+    // Getting in and out
+    const flow = [
+        [{ move:'bank', press:true, tag:'HOLD 2 SEC', leds:'blue' },
+         'Hold <strong>BANK</strong> for 2 seconds. LEDs breathe blue. Playback stops; your loop is kept.'],
+        [{ hold:['rec'], move:'crush', leds:'orange', disp:'02' },
+         '<span class="tag-hold">Hold</span> a footswitch and <span class="tag-move">move</span> a control. Changes apply right away.'],
+        [{ move:'bank', press:true, tag:'DOUBLE-CLICK', leds:'white' },
+         'Double-click <strong>BANK</strong> to save and exit. LEDs breathe white.'],
+    ];
+    document.getElementById('menu-flow').innerHTML = flow.map(([o, cap], i) =>
+        `<figure>${mini(o)}<figcaption><span class="stepn">${i+1}</span>${cap}</figcaption></figure>`).join('');
+
+    // Settings
+    const CW = '↻ clockwise', CCW = '↺ counter-clockwise';
+    const cards = [
+        { code:'A1', title:'Record format', g:{ hold:['rec'], move:'bank' },
+          how:'Hold <strong>REC/DUB</strong>, turn <strong>BANK</strong>.',
+          opts:[ ['on','blue','Stereo',CW,true], ['OF','red','Mono — doubles the recording time',CCW] ] },
+        { code:'A2', title:'Record mode', g:{ hold:['rec'], move:'level' },
+          how:'Hold <strong>REC/DUB</strong>, turn <strong>LEVEL</strong>.',
+          opts:[ ['on','blue','Auto — recording starts when you play',CW], ['OF','red','Manual — recording starts on the tap',CCW,true] ] },
+        { code:'A3', title:'Crush strength', g:{ hold:['rec'], move:'crush' },
+          how:'Hold <strong>REC/DUB</strong>, turn <strong>CRUSH</strong>.',
+          opts:[ ['01','white','Light',CCW], ['02','orange','Normal','middle',true], ['03','red','Heavy',CW] ] },
+        { code:'A4', title:'Card space used', g:{ hold:['rec'], move:'bank', press:true, tag:'PRESS + HOLD' },
+          how:'Hold <strong>REC/DUB</strong>, press and hold <strong>BANK</strong>. Look only — nothing changes.',
+          opts:[ ['42','green','How full the card is — 00 to 99 %. The green bar fills to match.','',false,3] ] },
+        { code:'B3', title:'LED brightness', g:{ hold:['fx'], move:'crush' },
+          how:'Hold <strong>EFFECT</strong>, turn <strong>CRUSH</strong>. The LEDs change as you turn.',
+          opts:[ ['99','white','Full brightness',CW,true], [' 0','','All LEDs off',CCW] ] },
+        { code:'C1', title:'Overdub end', g:{ hold:['stop'], move:'bank' },
+          how:'Hold <strong>STOP</strong>, turn <strong>BANK</strong>.',
+          opts:[ ['on','orange','Overdub ends itself at the loop end',CW], ['OF','green','Overdub runs until you tap',CCW,true] ] },
+        { code:'C3', title:'STOP footswitch role', g:{ hold:['stop'], move:'crush' },
+          how:'Hold <strong>STOP</strong>, turn <strong>CRUSH</strong>.',
+          opts:[ ['on','purple','FX2 — STOP becomes a second effect switch',CW], ['OF','red','Stop — normal stop switch',CCW,true] ] },
+    ];
+    document.getElementById('menu-cards').innerHTML = cards.map(c => {
+        const d = c.opts.find(o => o[4]) || c.opts[0];
+        const panel = mini(Object.assign({ disp:d[0], leds:d[1] || null, fill:d[5] }, c.g));
+        const opts = c.opts.map(([disp, col, what, dir, def, n]) =>
+            `<div class="mopt"><span class="seg">${disp}</span>${strip(col, n)}<span class="what"><b>${what.split(' — ')[0]}</b>${what.includes(' — ') ? ' — ' + what.split(' — ')[1] : ''}${def ? '<span class="mdefault">DEFAULT</span>' : ''}${dir ? `<span class="dir">${dir}</span>` : ''}</span></div>`).join('');
+        return `<div class="mcard"><div>${panel}</div><div><div class="mcard-head"><span class="mcode">${c.code}</span><span class="mtitle">${c.title}</span></div><p class="mgesture">${c.how}</p>${opts}</div></div>`;
+    }).join('');
+
+    // Factory reset picture
+    document.getElementById('menu-reset').innerHTML =
+        `<div>${mini({ hold:['rec','stop'], disp:'05' })}</div><div><p class="mgesture"><span class="tag-hold">Hold</span> <strong>REC/DUB + STOP</strong> while you plug in the power.</p></div>`;
 })();
 </script>
 </body>
