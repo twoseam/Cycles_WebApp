@@ -6,6 +6,163 @@
     <title>CYCLES — Owners Manual</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="cycles-shared.css">
+    <style>
+        /* ── Owners Manual — page-local styles. Colors come from the shared
+           tokens in cycles-shared.css so light + dark themes both work. ── */
+        #app { max-width: 920px; }
+        @media (min-width: 1200px) { #app { max-width: 920px; } }
+
+        .man { font-size: 15px; line-height: 1.6; color: var(--fg-dim); }
+        .man h1 {
+            font-size: 34px; font-weight: 700; letter-spacing: 0.02em;
+            color: var(--fg); margin: 0 0 6px;
+        }
+        .man h3 {
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-size: 12px; font-weight: 700; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--brand-red);
+            margin: 26px 0 8px;
+        }
+        .man p  { margin: 0 0 12px; max-width: 68ch; }
+        .man ul, .man ol { margin: 0 0 14px; padding-left: 22px; max-width: 68ch; }
+        .man li { margin-bottom: 6px; }
+        .man strong { color: var(--fg); }
+        .man a { color: var(--brand-blue); }
+        body.dark .man a { color: #8fa8ff; }
+
+        /* Cover */
+        .man-cover { text-align: center; padding: 26px 10px 8px; }
+        .man-cover-logo svg { width: 100%; max-width: 380px; height: auto; }
+        .man-cover-logo svg .st1 { fill: var(--brand-blue); }
+        .man-cover-logo svg .st0 { fill: var(--brand-red); }
+        .man-kicker {
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+            color: var(--fg-muted); margin: 18px 0 6px;
+        }
+        .man-cover p { margin-left: auto; margin-right: auto; }
+        .man-pdf {
+            display: inline-block; margin-top: 10px; padding: 10px 22px;
+            font-family: 'Roboto Mono', 'Courier New', monospace;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+            text-transform: uppercase; text-decoration: none;
+            color: var(--fg) !important; background: var(--bg-raised);
+            border: 1px solid var(--border-dark); box-shadow: var(--shadow-card);
+        }
+        .man-pdf:hover { background: var(--bg-hover); }
+
+        /* Contents */
+        .man-toc { columns: 2; column-gap: 40px; list-style: none; padding: 0 !important; max-width: none !important; }
+        .man-toc li { break-inside: avoid; margin-bottom: 8px; }
+        .man-toc a {
+            display: flex; gap: 12px; text-decoration: none; color: var(--fg) !important;
+            border-bottom: 1px dotted var(--border); padding-bottom: 4px;
+        }
+        .man-toc .n { font-family: 'Roboto Mono', monospace; color: var(--brand-red); font-weight: 700; min-width: 22px; }
+        @media (max-width: 600px) { .man-toc { columns: 1; } }
+
+        /* Panel diagram with numbered callouts */
+        .panel { position: relative; border: 2px solid var(--border-dark); background: #fff1d2; margin: 6px 0 20px; }
+        .panel img { display: block; width: 100%; height: auto; }
+        .pin {
+            position: absolute; transform: translate(-50%, -50%);
+            width: 26px; height: 26px; border-radius: 50%;
+            background: var(--brand-red); color: #fff; border: 2px solid #fff;
+            font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+        }
+        @media (max-width: 600px) { .pin { width: 18px; height: 18px; font-size: 9px; border-width: 1px; } }
+
+        .callouts { list-style: none; padding: 0 !important; max-width: none !important; }
+        .callouts li { display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border-light); margin: 0; }
+        .callouts .num {
+            flex: 0 0 26px; height: 26px; border-radius: 50%;
+            background: var(--brand-red); color: #fff;
+            font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .callouts .ttl { display: block; font-weight: 700; color: var(--fg); letter-spacing: 0.06em; }
+
+        /* Tables */
+        .tbl-wrap { overflow-x: auto; margin: 4px 0 18px; }
+        .man table { border-collapse: collapse; width: 100%; font-size: 14px; }
+        .man th {
+            font-family: 'Roboto Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em;
+            text-transform: uppercase; text-align: left; color: var(--fg-muted);
+            border-bottom: 2px solid var(--border-dark); padding: 8px 10px;
+        }
+        .man td { border-bottom: 1px solid var(--border-light); padding: 9px 10px; vertical-align: top; }
+
+        /* 7-segment display token + LED chips */
+        .seg {
+            display: inline-block; min-width: 2.2em; text-align: center;
+            font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 13px;
+            background: var(--seg-bg); color: var(--seg-text);
+            border: 1px solid var(--seg-border); border-radius: 3px;
+            padding: 1px 6px; white-space: pre;
+        }
+        .led {
+            display: inline-block; width: 11px; height: 11px; margin-right: 6px;
+            border: 1px solid rgba(0,0,0,0.45); vertical-align: -1px;
+        }
+        .led.red { background: #e02020; }   .led.green  { background: #22dd22; }
+        .led.orange { background: #ff8a00; } .led.blue   { background: #2a62ff; }
+        .led.purple { background: #9a3fe0; } .led.yellow { background: #ffd800; }
+        .led.white { background: #ffffff; }  .led.off    { background: #2a2a2a; }
+
+        /* Notes + steps */
+        .note {
+            border-left: 4px solid var(--brand-blue); background: var(--bg-inset);
+            padding: 12px 16px; margin: 6px 0 18px; max-width: 68ch;
+        }
+        .note.warn { border-left-color: var(--brand-red); }
+        .note .lbl {
+            display: block; font-family: 'Roboto Mono', monospace; font-size: 10.5px;
+            font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--fg); margin-bottom: 4px;
+        }
+        .note p:last-child, .note ul:last-child { margin-bottom: 0; }
+        .steps { counter-reset: s; list-style: none; padding: 0 !important; }
+        .steps li { counter-increment: s; position: relative; padding-left: 38px; margin-bottom: 10px; }
+        .steps li::before {
+            content: counter(s); position: absolute; left: 0; top: 0;
+            width: 24px; height: 24px; border: 2px solid var(--border-dark);
+            font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; color: var(--fg);
+            background: var(--bg-label);
+        }
+        .man .module { scroll-margin-top: 20px; }
+
+        /* ── Print / PDF ── */
+        @media print {
+            @page { size: letter; margin: 0.7in 0.75in; }
+            body { background: #fff !important; visibility: visible !important; }
+            #header, #menu-dropdown, #site-footer, .man-pdf { display: none !important; }
+            #app { max-width: none; padding: 0; }
+            .man { font-size: 10.5pt; color: #222; }
+            .man .module {
+                background: #fff; border: none; padding: 0; margin: 0 0 0.4in;
+            }
+            /* New page only for the big chapters; short ones flow and stay whole. */
+            .man .module.pg { break-before: page; }
+            .man .module.keep { break-inside: avoid; }
+            .man p, .man ul, .man ol, .note { max-width: none; }
+            .panel { width: 78%; margin-left: auto; margin-right: auto; }
+            .man .module::before { display: none; }
+            .man .module-code {
+                position: static; display: block; padding: 0 0 6px; margin-bottom: 14px;
+                background: none; border-bottom: 2px solid #111; color: #111; font-size: 10pt;
+            }
+            .man-cover { padding-top: 2.2in; padding-bottom: 1.2in; }
+            .man h3, .note, .callouts li, tr, .steps li { break-inside: avoid; }
+            .man h3 { break-after: avoid; }
+            .note { background: #f4f4f4; }
+            .seg, .led, .pin, .callouts .num, .panel { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .man a { color: inherit; text-decoration: none; }
+            .tbl-wrap { overflow: visible; }
+        }
+    </style>
 </head>
 <body data-page="manual">
 <div id="app">
@@ -13,23 +170,595 @@
 <div id="header"></div>
 <div id="menu-dropdown"></div>
 
-<div class="module">
+<div class="man">
+
+<!-- ── Cover ─────────────────────────────────────────────────────────────── -->
+<div class="module no-break">
     <div class="module-code">Owners Manual</div>
-    <div class="placeholder-body">
-        <div class="placeholder-title">Owners Manual</div>
-        <div class="placeholder-sub">Coming soon</div>
-        <div class="placeholder-copy">
-            An interactive walkthrough of every control, footswitch gesture, and menu feature
-            on the CYCLES pedal — driven by the hardware layout. This page is under
-            construction.
-        </div>
+    <div class="man-cover">
+        <div class="man-cover-logo"></div>
+        <div class="man-kicker">Looper Workstation</div>
+        <h1>Owners Manual</h1>
+        <p>Stereo looper with tape-style speed and reverse, time-stretch, undo, a lo-fi Crush effect, and 99 memory slots on a microSD card.</p>
+        <div class="man-kicker">Firmware 1.6.6 &nbsp;·&nbsp; TwoSeam Effects</div>
+        <a class="man-pdf" href="Assets/Cycles-Owners-Manual.pdf" download>Download PDF</a>
     </div>
 </div>
+
+<!-- ── Contents ──────────────────────────────────────────────────────────── -->
+<div class="module pg">
+    <div class="module-code">Contents</div>
+    <ul class="man-toc">
+        <li><a href="#front"><span class="n">01</span>Front panel</a></li>
+        <li><a href="#rear"><span class="n">02</span>Connections &amp; power-up</a></li>
+        <li><a href="#quick"><span class="n">03</span>Quick start</a></li>
+        <li><a href="#looping"><span class="n">04</span>Looping</a></li>
+        <li><a href="#length"><span class="n">05</span>Loop length</a></li>
+        <li><a href="#undo"><span class="n">06</span>Undo / redo</a></li>
+        <li><a href="#oneshot"><span class="n">07</span>One-shot</a></li>
+        <li><a href="#speed"><span class="n">08</span>Speed &amp; direction</a></li>
+        <li><a href="#stretch"><span class="n">09</span>Time-stretch</a></li>
+        <li><a href="#signal"><span class="n">10</span>Level &amp; Crush</a></li>
+        <li><a href="#memory"><span class="n">11</span>Memory slots</a></li>
+        <li><a href="#menu"><span class="n">12</span>Menu</a></li>
+        <li><a href="#fx2"><span class="n">13</span>FX2 mode</a></li>
+        <li><a href="#leds"><span class="n">14</span>LED guide</a></li>
+        <li><a href="#display"><span class="n">15</span>Display guide</a></li>
+        <li><a href="#card"><span class="n">16</span>The microSD card</a></li>
+        <li><a href="#webapp"><span class="n">17</span>Data Manager web app</a></li>
+        <li><a href="#trouble"><span class="n">18</span>Troubleshooting</a></li>
+        <li><a href="#specs"><span class="n">19</span>Specifications</a></li>
+    </ul>
+</div>
+
+<!-- ── 01 Front panel ────────────────────────────────────────────────────── -->
+<div class="module pg" id="front">
+    <div class="module-code">01 · Front Panel</div>
+
+    <div class="panel">
+        <img src="Assets/Cycles%20%E2%80%93%20UI.svg" alt="CYCLES front panel">
+        <span class="pin" style="left:8%;  top:22%">1</span>
+        <span class="pin" style="left:8%;  top:47%">2</span>
+        <span class="pin" style="left:30%; top:23%">3</span>
+        <span class="pin" style="left:45.5%; top:23%">4</span>
+        <span class="pin" style="left:61%; top:23%">5</span>
+        <span class="pin" style="left:27%; top:65%">6</span>
+        <span class="pin" style="left:77.5%; top:22%">7</span>
+        <span class="pin" style="left:77.5%; top:47%">8</span>
+        <span class="pin" style="left:8%;  top:80%">9</span>
+        <span class="pin" style="left:42.5%; top:80%">10</span>
+        <span class="pin" style="left:77.5%; top:80%">11</span>
+        <span class="pin" style="left:39%; top:11%">12</span>
+    </div>
+
+    <ul class="callouts">
+        <li><span class="num">1</span><div><span class="ttl">MEMORY display</span>Two digits. Normally shows the current memory slot (01–99). Also shows knob values, the record timer, and short codes. See <a href="#display">Display guide</a>.</div></li>
+        <li><span class="num">2</span><div><span class="ttl">BANK encoder (turn + push)</span>Turn to pick a memory slot. Click to load and save. Hold and turn for time-stretch. Hold 2 seconds for the menu.</div></li>
+        <li><span class="num">3</span><div><span class="ttl">SPEED toggle — FULL / HALF</span>Tape-style speed. Tempo and pitch move together. Display shows <span class="seg">FS</span> or <span class="seg">HS</span> when flipped.</div></li>
+        <li><span class="num">4</span><div><span class="ttl">DIRECTION toggle — FWD / REV</span>Plays the loop forward or backward. Display shows <span class="seg">FF</span> or <span class="seg">rr</span>.</div></li>
+        <li><span class="num">5</span><div><span class="ttl">EFFECT toggle — ONE / UNDO</span>Chooses what the EFFECT footswitch does: one-shot or undo/redo. Display shows <span class="seg">1S</span> or <span class="seg">Ur</span>. It also sets the maximum loop length — see <a href="#length">Loop length</a>.</div></li>
+        <li><span class="num">6</span><div><span class="ttl">PROGRESS LEDs</span>Eight lights. Show where you are in the loop, and what the pedal is doing, by colour. See <a href="#leds">LED guide</a>.</div></li>
+        <li><span class="num">7</span><div><span class="ttl">LEVEL knob</span>Loop volume. Fully clockwise is full volume. Your live guitar is never turned down.</div></li>
+        <li><span class="num">8</span><div><span class="ttl">CRUSH knob</span>Lo-fi tape/bit-crush on the loop only. <strong>Fully clockwise is clean.</strong> Turn counter-clockwise for more crush.</div></li>
+        <li><span class="num">9</span><div><span class="ttl">REC/DUB footswitch</span>Record, play, overdub.</div></li>
+        <li><span class="num">10</span><div><span class="ttl">EFFECT footswitch</span>One-shot or undo/redo, set by the EFFECT toggle.</div></li>
+        <li><span class="num">11</span><div><span class="ttl">STOP footswitch</span>Stop. Double-tap and hold to clear the loop.</div></li>
+        <li><span class="num">12</span><div><span class="ttl">Jacks (top edge)</span>9V DC, OUTPUT R, OUTPUT L, INPUT R, INPUT L.</div></li>
+    </ul>
+
+    <div class="note">
+        <span class="lbl">Note</span>
+        <p>The TRIGGER and BASS legends between the footswitches are reserved. They are not active in firmware 1.6.6.</p>
+    </div>
+</div>
+
+<!-- ── 02 Connections & power-up ─────────────────────────────────────────── -->
+<div class="module keep" id="rear">
+    <div class="module-code">02 · Connections &amp; Power-Up</div>
+    <h3>Connections</h3>
+    <ul>
+        <li><strong>INPUT L / INPUT R</strong> — instrument or stereo source in.</li>
+        <li><strong>OUTPUT L / OUTPUT R</strong> — to your amp, interface, or next pedal.</li>
+        <li><strong>9V DC</strong> — power. Match the polarity symbol printed on the pedal.</li>
+        <li><strong>microSD card</strong> — insert <strong>before</strong> powering on. The pedal only looks for the card at start-up.</li>
+    </ul>
+    <p>Your live signal always passes through the pedal. The loop is mixed on top of it.</p>
+
+    <h3>Power-up</h3>
+    <ol class="steps">
+        <li>A colour sweep runs across the LEDs while the display spins.</li>
+        <li>The LEDs fade in and out once: <span class="led red"></span><strong>red</strong> = Manual record mode, <span class="led blue"></span><strong>blue</strong> = Auto record mode.</li>
+        <li>The pedal is ready. LEDs off, display shows the slot number, no loop loaded.</li>
+    </ol>
+    <div class="note warn">
+        <span class="lbl">Important</span>
+        <p>The loop you are playing is <strong>not</strong> kept when power is removed. Save it to a memory slot first.</p>
+    </div>
+    <p>All LEDs solid red with <span class="seg">00</span> for two seconds at start-up means the card could not be read. You can still loop, but you cannot save or load.</p>
+</div>
+
+<!-- ── 03 Quick start ────────────────────────────────────────────────────── -->
+<div class="module keep" id="quick">
+    <div class="module-code">03 · Quick Start</div>
+    <ol class="steps">
+        <li>Tap <strong>REC/DUB</strong>. LEDs sweep red. Play.</li>
+        <li>Tap <strong>REC/DUB</strong> again. The loop plays. A green bar shows your place.</li>
+        <li>Tap <strong>REC/DUB</strong> again to overdub. Orange flash. Tap once more to finish.</li>
+        <li>Tap <strong>STOP</strong> to stop. Tap <strong>REC/DUB</strong> to play from the top.</li>
+        <li>To clear: double-tap <strong>STOP</strong> and hold the second tap for 1.5 seconds. Two red blinks.</li>
+    </ol>
+</div>
+
+<!-- ── 04 Looping ────────────────────────────────────────────────────────── -->
+<div class="module pg" id="looping">
+    <div class="module-code">04 · Looping</div>
+
+    <h3>What each footswitch does</h3>
+    <div class="tbl-wrap"><table>
+        <tr><th>Pedal is…</th><th>REC/DUB</th><th>EFFECT</th><th>STOP</th></tr>
+        <tr><td><strong>Empty</strong><br><span class="led off"></span>LEDs off</td><td>Start recording</td><td>—</td><td>—</td></tr>
+        <tr><td><strong>Recording</strong><br><span class="led red"></span>red sweep</td><td>Close the loop and play</td><td>—</td><td>Close the loop and stop. Take is kept.</td></tr>
+        <tr><td><strong>Playing</strong><br><span class="led green"></span>green bar</td><td>Start overdub</td><td>One-shot, or undo/redo</td><td>Stop and rewind</td></tr>
+        <tr><td><strong>Overdubbing</strong><br><span class="led orange"></span>orange over green</td><td>Finish overdub, keep playing</td><td>—</td><td>Finish overdub and stop</td></tr>
+        <tr><td><strong>Stopped</strong><br><span class="led green"></span>slow dim green</td><td>Play from the top</td><td>One-shot, or undo/redo</td><td>—</td></tr>
+    </table></div>
+
+    <h3>While recording</h3>
+    <ul>
+        <li>The display counts seconds. At each minute, the minute number blinks.</li>
+        <li>In the last 15 seconds before the length limit, it counts down <span class="seg">15</span> → <span class="seg">00</span>.</li>
+        <li>At the limit, the loop closes itself and starts playing.</li>
+    </ul>
+
+    <h3>Overdubbing</h3>
+    <ul>
+        <li>New playing is added on top. Nothing is erased.</li>
+        <li>The bar turns orange over the part you have covered. Green is not yet covered.</li>
+        <li>You can overdub with SPEED or DIRECTION flipped. For the cleanest result, overdub at the speed the loop was recorded at.</li>
+    </ul>
+
+    <h3>Clearing the loop</h3>
+    <ol class="steps">
+        <li>Tap <strong>STOP</strong>.</li>
+        <li>Within half a second, press <strong>STOP</strong> again and hold for 1.5 seconds. LEDs go solid red.</li>
+        <li>Two quick red blinks = cleared. Let go early to cancel.</li>
+    </ol>
+
+    <h3>Record order — Mode A / Mode B</h3>
+    <ul>
+        <li><strong>Mode A:</strong> Record → Play → Overdub.</li>
+        <li><strong>Mode B:</strong> Record → Overdub → Play. The second REC tap goes straight into overdub.</li>
+        <li>To switch: hold <strong>REC/DUB + STOP</strong> together for 2 seconds while empty, playing, or stopped. Press STOP a hair first.</li>
+        <li>The LEDs show the new order, left to right: <span class="led red"></span>record, <span class="led green"></span>play, <span class="led orange"></span>overdub. They flash twice to confirm.</li>
+        <li>This choice is remembered on the card.</li>
+    </ul>
+
+    <h3>Auto record</h3>
+    <ul>
+        <li>Turn on in the <a href="#menu">menu</a> (A2).</li>
+        <li>Tap <strong>REC/DUB</strong> to arm. LEDs breathe blue.</li>
+        <li>Recording starts the moment you play.</li>
+        <li>Tap REC/DUB again, or STOP, to disarm.</li>
+    </ul>
+</div>
+
+<!-- ── 05 Loop length ────────────────────────────────────────────────────── -->
+<div class="module keep" id="length">
+    <div class="module-code">05 · Loop Length</div>
+    <p>The <strong>EFFECT toggle</strong> position at the moment you start recording sets the maximum length.</p>
+    <div class="tbl-wrap"><table>
+        <tr><th>EFFECT toggle at record start</th><th>Stereo</th><th>Mono</th><th>Undo</th></tr>
+        <tr><td><strong>UNDO</strong></td><td>1:30</td><td>3:00</td><td>Yes</td></tr>
+        <tr><td><strong>ONE</strong></td><td>3:00</td><td>6:00</td><td>Only if the loop ends up 1:30 or shorter (3:00 mono)</td></tr>
+    </table></div>
+    <ul>
+        <li>Stereo or mono is chosen in the <a href="#menu">menu</a> (A1).</li>
+        <li>Mono blends left and right into one channel and doubles the recording time.</li>
+    </ul>
+</div>
+
+<!-- ── 06 Undo / redo ────────────────────────────────────────────────────── -->
+<div class="module keep" id="undo">
+    <div class="module-code">06 · Undo / Redo</div>
+    <ul>
+        <li>Set the EFFECT toggle to <strong>UNDO</strong>.</li>
+        <li>Tap <strong>EFFECT</strong>: the last overdub is removed. <span class="led blue"></span>Blue flash.</li>
+        <li>Tap again: it comes back. <span class="led green"></span>Green flash.</li>
+        <li>One level. One step = one overdub, from REC in to REC out.</li>
+        <li>The first recording cannot be undone.</li>
+        <li>Works while playing or stopped.</li>
+    </ul>
+    <div class="note warn">
+        <span class="lbl">Good to know</span>
+        <ul>
+            <li>Undo is not available on loops longer than 1:30 stereo / 3:00 mono. You get a red flash.</li>
+            <li>If you undo a layer and then start a <strong>new</strong> overdub, the undone layer comes back for good.</li>
+            <li>If you save while a layer is undone, the saved loop still includes it.</li>
+            <li>Loading a slot clears the undo history.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ── 07 One-shot ───────────────────────────────────────────────────────── -->
+<div class="module keep" id="oneshot">
+    <div class="module-code">07 · One-Shot</div>
+    <ul>
+        <li>Set the EFFECT toggle to <strong>ONE</strong>.</li>
+        <li>Tap <strong>EFFECT</strong>: the loop jumps to the start, plays once, and stops. <span class="led purple"></span>Purple flash, purple bar.</li>
+        <li>With DIRECTION on REV, it starts from the end and plays backward.</li>
+        <li>Tap again any time to re-trigger. Good for stabs and samples.</li>
+        <li>Tap <strong>REC/DUB</strong> during a one-shot to cancel it. The loop keeps looping.</li>
+    </ul>
+</div>
+
+<!-- ── 08 Speed & direction ──────────────────────────────────────────────── -->
+<div class="module keep" id="speed">
+    <div class="module-code">08 · Speed &amp; Direction</div>
+    <h3>Speed</h3>
+    <p>Works like tape. The SPEED position when you <strong>start recording</strong> is "normal" for that loop.</p>
+    <div class="tbl-wrap"><table>
+        <tr><th>Recorded at</th><th>Flip to</th><th>You hear</th></tr>
+        <tr><td>FULL</td><td>HALF</td><td>Half speed, one octave down</td></tr>
+        <tr><td>HALF</td><td>FULL</td><td>Double speed, one octave up</td></tr>
+    </table></div>
+    <ul>
+        <li>The change is instant.</li>
+        <li>A loaded memory slot treats the SPEED position at load time as normal.</li>
+        <li>SPEED is ignored while <a href="#stretch">time-stretch</a> is on.</li>
+    </ul>
+    <h3>Direction</h3>
+    <ul>
+        <li>Flip to <strong>REV</strong> to play the loop backward. Instant.</li>
+        <li>The progress bar runs the other way.</li>
+    </ul>
+</div>
+
+<!-- ── 09 Time-stretch ───────────────────────────────────────────────────── -->
+<div class="module pg" id="stretch">
+    <div class="module-code">09 · Time-Stretch</div>
+    <p>Changes the tempo <strong>without</strong> changing the pitch.</p>
+    <ol class="steps">
+        <li>While a loop is playing forward, press and hold the <strong>BANK</strong> encoder.</li>
+        <li>Start turning within 2 seconds. (If you wait, the menu opens instead.)</li>
+        <li>Clockwise = faster. Counter-clockwise = slower. Nine steps each way, about 8% per step.</li>
+        <li>Let go. The new tempo stays.</li>
+    </ol>
+    <ul>
+        <li>Display: <span class="seg"> 1</span>–<span class="seg"> 9</span> faster, <span class="seg">-1</span>–<span class="seg">-9</span> slower, <span class="seg">00</span> normal.</li>
+        <li>Full range: half tempo to double tempo.</li>
+        <li>To turn it off: hold the encoder, turn back to <span class="seg">00</span>, let go.</li>
+        <li>A new recording, clearing, or loading a slot also resets it.</li>
+        <li>Not available in reverse (red flash) or on stream slots.</li>
+    </ul>
+
+    <h3>Bake — make the new tempo permanent</h3>
+    <ul>
+        <li>With stretch on, tap <strong>REC/DUB</strong>.</li>
+        <li>The pedal rewrites the loop at the new tempo and goes straight into overdub. No gap in the sound.</li>
+        <li>What you play during the bake is kept.</li>
+        <li>The new loop takes over at the next loop start. Stretch returns to <span class="seg">00</span>.</li>
+        <li>REC taps are ignored until that happens.</li>
+    </ul>
+    <div class="note warn">
+        <span class="lbl">Good to know</span>
+        <ul>
+            <li><strong>A bake cannot be undone.</strong> Save to a slot first if you want the original.</li>
+            <li>Bake needs the loop — before and after — to fit in 1:30 stereo / 3:00 mono. If not, REC just starts a normal overdub at the original tempo.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ── 10 Level & Crush ──────────────────────────────────────────────────── -->
+<div class="module keep" id="signal">
+    <div class="module-code">10 · Level &amp; Crush</div>
+    <h3>Level</h3>
+    <ul>
+        <li>Loop volume, silent to full. Your live signal is not affected.</li>
+        <li>While turning: <span class="led yellow"></span>yellow bar, display shows 0–100 (<span class="seg">00</span> = 100).</li>
+    </ul>
+    <h3>Crush</h3>
+    <ul>
+        <li>Lo-fi on the loop only: narrowed tone, lowered sample rate and bit depth, compression, soft saturation, and a slow tape warble.</li>
+        <li><strong>Fully clockwise = clean</strong> (true bypass). Counter-clockwise = more crush.</li>
+        <li>While turning: <span class="led white"></span>white bar. The display follows the knob, so <span class="seg">00</span> (100) is clean and <span class="seg"> 0</span> is fully crushed.</li>
+        <li>Three strengths — Light, Normal, Heavy — in the <a href="#menu">menu</a> (A3).</li>
+    </ul>
+    <div class="note">
+        <span class="lbl">Note</span>
+        <p>Level and Crush are playback only. They are never recorded into overdubs or saved to slots. To print Crush into a file, export from the <a href="#webapp">web app</a>.</p>
+    </div>
+</div>
+
+<!-- ── 11 Memory slots ───────────────────────────────────────────────────── -->
+<div class="module pg" id="memory">
+    <div class="module-code">11 · Memory Slots</div>
+    <p>99 slots on the microSD card. Turn <strong>BANK</strong> to choose one. Every encoder click gives a short blue flash.</p>
+
+    <h3>Load a slot</h3>
+    <ol class="steps">
+        <li>Turn BANK to the slot.</li>
+        <li><strong>Double-click</strong> the encoder. The number blinks.</li>
+        <li><strong>Click once more</strong> to confirm. (STOP cancels. It also gives up after 10 seconds.)</li>
+        <li><span class="led blue"></span>Blue bar fills, then a <span class="led green"></span>green flash. The loop is loaded and stopped.</li>
+        <li>Tap <strong>REC/DUB</strong> to play.</li>
+    </ol>
+    <p><span class="led red"></span>Red flash = the slot is empty or could not be read.</p>
+
+    <h3>Save to a slot</h3>
+    <ol class="steps">
+        <li>Turn BANK to the slot.</li>
+        <li><strong>Click once, then press again and hold</strong> for 3 seconds.</li>
+        <li>While holding, the LEDs breathe <span class="led yellow"></span><strong>yellow</strong> (empty slot) or <span class="led red"></span><strong>red</strong> (you will overwrite). Let go early to cancel.</li>
+        <li>A bar fills, then two flashes. Saved. The loop is stopped.</li>
+    </ol>
+
+    <ul>
+        <li>You cannot save or load while recording or overdubbing.</li>
+        <li>The pedal does not show which slots are full. The save colour (yellow/red) tells you.</li>
+        <li>Slots are deleted in the <a href="#webapp">web app</a>, not on the pedal.</li>
+        <li>After a save, wait a moment before removing power.</li>
+    </ul>
+
+    <h3>Stream slots</h3>
+    <p>Long tracks (backing tracks, full songs) loaded with the web app play straight from the card.</p>
+    <ul>
+        <li>Any length. Load almost instantly.</li>
+        <li>Play-only: no overdub, no undo, no save, no time-stretch.</li>
+        <li>REC/DUB = play. STOP = stop and rewind.</li>
+        <li>EFFECT toggle on UNDO: the EFFECT footswitch is <strong>pause / resume</strong>.</li>
+        <li>SPEED, DIRECTION, and one-shot work. Expect a brief gap when flipping direction or re-triggering.</li>
+    </ul>
+</div>
+
+<!-- ── 12 Menu ───────────────────────────────────────────────────────────── -->
+<div class="module pg" id="menu">
+    <div class="module-code">12 · Menu</div>
+    <ul>
+        <li><strong>Enter:</strong> hold the BANK encoder for 2 seconds. LEDs breathe blue. Playback stops; the loop is kept.</li>
+        <li><strong>Change a setting:</strong> hold a footswitch and move a control (table below). Changes apply right away.</li>
+        <li><strong>Exit and save:</strong> double-click the encoder. LEDs breathe white.</li>
+    </ul>
+    <div class="tbl-wrap"><table>
+        <tr><th>Code</th><th>Hold + move</th><th>Setting</th><th>Options</th><th>Default</th></tr>
+        <tr><td><strong>A1</strong></td><td>REC/DUB + turn BANK</td><td>Record format</td><td><span class="seg">on</span> <span class="led blue"></span>stereo · <span class="seg">OF</span> <span class="led red"></span>mono</td><td>Stereo</td></tr>
+        <tr><td><strong>A2</strong></td><td>REC/DUB + LEVEL</td><td>Record mode</td><td><span class="seg">on</span> <span class="led blue"></span>Auto · <span class="seg">OF</span> <span class="led red"></span>Manual</td><td>Manual</td></tr>
+        <tr><td><strong>A3</strong></td><td>REC/DUB + CRUSH</td><td>Crush strength</td><td><span class="seg">01</span> <span class="led white"></span>Light · <span class="seg">02</span> <span class="led orange"></span>Normal · <span class="seg">03</span> <span class="led red"></span>Heavy</td><td>02</td></tr>
+        <tr><td><strong>A4</strong></td><td>REC/DUB + hold BANK</td><td>Card space used</td><td>Shows 00–99 %</td><td>—</td></tr>
+        <tr><td><strong>B3</strong></td><td>EFFECT + CRUSH</td><td>LED brightness</td><td>0–99. <strong>0 turns all LEDs off.</strong></td><td>Full</td></tr>
+        <tr><td><strong>C1</strong></td><td>STOP + turn BANK</td><td>Overdub end</td><td><span class="seg">on</span> <span class="led orange"></span>ends itself at loop end · <span class="seg">OF</span> <span class="led green"></span>runs until you tap</td><td>OF</td></tr>
+        <tr><td><strong>C3</strong></td><td>STOP + CRUSH</td><td>STOP footswitch role</td><td><span class="seg">on</span> <span class="led purple"></span>FX2 · <span class="seg">OF</span> <span class="led red"></span>Stop</td><td>OF</td></tr>
+    </table></div>
+    <div class="note">
+        <span class="lbl">Tips</span>
+        <ul>
+            <li>Holding REC/DUB alone shows the A1 value. Read a knob setting while the knob is still moving.</li>
+            <li>The knobs are live. Re-set LEVEL and CRUSH after you leave the menu.</li>
+            <li>Settings are stored on the card when you exit. A red flash on exit means they were not stored.</li>
+        </ul>
+    </div>
+
+    <h3>Factory reset</h3>
+    <ol class="steps">
+        <li>Hold <strong>REC/DUB + STOP</strong> while powering on.</li>
+        <li>The display counts <span class="seg">05</span> → <span class="seg">01</span>. Keep holding to the end.</li>
+        <li>Menu settings return to defaults. Let go early to cancel.</li>
+    </ol>
+    <p>Memory slots and the Mode A/B choice are not touched.</p>
+</div>
+
+<!-- ── 13 FX2 mode ───────────────────────────────────────────────────────── -->
+<div class="module keep" id="fx2">
+    <div class="module-code">13 · FX2 Mode</div>
+    <p>Turns the STOP footswitch into a second effect switch. Turn on in the menu (C3).</p>
+    <h3>STOP footswitch in FX2 mode</h3>
+    <ul>
+        <li><strong>Single tap:</strong> its effect. (Default: reverse.)</li>
+        <li><strong>Double-tap:</strong> stop.</li>
+        <li><strong>Double-tap and hold 1.5 s:</strong> clear the loop.</li>
+    </ul>
+    <h3>Effects you can assign</h3>
+    <div class="tbl-wrap"><table>
+        <tr><th>Effect</th><th>What a tap does</th></tr>
+        <tr><td>Classic</td><td>Follows the EFFECT toggle (one-shot or undo)</td></tr>
+        <tr><td>Speed latch</td><td>Flips speed. Tap again to release.</td></tr>
+        <tr><td>Reverse latch</td><td>Flips direction. Tap again to release.</td></tr>
+        <tr><td>Undo / redo</td><td>Same as <a href="#undo">Undo</a></td></tr>
+        <tr><td>One-shot</td><td>Same as <a href="#oneshot">One-shot</a></td></tr>
+    </table></div>
+    <ul>
+        <li>While a latch is on, the matching toggle is ignored.</li>
+        <li>Latches reset on a new loop, a clear, or a slot load.</li>
+    </ul>
+    <h3>Assigning</h3>
+    <ol class="steps">
+        <li>Enter the menu, with C3 set to <span class="seg">on</span>.</li>
+        <li>Hold <strong>EFFECT</strong> or <strong>STOP</strong> — the footswitch you want to set.</li>
+        <li>Flip a toggle: <strong>SPEED</strong> = speed latch. <strong>DIRECTION</strong> = reverse latch. <strong>EFFECT</strong> = classic.</li>
+    </ol>
+    <p>If both footswitches are set to classic, the pedal splits them: the one you just set becomes one-shot, the other becomes undo/redo.</p>
+</div>
+
+<!-- ── 14 LED guide ──────────────────────────────────────────────────────── -->
+<div class="module pg" id="leds">
+    <div class="module-code">14 · LED Guide</div>
+    <div class="tbl-wrap"><table>
+        <tr><th>You see</th><th>It means</th></tr>
+        <tr><td><span class="led off"></span>Off</td><td>Empty. No loop.</td></tr>
+        <tr><td><span class="led red"></span>Red sweep, back and forth</td><td>Recording</td></tr>
+        <tr><td><span class="led green"></span>Green bar filling</td><td>Playing</td></tr>
+        <tr><td><span class="led orange"></span>Orange flash, then orange over green</td><td>Overdubbing</td></tr>
+        <tr><td><span class="led green"></span>Slow dim green breathing</td><td>Stopped, loop loaded</td></tr>
+        <tr><td><span class="led purple"></span>Purple flash, purple bar</td><td>One-shot</td></tr>
+        <tr><td><span class="led blue"></span>Blue flash / <span class="led green"></span>green flash</td><td>Undo / redo</td></tr>
+        <tr><td><span class="led red"></span>Solid red</td><td>STOP is held</td></tr>
+        <tr><td><span class="led red"></span>Two quick red blinks</td><td>Loop cleared</td></tr>
+        <tr><td><span class="led red"></span>Short red flash</td><td>"Not now" — see below</td></tr>
+        <tr><td><span class="led blue"></span>Slow blue breathing</td><td>Auto record armed</td></tr>
+        <tr><td><span class="led blue"></span>Short blue flash</td><td>Encoder click</td></tr>
+        <tr><td><span class="led blue"></span>Blue breathing, growing</td><td>Holding toward the menu / in the menu</td></tr>
+        <tr><td><span class="led white"></span>White breathing</td><td>Menu saved</td></tr>
+        <tr><td><span class="led yellow"></span>Yellow / <span class="led red"></span>red breathing</td><td>Save hold: empty slot / overwrite</td></tr>
+        <tr><td>Bar fills, then two flashes</td><td>Saving, saved</td></tr>
+        <tr><td><span class="led blue"></span>Blue bar, then <span class="led green"></span>green flash</td><td>Loading, loaded</td></tr>
+        <tr><td><span class="led yellow"></span>Yellow bar / <span class="led white"></span>white bar</td><td>LEVEL / CRUSH being turned</td></tr>
+        <tr><td>Colour sweep, then <span class="led red"></span>red or <span class="led blue"></span>blue fade</td><td>Power-up (red = Manual, blue = Auto)</td></tr>
+        <tr><td><span class="led red"></span>All red for 2 s + <span class="seg">00</span></td><td>Card could not be read at start-up</td></tr>
+    </table></div>
+    <h3>The short red flash means one of</h3>
+    <ul>
+        <li>The slot is empty, or the load failed.</li>
+        <li>Nothing to save, or the save failed.</li>
+        <li>Overdub tried on a stream slot.</li>
+        <li>Undo tried on a loop that is too long.</li>
+        <li>Time-stretch tried in reverse.</li>
+        <li>Menu settings could not be stored.</li>
+    </ul>
+</div>
+
+<!-- ── 15 Display guide ──────────────────────────────────────────────────── -->
+<div class="module keep" id="display">
+    <div class="module-code">15 · Display Guide</div>
+    <div class="tbl-wrap"><table>
+        <tr><th>Display</th><th>Meaning</th></tr>
+        <tr><td><span class="seg">01</span>–<span class="seg">99</span> steady</td><td>Current memory slot</td></tr>
+        <tr><td>Number blinking</td><td>Load waiting for your confirming click</td></tr>
+        <tr><td>Counting up</td><td>Record time in seconds. Blinking number = minutes.</td></tr>
+        <tr><td><span class="seg">15</span> → <span class="seg">00</span></td><td>Seconds left before the length limit</td></tr>
+        <tr><td><span class="seg"> 0</span> … <span class="seg">00</span></td><td>Knob value, 0 to 100</td></tr>
+        <tr><td><span class="seg"> 3</span> / <span class="seg">-3</span> / <span class="seg">00</span></td><td>Time-stretch step</td></tr>
+        <tr><td><span class="seg">FS</span> <span class="seg">HS</span></td><td>Full speed / half speed</td></tr>
+        <tr><td><span class="seg">FF</span> <span class="seg">rr</span></td><td>Forward / reverse</td></tr>
+        <tr><td><span class="seg">1S</span> <span class="seg">Ur</span></td><td>One-shot / undo-redo</td></tr>
+        <tr><td><span class="seg">on</span> <span class="seg">OF</span></td><td>Menu setting on / off</td></tr>
+        <tr><td>Spinning segments</td><td>Start-up, menu idle, or clear-hold</td></tr>
+        <tr><td><span class="seg">05</span> → <span class="seg">01</span> at power-on</td><td>Factory reset countdown</td></tr>
+    </table></div>
+</div>
+
+<!-- ── 16 microSD card ───────────────────────────────────────────────────── -->
+<div class="module keep" id="card">
+    <div class="module-code">16 · The microSD Card</div>
+    <ul>
+        <li>Format: <strong>FAT32</strong>. Name the card <strong>CYCLES</strong> (the web app checks the name).</li>
+        <li>Insert before power-on. Swapping cards while running is not supported — power off first.</li>
+        <li>The pedal creates its folders on first start.</li>
+    </ul>
+    <div class="tbl-wrap"><table>
+        <tr><th>On the card</th><th>What it is</th></tr>
+        <tr><td>Cycles/Memory_Slots/Mem_NN.raw</td><td>Stereo loop in slot NN</td></tr>
+        <tr><td>Cycles/Memory_Slots/Mem_NN_mono.raw</td><td>Mono loop</td></tr>
+        <tr><td>Cycles/Memory_Slots/Mem_NN_stream.raw</td><td>Stereo stream (play-only, any length)</td></tr>
+        <tr><td>Cycles/Settings.bin</td><td>Menu settings</td></tr>
+        <tr><td>Cycles/Mode.bin</td><td>Mode A / B</td></tr>
+        <tr><td>Cycles/diag.log</td><td>Diagnostic log for support</td></tr>
+    </table></div>
+    <p>Audio is stored as raw 24-bit, 48 kHz. Use the web app to get loops in and out — don't rename files by hand. Don't use slot 00.</p>
+</div>
+
+<!-- ── 17 Web app ────────────────────────────────────────────────────────── -->
+<div class="module pg" id="webapp">
+    <div class="module-code">17 · Data Manager Web App</div>
+    <p><a href="index.html">cycleslooper.com</a> manages the card from your computer. Use desktop <strong>Chrome</strong> or <strong>Edge</strong>. Phones can only preview the stock tracks.</p>
+    <h3>Connect</h3>
+    <ul>
+        <li>Put the card in your computer. Click <strong>Connect CYCLES Card</strong> and choose the card.</li>
+        <li>No card handy? Click <strong>Look around without a card</strong>.</li>
+    </ul>
+    <h3>Import</h3>
+    <ul>
+        <li>Drop in WAV, MP3, or other audio. It is converted to 48 kHz and levelled automatically.</li>
+        <li>WAV is best for loops. MP3 adds tiny gaps that can throw off loop timing.</li>
+        <li>Up to 1:30 goes in as a normal stereo loop. Longer files ask you to choose a format:</li>
+    </ul>
+    <div class="tbl-wrap"><table>
+        <tr><th>Format</th><th>Max length</th><th>Overdub</th><th>Undo</th></tr>
+        <tr><td>Stereo</td><td>1:30</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Stereo long</td><td>3:00</td><td>Yes</td><td>No</td></tr>
+        <tr><td>Mono</td><td>3:00</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Mono long</td><td>6:00</td><td>Yes</td><td>No</td></tr>
+        <tr><td>Stereo stream</td><td>Any</td><td>No</td><td>No</td></tr>
+    </table></div>
+    <div class="note warn">
+        <span class="lbl">Important</span>
+        <p>For long tracks choose <strong>stereo stream</strong>. Firmware 1.6.6 cannot play mono stream files — the slot will look empty on the pedal.</p>
+    </div>
+    <h3>Memory slots</h3>
+    <ul>
+        <li>Drag a tile to move it to another slot. Dropping on a full slot asks first.</li>
+        <li>Hover a tile and click × to delete. <strong>Delete All Slots</strong> wipes everything. Both ask first.</li>
+    </ul>
+    <h3>Stock tracks</h3>
+    <ul>
+        <li>Backing tracks you can preview and send to a slot. Click to import, or drag onto a slot.</li>
+    </ul>
+    <h3>Preview and export</h3>
+    <ul>
+        <li>Audition any slot with speed (0.5× / 1× / 2×), direction, Crush, loop, and one-shot. Space bar = play / pause.</li>
+        <li><strong>Export</strong> saves a WAV with your speed and direction applied.</li>
+        <li><strong>Apply Effects = Yes</strong> also prints Crush into the file.</li>
+        <li>Preview settings never change what is on the card.</li>
+    </ul>
+</div>
+
+<!-- ── 18 Troubleshooting ────────────────────────────────────────────────── -->
+<div class="module pg" id="trouble">
+    <div class="module-code">18 · Troubleshooting</div>
+    <div class="tbl-wrap"><table>
+        <tr><th>Problem</th><th>Try this</th></tr>
+        <tr><td>Red flash on every save and load</td><td>Card missing or not seated. Power off, re-seat the card, power on.</td></tr>
+        <tr><td>All LEDs red + <span class="seg">00</span> at start-up</td><td>Card could not be read. Check it is FAT32.</td></tr>
+        <tr><td>A slot loaded from the web app looks empty</td><td>It may be a mono stream, or longer than 3:00 stereo / 6:00 mono. Re-import as stereo stream.</td></tr>
+        <tr><td>Undo gives a red flash</td><td>The loop is over 1:30 stereo / 3:00 mono. Record with the EFFECT toggle on UNDO to stay in range.</td></tr>
+        <tr><td>All LEDs are dark but audio works</td><td>LED brightness (menu B3) is at 0. Enter the menu, hold EFFECT, turn CRUSH.</td></tr>
+        <tr><td>Encoder hold opens the menu instead of stretch</td><td>Start turning sooner — within 2 seconds of pressing.</td></tr>
+        <tr><td>SPEED toggle does nothing</td><td>Time-stretch is on. Hold the encoder and turn back to <span class="seg">00</span>.</td></tr>
+        <tr><td>Level or Crush changed after the menu</td><td>The knobs are live. Set them again.</td></tr>
+        <tr><td>Loop gone after power-off</td><td>Normal. Save to a slot before unplugging.</td></tr>
+        <tr><td>Hum or noise in a high-gain amp's FX loop</td><td>Try the pedal in front of the amp, or use an isolated power supply.</td></tr>
+    </table></div>
+</div>
+
+<!-- ── 19 Specifications ─────────────────────────────────────────────────── -->
+<div class="module keep" id="specs">
+    <div class="module-code">19 · Specifications</div>
+    <div class="tbl-wrap"><table>
+        <tr><td><strong>Audio</strong></td><td>Stereo in / stereo out, 48 kHz</td></tr>
+        <tr><td><strong>Storage format</strong></td><td>24-bit PCM, raw, on microSD (FAT32)</td></tr>
+        <tr><td><strong>Loop length</strong></td><td>1:30 / 3:00 stereo · 3:00 / 6:00 mono · streams unlimited</td></tr>
+        <tr><td><strong>Memory slots</strong></td><td>99</td></tr>
+        <tr><td><strong>Undo</strong></td><td>1 level</td></tr>
+        <tr><td><strong>Time-stretch</strong></td><td>½× to 2× tempo, ±9 steps, pitch preserved</td></tr>
+        <tr><td><strong>Loop seam</strong></td><td>10 ms crossfade</td></tr>
+        <tr><td><strong>Controls</strong></td><td>3 footswitches, 3 toggles, 2 knobs, push encoder</td></tr>
+        <tr><td><strong>Indicators</strong></td><td>2-digit display, 8 RGB LEDs</td></tr>
+        <tr><td><strong>Processor</strong></td><td>Electrosmith Daisy Seed</td></tr>
+        <tr><td><strong>Power</strong></td><td>9V DC</td></tr>
+    </table></div>
+    <h3>Firmware updates</h3>
+    <p>Updates are installed over USB from the Chrome browser. Step-by-step instructions will be posted here with the first update.</p>
+</div>
+
+</div><!-- /.man -->
 
 <footer id="site-footer"></footer>
 
 </div>
 
 <script src="cycles-shared.js"></script>
+<script>
+// Clone the header logo into the cover once shared.js has injected it.
+(function () {
+    const slot = document.querySelector('.man-cover-logo');
+    const tryClone = () => {
+        const src = document.querySelector('#logo svg');
+        if (src && slot && !slot.firstChild) { slot.innerHTML = src.outerHTML; return true; }
+        return false;
+    };
+    if (!tryClone()) {
+        const t = setInterval(() => { if (tryClone()) clearInterval(t); }, 50);
+        setTimeout(() => clearInterval(t), 3000);
+    }
+})();
+</script>
 </body>
 </html>
