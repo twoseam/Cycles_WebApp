@@ -1892,6 +1892,20 @@
             box-shadow: 0 0 0 transparent;
         }
         #btn-connect-prompt:disabled { opacity: 0.6; cursor: default; }
+        #btn-connect-skip {
+            display: block;
+            margin: -8px auto 22px;
+            padding: 4px 8px;
+            background: none;
+            border: none;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            color: var(--fg-dim);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            cursor: pointer;
+        }
+        #btn-connect-skip:hover { color: var(--fg); }
         .connect-note {
             font-size: 10px !important;
             letter-spacing: 0.12em;
@@ -2700,6 +2714,7 @@
         <h1>MicroSD Card Missing</h1>
         <p>Insert your MicroSD card, then click the button.<br>This will give the app access to your loopers' memory bank.</p>
         <button id="btn-connect-prompt">Connect CYCLES Card</button>
+        <button id="btn-connect-skip" type="button">Look around without a card</button>
         <p class="connect-note">Cycles Looper Workstation Memory Manager</p>
     </div>
 </div>
@@ -6547,6 +6562,13 @@ document.getElementById('btn-connect-prompt').addEventListener('click', async ()
         btn.textContent = 'Connect CYCLES Card';
         btn.disabled = false;
     }
+});
+
+// Browse the app with no card: drop the full-screen prompt and leave the
+// header "Connect CYCLES card" button so a card can still be attached later.
+document.getElementById('btn-connect-skip').addEventListener('click', () => {
+    hideConnectPrompt();
+    showConnectButton();
 });
 
 async function init() {
